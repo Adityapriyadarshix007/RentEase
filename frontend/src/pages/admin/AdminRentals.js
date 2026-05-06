@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 const AdminRentals = () => {
   const [rentals, setRentals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchRentals();
@@ -11,15 +12,39 @@ const AdminRentals = () => {
 
   const fetchRentals = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5001/api/rentals', {
-        headers: { 'Authorization': `Bearer ${token}` }
+      
+      if (!token) {
+        setError('No authentication token found');
+        setLoading(false);
+        return;
+      }
+      
+      const response = await fetch('https://rentease-backend-njvk.onrender.com/api/rentals', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
+      
+      if (response.status === 403) {
+        setError('Access denied. Admin privileges required.');
+        setLoading(false);
+        return;
+      }
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
       const data = await response.json();
       setRentals(data.rentals || []);
-    } catch (error) {
-      console.error('Error fetching rentals:', error);
-      toast.error('Failed to fetch rentals');
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching rentals:', err);
+      setError(err.message);
+      toast.error('Failed to load rentals');
     } finally {
       setLoading(false);
     }
@@ -28,7 +53,7 @@ const AdminRentals = () => {
   const updateRentalStatus = async (rentalId, newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/rentals/${rentalId}/status`, {
+      const response = await fetch(`https://rentease-backend-njvk.onrender.com/api/rentals/${rentalId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -36,7 +61,7 @@ const AdminRentals = () => {
         },
         body: JSON.stringify({ status: newStatus })
       });
-
+      
       if (response.ok) {
         toast.success(`Rental status updated to ${newStatus}`);
         fetchRentals();
@@ -68,7 +93,30 @@ const AdminRentals = () => {
     { value: 'overdue', label: 'Overdue', color: 'orange' }
   ];
 
-  if (loading) return <div className="p-8 text-center">Loading rentals...</div>;
+  if (loading) {
+    return <div className="p-8 text-center">Loading rentals...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 text-center">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <p className="text-red-600 mb-4">Error: {error}</p>
+          <button onClick={fetchRentals} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (rentals.length === 0) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-gray-500">No rentals found.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -92,8 +140,8 @@ const AdminRentals = () => {
                 <tr key={rental._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm text-gray-900">{rental.product?.name || 'N/A'}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{rental.user?.name || 'N/A'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">₹{rental.totalAmount}</td>
-                  <td className="px-6 py-4 text-sm">
+                  <td className="px-6 py-4 text-sm">₹{rental.totalAmount}</td>
+                  <td className="px-6 py-4">
                     <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(rental.status)}`}>
                       {rental.status}
                     </span>
@@ -101,7 +149,7 @@ const AdminRentals = () => {
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {new Date(rental.createdAt).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 text-sm">
+                  <td className="px-6 py-4">
                     <select
                       value={rental.status}
                       onChange={(e) => updateRentalStatus(rental._id, e.target.value)}
@@ -116,13 +164,6 @@ const AdminRentals = () => {
                   </td>
                 </tr>
               ))}
-              {rentals.length === 0 && (
-                <tr>
-                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
-                    No rentals found
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
