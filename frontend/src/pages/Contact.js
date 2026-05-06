@@ -11,8 +11,8 @@ const Contact = () => {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  // Use environment variable for API URL
-  const API_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
+  // Use the live backend URL
+  const API_URL = 'https://rentease-backend-njvk.onrender.com';
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -23,6 +23,9 @@ const Contact = () => {
     e.preventDefault();
     setSubmitting(true);
     
+    console.log('Sending to:', `${API_URL}/api/contact`);
+    console.log('Data:', formData);
+    
     try {
       const response = await fetch(`${API_URL}/api/contact`, {
         method: 'POST',
@@ -32,7 +35,9 @@ const Contact = () => {
         body: JSON.stringify(formData)
       });
       
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
       
       if (response.ok) {
         toast.success('Message sent successfully! We will get back to you soon.');
@@ -41,8 +46,8 @@ const Contact = () => {
         toast.error(data.message || 'Failed to send message. Please try again.');
       }
     } catch (error) {
-      console.error('Error sending message:', error);
-      toast.error('Network error. Please try again.');
+      console.error('Error details:', error);
+      toast.error('Network error. Please check your connection and try again.');
     } finally {
       setSubmitting(false);
     }
@@ -138,14 +143,6 @@ const Contact = () => {
               </div>
             </div>
           ))}
-          
-          {/* Map placeholder */}
-          <div className="bg-gray-200 rounded-lg h-64 flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-4xl mb-2">🗺️</div>
-              <p className="text-gray-500">Map View</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
