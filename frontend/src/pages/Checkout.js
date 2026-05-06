@@ -20,6 +20,15 @@ const Checkout = () => {
     landmark: ''
   });
 
+  // ALL PAYMENT OPTIONS
+  const paymentMethods = [
+    { id: 'cod', name: 'Cash on Delivery', icon: '💰', description: 'Pay when you receive the product' },
+    { id: 'card', name: 'Credit/Debit Card', icon: '💳', description: 'Pay securely with card' },
+    { id: 'upi', name: 'UPI', icon: '📱', description: 'Google Pay, PhonePe, Paytm' },
+    { id: 'netbanking', name: 'Net Banking', icon: '🏦', description: 'All major banks' },
+    { id: 'wallet', name: 'Digital Wallet', icon: '👛', description: 'Paytm, Amazon Pay, MobiKwik' }
+  ];
+
   useEffect(() => {
     if (cartItems.length === 0) {
       navigate('/cart');
@@ -89,7 +98,6 @@ const Checkout = () => {
         } else {
           const errorData = await response.json();
           console.error('Rental creation failed:', errorData);
-          toast.error(`Failed to create rental for ${item.productName}`);
         }
       }
       
@@ -127,13 +135,12 @@ const Checkout = () => {
             <h2 className="text-xl font-semibold mb-4">📍 Delivery Address</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Street Address *</label>
-                <input type="text" name="street" value={address.street} onChange={handleAddressChange} required className="w-full px-4 py-2 border rounded-lg" placeholder="House No, Building, Street" />
+                <input type="text" name="street" value={address.street} onChange={handleAddressChange} placeholder="Street Address *" className="w-full px-4 py-2 border rounded-lg" required />
               </div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">City *</label><input type="text" name="city" value={address.city} onChange={handleAddressChange} required className="w-full px-4 py-2 border rounded-lg" /></div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">State *</label><input type="text" name="state" value={address.state} onChange={handleAddressChange} required className="w-full px-4 py-2 border rounded-lg" /></div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">Pincode *</label><input type="text" name="pincode" value={address.pincode} onChange={handleAddressChange} required maxLength="6" className="w-full px-4 py-2 border rounded-lg" /></div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">Landmark</label><input type="text" name="landmark" value={address.landmark} onChange={handleAddressChange} className="w-full px-4 py-2 border rounded-lg" placeholder="Near any landmark" /></div>
+              <input type="text" name="city" value={address.city} onChange={handleAddressChange} placeholder="City *" className="w-full px-4 py-2 border rounded-lg" required />
+              <input type="text" name="state" value={address.state} onChange={handleAddressChange} placeholder="State *" className="w-full px-4 py-2 border rounded-lg" required />
+              <input type="text" name="pincode" value={address.pincode} onChange={handleAddressChange} placeholder="Pincode *" className="w-full px-4 py-2 border rounded-lg" maxLength="6" required />
+              <input type="text" name="landmark" value={address.landmark} onChange={handleAddressChange} placeholder="Landmark" className="w-full px-4 py-2 border rounded-lg" />
             </div>
           </div>
           
@@ -141,17 +148,30 @@ const Checkout = () => {
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4">📅 Delivery Schedule</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">Delivery Date *</label><input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} min={new Date().toISOString().split('T')[0]} required className="w-full px-4 py-2 border rounded-lg" /></div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">Delivery Slot *</label><select value={deliverySlot} onChange={(e) => setDeliverySlot(e.target.value)} className="w-full px-4 py-2 border rounded-lg"><option value="morning">Morning (9 AM - 12 PM)</option><option value="afternoon">Afternoon (12 PM - 4 PM)</option><option value="evening">Evening (4 PM - 8 PM)</option></select></div>
+              <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} min={new Date().toISOString().split('T')[0]} className="w-full px-4 py-2 border rounded-lg" required />
+              <select value={deliverySlot} onChange={(e) => setDeliverySlot(e.target.value)} className="w-full px-4 py-2 border rounded-lg">
+                <option value="morning">Morning (9 AM - 12 PM)</option>
+                <option value="afternoon">Afternoon (12 PM - 4 PM)</option>
+                <option value="evening">Evening (4 PM - 8 PM)</option>
+              </select>
             </div>
           </div>
           
-          {/* Payment Method */}
+          {/* ALL Payment Methods */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">💳 Payment Method</h2>
+            <h2 className="text-xl font-semibold mb-4">💳 Select Payment Method</h2>
             <div className="space-y-3">
-              <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"><input type="radio" name="paymentMethod" value="cod" checked={paymentMethod === 'cod'} onChange={(e) => setPaymentMethod(e.target.value)} className="mr-3" /><span className="text-lg mr-2">💰</span><span className="flex-1">Cash on Delivery</span></label>
-              <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"><input type="radio" name="paymentMethod" value="online" checked={paymentMethod === 'online'} onChange={(e) => setPaymentMethod(e.target.value)} className="mr-3" /><span className="text-lg mr-2">💳</span><span className="flex-1">Card/UPI/NetBanking</span><span className="text-xs text-green-600">(Coming Soon)</span></label>
+              {paymentMethods.map((method) => (
+                <label key={method.id} className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${paymentMethod === method.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
+                  <input type="radio" name="paymentMethod" value={method.id} checked={paymentMethod === method.id} onChange={(e) => setPaymentMethod(e.target.value)} className="mr-3 w-4 h-4" />
+                  <span className="text-2xl mr-3">{method.icon}</span>
+                  <div className="flex-1">
+                    <p className="font-medium">{method.name}</p>
+                    <p className="text-sm text-gray-500">{method.description}</p>
+                  </div>
+                  {paymentMethod === method.id && <span className="text-green-500 text-sm">✓ Selected</span>}
+                </label>
+              ))}
             </div>
           </div>
         </div>
@@ -161,10 +181,28 @@ const Checkout = () => {
           <div className="bg-white rounded-lg shadow-md p-6 sticky top-20">
             <h2 className="text-xl font-bold mb-4">Order Summary</h2>
             <div className="max-h-80 overflow-y-auto mb-4 space-y-3">
-              {cartItems.map((item) => (<div key={item.productId} className="flex justify-between py-2 border-b"><div><p className="font-medium">{item.productName}</p><p className="text-sm text-gray-500">{item.quantity} × {item.tenureMonths} months</p></div><span className="font-semibold">₹{item.monthlyRent * item.tenureMonths * item.quantity}</span></div>))}
+              {cartItems.map((item) => (
+                <div key={item.productId} className="flex justify-between py-2 border-b">
+                  <div>
+                    <p className="font-medium">{item.productName}</p>
+                    <p className="text-sm text-gray-500">{item.quantity} × {item.tenureMonths} months</p>
+                  </div>
+                  <span className="font-semibold">₹{item.monthlyRent * item.tenureMonths * item.quantity}</span>
+                </div>
+              ))}
             </div>
-            <div className="space-y-2 mb-4"><div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal}</span></div><div className="flex justify-between"><span>Delivery Charges</span><span className="text-green-600">FREE</span></div><div className="flex justify-between"><span>Security Deposit</span><span>₹{totalDeposit}</span></div><div className="border-t pt-2 mt-2"><div className="flex justify-between font-bold text-lg"><span>Total</span><span className="text-blue-600">₹{total}</span></div><p className="text-xs text-gray-500 mt-1">Security deposit collected separately</p></div></div>
-            <button onClick={handleSubmit} disabled={loading} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50">{loading ? 'Processing...' : `Place Order • ₹${total}`}</button>
+            <div className="space-y-2 mb-4">
+              <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal}</span></div>
+              <div className="flex justify-between"><span>Delivery Charges</span><span className="text-green-600">FREE</span></div>
+              <div className="flex justify-between"><span>Security Deposit</span><span>₹{totalDeposit}</span></div>
+              <div className="border-t pt-2 mt-2">
+                <div className="flex justify-between font-bold text-lg"><span>Total</span><span className="text-blue-600">₹{total}</span></div>
+                <p className="text-xs text-gray-500 mt-1">Security deposit collected separately</p>
+              </div>
+            </div>
+            <button onClick={handleSubmit} disabled={loading} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50">
+              {loading ? 'Processing...' : `Place Order • ₹${total}`}
+            </button>
           </div>
         </div>
       </div>

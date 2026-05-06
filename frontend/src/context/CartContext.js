@@ -15,14 +15,12 @@ export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load cart from localStorage on mount
   useEffect(() => {
     const savedCart = localStorage.getItem('rentease_cart');
     if (savedCart) {
       try {
         const parsedCart = JSON.parse(savedCart);
         setCartItems(parsedCart);
-        console.log('Cart loaded from storage:', parsedCart.length, 'items');
       } catch (error) {
         console.error('Error loading cart:', error);
       }
@@ -30,11 +28,9 @@ export const CartProvider = ({ children }) => {
     setIsLoaded(true);
   }, []);
 
-  // Save cart to localStorage whenever it changes
   useEffect(() => {
     if (isLoaded) {
       localStorage.setItem('rentease_cart', JSON.stringify(cartItems));
-      console.log('Cart saved to storage:', cartItems.length, 'items');
     }
   }, [cartItems, isLoaded]);
 
@@ -48,18 +44,16 @@ export const CartProvider = ({ children }) => {
       const existingItemIndex = prevItems.findIndex(item => item.productId === product._id);
       
       if (existingItemIndex !== -1) {
-        // Update existing item
         const updatedItems = [...prevItems];
         updatedItems[existingItemIndex] = {
           ...updatedItems[existingItemIndex],
           quantity: updatedItems[existingItemIndex].quantity + quantity,
           tenureMonths: tenureMonths
         };
+        // Only show one toast
         toast.success(`Updated ${product.name} quantity to ${updatedItems[existingItemIndex].quantity}`);
-        console.log('Updated cart item:', updatedItems[existingItemIndex]);
         return updatedItems;
       } else {
-        // Add new item
         const newItem = {
           productId: product._id,
           productName: product.name,
@@ -71,8 +65,8 @@ export const CartProvider = ({ children }) => {
           category: product.category,
           subCategory: product.subCategory
         };
-        toast.success(`Added ${product.name} to cart!`);
-        console.log('Added new cart item:', newItem);
+        // Only show one toast
+        toast.success(`${product.name} added to cart!`);
         return [...prevItems, newItem];
       }
     });
@@ -102,7 +96,6 @@ export const CartProvider = ({ children }) => {
           : item
       )
     );
-    toast.success('Cart updated');
   };
 
   const updateTenure = (productId, newTenure) => {
@@ -113,7 +106,6 @@ export const CartProvider = ({ children }) => {
           : item
       )
     );
-    toast.success('Rental tenure updated');
   };
 
   const clearCart = () => {
@@ -131,10 +123,6 @@ export const CartProvider = ({ children }) => {
     return cartItems.reduce((count, item) => count + item.quantity, 0);
   };
 
-  const getItemDetails = (productId) => {
-    return cartItems.find(item => item.productId === productId);
-  };
-
   return (
     <CartContext.Provider value={{
       cartItems,
@@ -144,8 +132,7 @@ export const CartProvider = ({ children }) => {
       updateTenure,
       clearCart,
       getCartTotal,
-      getCartCount,
-      getItemDetails
+      getCartCount
     }}>
       {children}
     </CartContext.Provider>

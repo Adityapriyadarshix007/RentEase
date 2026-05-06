@@ -2,19 +2,14 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { FaStar, FaStarHalfAlt, FaRegStar } from 'react-icons/fa';
-import toast from 'react-hot-toast';
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
 
   const handleAddToCart = (e) => {
-    e.preventDefault(); // Prevent event bubbling
-    e.stopPropagation(); // Stop propagation
-    
-    const success = addToCart(product);
-    if (success) {
-      toast.success(`${product.name} added to cart`);
-    }
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart(product);
   };
 
   const renderStars = (rating) => {
@@ -76,7 +71,7 @@ const ProductCard = ({ product }) => {
           </div>
           <button
             onClick={handleAddToCart}
-            className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700 transition"
+            className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700 transition cursor-pointer"
           >
             Rent Now
           </button>
