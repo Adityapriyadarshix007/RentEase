@@ -15,10 +15,16 @@ const categorySchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    maxlength: 200
+    default: ''
   },
-  image: String,
-  icon: String,
+  image: {
+    type: String,
+    default: ''
+  },
+  icon: {
+    type: String,
+    default: ''
+  },
   parentCategory: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category',

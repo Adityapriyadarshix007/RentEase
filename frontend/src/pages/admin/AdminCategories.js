@@ -14,10 +14,8 @@ const AdminCategories = () => {
 
   const fetchCategories = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('https://rentease-backend-njvk.onrender.com/api/categories', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      // Public endpoint - no auth needed for GET
+      const response = await fetch('https://rentease-backend-njvk.onrender.com/api/categories');
       const data = await response.json();
       setCategories(data.categories || []);
     } catch (error) {
@@ -47,7 +45,8 @@ const AdminCategories = () => {
         setFormData({ name: '', slug: '', description: '' });
         fetchCategories();
       } else {
-        toast.error('Failed to create category');
+        const error = await response.json();
+        toast.error(error.message || 'Failed to create category');
       }
     } catch (error) {
       toast.error('Failed to create category');
@@ -88,22 +87,72 @@ const AdminCategories = () => {
       
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50"><tr><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Slug</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th></tr></thead>
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Slug</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+            </tr>
+          </thead>
           <tbody className="divide-y divide-gray-200">
-            {categories.map((cat) => (<tr key={cat._id}><td className="px-6 py-4 text-sm text-gray-900">{cat.name}</td><td className="px-6 py-4 text-sm text-gray-500">{cat.slug}</td><td className="px-6 py-4 text-sm text-gray-500">{cat.description || '-'}</td><td className="px-6 py-4"><button onClick={() => handleDelete(cat._id)} className="text-red-600 hover:text-red-800"><FaTrash /></button></td></tr>))}
+            {categories.length === 0 ? (
+              <tr><td colSpan="4" className="px-6 py-8 text-center text-gray-500">No categories found. Click "Add Category" to create one.</td></tr>
+            ) : (
+              categories.map((cat) => (
+                <tr key={cat._id}>
+                  <td className="px-6 py-4 text-sm text-gray-900">{cat.name}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{cat.slug}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{cat.description || '-'}</td>
+                  <td className="px-6 py-4">
+                    <button onClick={() => handleDelete(cat._id)} className="text-red-600 hover:text-red-800">
+                      <FaTrash />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
       
+      {/* Add Category Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <h2 className="text-2xl font-bold mb-4">Add Category</h2>
             <form onSubmit={handleSubmit}>
-              <div className="mb-4"><label className="block mb-2">Name</label><input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value, slug: e.target.value.toLowerCase().replace(/\s/g, '-') })} className="w-full px-4 py-2 border rounded-lg" required /></div>
-              <div className="mb-4"><label className="block mb-2">Slug</label><input type="text" value={formData.slug} className="w-full px-4 py-2 border rounded-lg bg-gray-100" readOnly /></div>
-              <div className="mb-4"><label className="block mb-2">Description</label><textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full px-4 py-2 border rounded-lg" rows="3" /></div>
-              <div className="flex gap-3"><button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 border rounded-lg">Cancel</button><button type="submit" className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg">Create</button></div>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">Name *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    name: e.target.value, 
+                    slug: e.target.value.toLowerCase().replace(/\s/g, '-') 
+                  })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">Slug</label>
+                <input type="text" value={formData.slug} className="w-full px-4 py-2 border rounded-lg bg-gray-100" readOnly />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">Description</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                  rows="3"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 border rounded-lg">Cancel</button>
+                <button type="submit" className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg">Create</button>
+              </div>
             </form>
           </div>
         </div>
