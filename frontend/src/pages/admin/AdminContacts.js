@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaEye, FaCheckDouble, FaReply, FaTrash } from 'react-icons/fa';
+import { FaEye, FaCheckDouble, FaReply, FaTrash, FaEnvelope } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const AdminContacts = () => {
@@ -50,7 +50,7 @@ const AdminContacts = () => {
     }
     
     setSending(true);
-    toast.loading('Saving reply...', { id: 'reply-saving' });
+    const loadingToast = toast.loading('Sending reply and email notification...');
     
     try {
       const token = localStorage.getItem('token');
@@ -65,10 +65,14 @@ const AdminContacts = () => {
       
       const data = await response.json();
       
-      toast.dismiss('reply-saving');
+      toast.dismiss(loadingToast);
       
       if (response.ok) {
-        toast.success('✅ Reply saved successfully!');
+        if (data.emailSent) {
+          toast.success('✅ Reply sent! Email notification delivered to user.');
+        } else {
+          toast.warning('⚠️ Reply saved but email notification failed. Check email settings.');
+        }
         setSelectedContact(null);
         setReplyMessage('');
         fetchContacts();
@@ -76,9 +80,9 @@ const AdminContacts = () => {
         toast.error('Failed to save reply: ' + (data.message || 'Unknown error'));
       }
     } catch (error) {
-      toast.dismiss('reply-saving');
+      toast.dismiss(loadingToast);
       console.error('Reply error:', error);
-      toast.error('Network error. Could not save reply.');
+      toast.error('Network error. Could not send reply.');
     } finally {
       setSending(false);
     }
@@ -114,6 +118,9 @@ const AdminContacts = () => {
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">Contact Messages</h1>
+      <p className="text-gray-500 mb-4 flex items-center gap-2">
+        <FaEnvelope className="text-blue-500" /> When you reply, an email notification will be sent to the user.
+      </p>
       
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="overflow-x-auto">
@@ -138,6 +145,9 @@ const AdminContacts = () => {
                     <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(contact.status)}`}>
                       {contact.status}
                     </span>
+                    {contact.status === 'replied' && (
+                      <span className="ml-2 text-xs text-green-600">(Email sent)</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {new Date(contact.createdAt).toLocaleDateString()}
@@ -155,7 +165,7 @@ const AdminContacts = () => {
                       <button 
                         onClick={() => { setSelectedContact(contact); setReplyMessage(''); }} 
                         className="text-green-600 hover:text-green-800" 
-                        title="Reply"
+                        title="Send Reply"
                       >
                         <FaReply />
                       </button>
@@ -195,9 +205,12 @@ const AdminContacts = () => {
                   onChange={(e) => setReplyMessage(e.target.value)}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   rows="6"
-                  placeholder="Type your reply here..."
+                  placeholder="Type your reply here... The user will receive this via email."
                   disabled={sending}
                 />
+                <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
+                  <FaEnvelope className="text-blue-500" /> This reply will be sent as an email to {selectedContact.email}
+                </p>
               </div>
               
               <div className="flex gap-3">
@@ -213,7 +226,7 @@ const AdminContacts = () => {
                   disabled={sending || !replyMessage.trim()}
                   className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {sending ? 'Saving...' : 'Send Reply'}
+                  {sending ? 'Sending...' : 'Send Reply & Email'}
                 </button>
               </div>
             </div>
