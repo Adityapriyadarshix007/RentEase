@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaEye, FaCheckDouble, FaReply, FaTrash, FaEnvelope, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import { FaEye, FaCheckDouble, FaReply, FaTrash, FaEnvelope } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const AdminContacts = () => {
@@ -24,6 +24,7 @@ const AdminContacts = () => {
       const data = await response.json();
       setContacts(data.contacts || []);
     } catch (error) {
+      console.error('Error fetching contacts:', error);
       toast.error('Failed to load messages');
     } finally {
       setLoading(false);
@@ -41,6 +42,7 @@ const AdminContacts = () => {
       toast.success(`Message marked as ${status}`);
       fetchContacts();
     } catch (error) {
+      console.error('Error updating status:', error);
       toast.error('Failed to update');
     }
   };
@@ -52,7 +54,7 @@ const AdminContacts = () => {
     }
     
     setSending(true);
-    const loadingToast = toast.loading('Sending reply and email notification...');
+    toast.loading('Sending reply...');
     
     try {
       const token = localStorage.getItem('token');
@@ -69,23 +71,19 @@ const AdminContacts = () => {
       });
       
       const data = await response.json();
-      toast.dismiss(loadingToast);
+      toast.dismiss();
       
       if (response.ok) {
-        if (data.emailSent) {
-          toast.success('✅ Reply saved and email sent to user!');
-        } else {
-          toast.warning('⚠️ Reply saved but email failed. Check email settings.');
-        }
+        toast.success('✅ Reply saved successfully!');
         setSelectedContact(null);
         setReplyMessage('');
         fetchContacts();
       } else {
-        toast.error('Failed to save reply');
+        toast.error('Failed to save reply: ' + (data.message || 'Unknown error'));
       }
     } catch (error) {
-      toast.dismiss(loadingToast);
       console.error('Reply error:', error);
+      toast.dismiss();
       toast.error('Network error. Could not send reply.');
     } finally {
       setSending(false);
@@ -103,6 +101,7 @@ const AdminContacts = () => {
         toast.success('Message deleted');
         fetchContacts();
       } catch (error) {
+        console.error('Error deleting:', error);
         toast.error('Failed to delete');
       }
     }
@@ -122,11 +121,12 @@ const AdminContacts = () => {
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">Contact Messages</h1>
+      
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-center gap-3">
         <FaEnvelope className="text-blue-500 text-2xl" />
         <div>
-          <p className="font-semibold text-blue-800">Email Notifications Active</p>
-          <p className="text-sm text-blue-600">When you reply, an email will be sent to the user automatically.</p>
+          <p className="font-semibold text-blue-800">Reply System</p>
+          <p className="text-sm text-blue-600">Click the reply button to respond to customer messages.</p>
         </div>
       </div>
       
@@ -141,7 +141,7 @@ const AdminContacts = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-              </tr>
+              </table>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {contacts.map((contact) => (
@@ -153,11 +153,6 @@ const AdminContacts = () => {
                     <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(contact.status)}`}>
                       {contact.status}
                     </span>
-                    {contact.status === 'replied' && (
-                      <span className="ml-2 text-xs text-green-600 flex items-center gap-1">
-                        <FaCheckCircle size={10} /> Email sent
-                      </span>
-                    )}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {new Date(contact.createdAt).toLocaleDateString()}
@@ -215,12 +210,9 @@ const AdminContacts = () => {
                   onChange={(e) => setReplyMessage(e.target.value)}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   rows="6"
-                  placeholder="Type your reply here... This will be sent as an email to the user."
+                  placeholder="Type your reply here..."
                   disabled={sending}
                 />
-                <p className="text-sm text-gray-500 mt-2 flex items-center gap-1">
-                  <FaEnvelope className="text-blue-500" /> This reply will be emailed to {selectedContact.email}
-                </p>
               </div>
               
               <div className="flex gap-3">
@@ -234,15 +226,9 @@ const AdminContacts = () => {
                 <button 
                   onClick={() => sendReply(selectedContact._id)} 
                   disabled={sending || !replyMessage.trim()}
-                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {sending ? (
-                    <>Sending...</>
-                  ) : (
-                    <>
-                      <FaEnvelope /> Send Reply & Email
-                    </>
-                  )}
+                  {sending ? 'Sending...' : 'Send Reply'}
                 </button>
               </div>
             </div>
