@@ -11,6 +11,9 @@ const Contact = () => {
   });
   const [submitting, setSubmitting] = useState(false);
 
+  // Use environment variable for API URL
+  const API_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -21,7 +24,7 @@ const Contact = () => {
     setSubmitting(true);
     
     try {
-      const response = await fetch('http://localhost:5001/api/contact', {
+      const response = await fetch(`${API_URL}/api/contact`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -72,7 +75,7 @@ const Contact = () => {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
@@ -83,7 +86,7 @@ const Contact = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
@@ -94,7 +97,7 @@ const Contact = () => {
                   name="subject"
                   value={formData.subject}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
@@ -105,9 +108,9 @@ const Contact = () => {
                   value={formData.message}
                   onChange={handleChange}
                   rows="5"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
-                ></textarea>
+                />
               </div>
               <button
                 type="submit"
@@ -136,7 +139,7 @@ const Contact = () => {
             </div>
           ))}
           
-          {/* Map */}
+          {/* Map placeholder */}
           <div className="bg-gray-200 rounded-lg h-64 flex items-center justify-center">
             <div className="text-center">
               <div className="text-4xl mb-2">🗺️</div>
