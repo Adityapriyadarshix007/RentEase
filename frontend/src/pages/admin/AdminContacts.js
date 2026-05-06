@@ -52,7 +52,7 @@ const AdminContacts = () => {
     }
     
     setSending(true);
-    toast.loading('Sending reply...');
+    toast.loading('Sending reply and email...');
     
     try {
       const token = localStorage.getItem('token');
@@ -72,7 +72,11 @@ const AdminContacts = () => {
       toast.dismiss();
       
       if (response.ok) {
-        toast.success('Reply saved successfully!');
+        if (data.emailSent) {
+          toast.success('✅ Reply sent! Email notification delivered to user.');
+        } else {
+          toast.warning('⚠️ Reply saved but email failed. Check email settings.');
+        }
         setSelectedContact(null);
         setReplyMessage('');
         fetchContacts();
@@ -81,6 +85,7 @@ const AdminContacts = () => {
       }
     } catch (error) {
       toast.dismiss();
+      console.error('Reply error:', error);
       toast.error('Network error. Could not send reply.');
     } finally {
       setSending(false);
@@ -121,8 +126,8 @@ const AdminContacts = () => {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-center gap-3">
         <FaEnvelope className="text-blue-500 text-2xl" />
         <div>
-          <p className="font-semibold text-blue-800">Reply System</p>
-          <p className="text-sm text-blue-600">Click the reply button to respond to customer messages.</p>
+          <p className="font-semibold text-blue-800">Email Notifications Active</p>
+          <p className="text-sm text-blue-600">When you reply, an email will be sent to the user automatically.</p>
         </div>
       </div>
       
@@ -149,6 +154,9 @@ const AdminContacts = () => {
                     <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(contact.status)}`}>
                       {contact.status}
                     </span>
+                    {contact.status === 'replied' && (
+                      <span className="ml-2 text-xs text-green-600">(Email sent)</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {new Date(contact.createdAt).toLocaleDateString()}
@@ -205,9 +213,12 @@ const AdminContacts = () => {
                   onChange={(e) => setReplyMessage(e.target.value)}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   rows="6"
-                  placeholder="Type your reply here..."
+                  placeholder="Type your reply here... This will be emailed to the user."
                   disabled={sending}
                 />
+                <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
+                  <FaEnvelope className="text-blue-500" /> This reply will be emailed to {selectedContact.email}
+                </p>
               </div>
               
               <div className="flex gap-3">
@@ -223,7 +234,7 @@ const AdminContacts = () => {
                   disabled={sending || !replyMessage.trim()}
                   className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {sending ? 'Sending...' : 'Send Reply'}
+                  {sending ? 'Sending...' : 'Send Reply & Email'}
                 </button>
               </div>
             </div>
