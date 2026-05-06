@@ -9,21 +9,18 @@ dotenv.config();
 
 const app = express();
 
-// CORS configuration
+// CORS configuration - Allow all origins for testing
 const corsOptions = {
-  origin: [
-  'http://localhost:3000', 
-  'http://localhost:3001',
-  'https://rentease-frontend-ul7h.onrender.com',
-  'https://rentease-frontend.onrender.com',
-  'https://rentease-frontend-mu.vercel.app'
-],
+  origin: '*',
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 };
 
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
