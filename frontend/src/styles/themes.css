@@ -1,0 +1,46 @@
+/* Light theme (default) */
+:root {
+  --color-primary: #3B82F6;
+  --color-secondary: #10B981;
+  --color-danger: #EF4444;
+  --color-warning: #F59E0B;
+  --color-info: #3B82F6;
+  --color-dark: #1F2937;
+  --color-light: #F3F4F6;
+  --color-success: #10B981;
+  
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --border-color: #e5e7eb;
+}
+
+/* Dark theme (future implementation) */
+[data-theme="dark"] {
+  --color-primary: #60A5FA;
+  --color-secondary: #34D399;
+  --color-danger: #F87171;
+  --color-warning: #FBBF24;
+  
+  --bg-primary: #1F2937;
+  --bg-secondary: #374151;
+  --text-primary: #F9FAFB;
+  --text-secondary: #D1D5DB;
+  --border-color: #4B5563;
+}
+
+/* Apply theme variables */
+body {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.card, .bg-white {
+  background-color: var(--bg-primary);
+  border-color: var(--border-color);
+}
+
+.text-gray-600 {
+  color: var(--text-secondary);
+}

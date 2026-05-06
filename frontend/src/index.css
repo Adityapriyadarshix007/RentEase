@@ -1,0 +1,179 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-dark font-sans;
+  }
+  
+  h1 {
+    @apply text-4xl font-bold;
+  }
+  
+  h2 {
+    @apply text-3xl font-semibold;
+  }
+  
+  h3 {
+    @apply text-2xl font-semibold;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-all duration-200 transform hover:scale-105;
+  }
+  
+  .btn-danger {
+    @apply bg-danger text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-all duration-200;
+  }
+  
+  .btn-outline {
+    @apply border-2 border-primary text-primary px-6 py-2 rounded-lg hover:bg-primary hover:text-white transition-all duration-200;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300;
+  }
+  
+  .input {
+    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200;
+  }
+  
+  .label {
+    @apply block text-gray-700 font-medium mb-2;
+  }
+  
+  .container-custom {
+    @apply container mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+/* Fix hover and focus issues */
+button, 
+button:focus, 
+button:active,
+a, 
+a:focus, 
+a:active {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #3B82F6 !important;
+  outline-offset: 2px !important;
+}
+
+/* Remove focus ring for mouse users */
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none !important;
+}
+
+/* Smooth transitions */
+button, a {
+  transition: all 0.2s ease !important;
+}
+
+/* Prevent unwanted hover on disabled buttons */
+button:disabled {
+  pointer-events: none !important;
+  opacity: 0.5 !important;
+}
+
+/* Fix cursor issues */
+.cursor-pointer {
+  cursor: pointer !important;
+}
+
+/* Ensure buttons don't get stuck in hover state */
+button:hover:active {
+  transform: scale(0.98);
+}
+
+/* Fix button styles */
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Remove focus outline for mouse, keep for keyboard */
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #3B82F6;
+  outline-offset: 2px;
+}
+
+/* Smooth transitions */
+button, a {
+  transition: all 0.2s ease;
+}
+
+/* Prevent button hover issues */
+button:hover:active {
+  transform: scale(0.98);
+}
+
+/* Mobile menu improvements */
+@media (max-width: 768px) {
+  button, a {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Footer button styles - keeps original CSS intact */
+footer button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+footer button:hover {
+  background: none;
+}
+
+/* Ensure clickable items have proper cursor */
+footer button,
+footer a {
+  cursor: pointer;
+}
+
+/* Remove default button focus outline for mouse */
+footer button:focus:not(:focus-visible) {
+  outline: none;
+}

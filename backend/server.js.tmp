@@ -1,0 +1,2 @@
+const uploadRoutes = require('./routes/upload.routes');
+app.use('/api/upload', uploadRoutes);

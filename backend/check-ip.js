@@ -1,0 +1,13 @@
+console.log('🔍 Checking IP Whitelist Configuration');
+console.log('======================================');
+console.log('Please open MongoDB Atlas:');
+console.log('https://cloud.mongodb.com\n');
+console.log('Then navigate to: Network Access');
+console.log('');
+console.log('Your current IP address is:', 'YOUR_CURRENT_IP');
+console.log('');
+console.log('Make sure either:');
+console.log('1. Your current IP is in the list, OR');
+console.log('2. 0.0.0.0/0 is in the list (allows all IPs)');
+console.log('');
+console.log('If not, click "Add IP Address" and add: 0.0.0.0/0');

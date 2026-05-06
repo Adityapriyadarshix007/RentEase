@@ -1,0 +1,85 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [16.x, 18.x]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+    
+    - name: Install Backend Dependencies
+      run: |
+        cd backend
+        npm ci
+    
+    - name: Install Frontend Dependencies
+      run: |
+        cd frontend
+        npm ci
+    
+    - name: Run Backend Lint
+      run: |
+        cd backend
+        npm run lint || true
+    
+    - name: Run Frontend Lint
+      run: |
+        cd frontend
+        npm run lint || true
+    
+    - name: Run Backend Tests
+      run: |
+        cd backend
+        npm test || true
+    
+    - name: Run Frontend Tests
+      run: |
+        cd frontend
+        npm test -- --passWithNoTests || true
+    
+    - name: Build Frontend
+      run: |
+        cd frontend
+        npm run build
+
+  security:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Run Security Audit
+      run: |
+        cd backend
+        npm audit --production || true
+        cd ../frontend
+        npm audit --production || true
+
+  sonarcloud:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

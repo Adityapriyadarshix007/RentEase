@@ -1,0 +1,84 @@
+
+## Scripts
+
+### **scripts/backupDB.js**
+```javascript
+const { exec } = require('child_process');
+const path = require('path');
+const fs = require('fs');
+const dotenv = require('dotenv');
+
+dotenv.config({ path: path.join(__dirname, '../backend/.env') });
+
+const backupDir = path.join(__dirname, '../database/backups');
+const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0];
+const backupPath = path.join(backupDir, `rentease_backup_${timestamp}`);
+
+// Ensure backup directory exists
+if (!fs.existsSync(backupDir)) {
+  fs.mkdirSync(backupDir, { recursive: true });
+}
+
+const mongodump = `mongodump --uri="${process.env.MONGODB_URI}" --out="${backupPath}"`;
+
+console.log('Starting database backup...');
+console.log(`Backup destination: ${backupPath}`);
+
+exec(mongodump, (error, stdout, stderr) => {
+  if (error) {
+    console.error(`Backup failed: ${error.message}`);
+    return;
+  }
+  
+  console.log(`Backup completed successfully!`);
+  console.log(`Backup saved to: ${backupPath}`);
+  
+  // Create a manifest file with backup info
+  const manifest = {
+    timestamp: new Date().toISOString(),
+    database: process.env.MONGODB_URI.split('/').pop(),
+    backupPath: backupPath,
+    size: getDirectorySize(backupPath)
+  };
+  
+  fs.writeFileSync(
+    path.join(backupPath, 'manifest.json'),
+    JSON.stringify(manifest, null, 2)
+  );
+  
+  // Clean up old backups (keep only last 7 days)
+  cleanOldBackups(backupDir, 7);
+});
+
+function getDirectorySize(directory) {
+  let size = 0;
+  const files = fs.readdirSync(directory);
+  
+  for (const file of files) {
+    const filePath = path.join(directory, file);
+    const stats = fs.statSync(filePath);
+    
+    if (stats.isFile()) {
+      size += stats.size;
+    } else if (stats.isDirectory()) {
+      size += getDirectorySize(filePath);
+    }
+  }
+  
+  return size;
+}
+
+function cleanOldBackups(directory, daysToKeep) {
+  const cutoff = Date.now() - (daysToKeep * 24 * 60 * 60 * 1000);
+  const backups = fs.readdirSync(directory);
+  
+  for (const backup of backups) {
+    const backupPath = path.join(directory, backup);
+    const stats = fs.statSync(backupPath);
+    
+    if (stats.mtimeMs < cutoff) {
+      console.log(`Removing old backup: ${backup}`);
+      fs.rmSync(backupPath, { recursive: true, force: true });
+    }
+  }
+}
