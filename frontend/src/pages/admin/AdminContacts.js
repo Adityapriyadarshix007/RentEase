@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaEye, FaCheckDouble, FaReply, FaTrash, FaEnvelope } from 'react-icons/fa';
+import { FaEye, FaCheckDouble, FaReply, FaTrash, FaEnvelope, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const AdminContacts = () => {
@@ -9,7 +9,6 @@ const AdminContacts = () => {
   const [replyMessage, setReplyMessage] = useState('');
   const [sending, setSending] = useState(false);
 
-  // Use the live backend URL directly
   const API_BASE_URL = 'https://rentease-backend-njvk.onrender.com';
 
   useEffect(() => {
@@ -19,26 +18,12 @@ const AdminContacts = () => {
   const fetchContacts = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        toast.error('Please login again');
-        return;
-      }
-      
       const response = await fetch(`${API_BASE_URL}/api/contact`, {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      
       const data = await response.json();
       setContacts(data.contacts || []);
     } catch (error) {
-      console.error('Error fetching contacts:', error);
       toast.error('Failed to load messages');
     } finally {
       setLoading(false);
@@ -48,24 +33,15 @@ const AdminContacts = () => {
   const updateStatus = async (id, status) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/contact/${id}`, {
+      await fetch(`${API_BASE_URL}/api/contact/${id}`, {
         method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json', 
-          'Authorization': `Bearer ${token}` 
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ status })
       });
-      
-      if (response.ok) {
-        toast.success(`Message marked as ${status}`);
-        fetchContacts();
-      } else {
-        toast.error('Failed to update status');
-      }
+      toast.success(`Message marked as ${status}`);
+      fetchContacts();
     } catch (error) {
-      console.error('Error updating status:', error);
-      toast.error('Network error');
+      toast.error('Failed to update');
     }
   };
 
@@ -76,19 +52,10 @@ const AdminContacts = () => {
     }
     
     setSending(true);
-    toast.loading('Sending reply...');
+    const loadingToast = toast.loading('Sending reply and email notification...');
     
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        toast.error('Please login again');
-        setSending(false);
-        return;
-      }
-      
-      console.log('Sending reply to:', `${API_BASE_URL}/api/contact/${id}`);
-      console.log('Reply message:', replyMessage);
-      
       const response = await fetch(`${API_BASE_URL}/api/contact/${id}`, {
         method: 'PUT',
         headers: { 
@@ -102,21 +69,23 @@ const AdminContacts = () => {
       });
       
       const data = await response.json();
-      console.log('Response:', data);
-      
-      toast.dismiss();
+      toast.dismiss(loadingToast);
       
       if (response.ok) {
-        toast.success('✅ Reply saved successfully!');
+        if (data.emailSent) {
+          toast.success('✅ Reply saved and email sent to user!');
+        } else {
+          toast.warning('⚠️ Reply saved but email failed. Check email settings.');
+        }
         setSelectedContact(null);
         setReplyMessage('');
         fetchContacts();
       } else {
-        toast.error(data.message || 'Failed to save reply');
+        toast.error('Failed to save reply');
       }
     } catch (error) {
+      toast.dismiss(loadingToast);
       console.error('Reply error:', error);
-      toast.dismiss();
       toast.error('Network error. Could not send reply.');
     } finally {
       setSending(false);
@@ -124,24 +93,18 @@ const AdminContacts = () => {
   };
 
   const deleteContact = async (id) => {
-    if (!window.confirm('Delete this message?')) return;
-    
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/contact/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
+    if (window.confirm('Delete this message?')) {
+      try {
+        const token = localStorage.getItem('token');
+        await fetch(`${API_BASE_URL}/api/contact/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         toast.success('Message deleted');
         fetchContacts();
-      } else {
+      } catch (error) {
         toast.error('Failed to delete');
       }
-    } catch (error) {
-      console.error('Error deleting:', error);
-      toast.error('Network error');
     }
   };
 
@@ -159,9 +122,13 @@ const AdminContacts = () => {
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">Contact Messages</h1>
-      <p className="text-gray-500 mb-4 flex items-center gap-2">
-        <FaEnvelope className="text-blue-500" /> Click the reply button (green) to respond to messages.
-      </p>
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-center gap-3">
+        <FaEnvelope className="text-blue-500 text-2xl" />
+        <div>
+          <p className="font-semibold text-blue-800">Email Notifications Active</p>
+          <p className="text-sm text-blue-600">When you reply, an email will be sent to the user automatically.</p>
+        </div>
+      </div>
       
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="overflow-x-auto">
@@ -186,25 +153,22 @@ const AdminContacts = () => {
                     <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(contact.status)}`}>
                       {contact.status}
                     </span>
+                    {contact.status === 'replied' && (
+                      <span className="ml-2 text-xs text-green-600 flex items-center gap-1">
+                        <FaCheckCircle size={10} /> Email sent
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {new Date(contact.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex gap-2">
-                      <button 
-                        onClick={() => setSelectedContact(contact)} 
-                        className="text-blue-600 hover:text-blue-800" 
-                        title="View Details"
-                      >
+                      <button onClick={() => setSelectedContact(contact)} className="text-blue-600 hover:text-blue-800" title="View">
                         <FaEye />
                       </button>
                       {contact.status === 'unread' && (
-                        <button 
-                          onClick={() => updateStatus(contact._id, 'read')} 
-                          className="text-yellow-600 hover:text-yellow-800" 
-                          title="Mark as Read"
-                        >
+                        <button onClick={() => updateStatus(contact._id, 'read')} className="text-yellow-600 hover:text-yellow-800" title="Mark Read">
                           <FaCheckDouble />
                         </button>
                       )}
@@ -215,11 +179,7 @@ const AdminContacts = () => {
                       >
                         <FaReply />
                       </button>
-                      <button 
-                        onClick={() => deleteContact(contact._id)} 
-                        className="text-red-600 hover:text-red-800" 
-                        title="Delete"
-                      >
+                      <button onClick={() => deleteContact(contact._id)} className="text-red-600 hover:text-red-800" title="Delete">
                         <FaTrash />
                       </button>
                     </div>
@@ -245,7 +205,7 @@ const AdminContacts = () => {
                 <p><strong>From:</strong> {selectedContact.name} ({selectedContact.email})</p>
                 <p><strong>Subject:</strong> {selectedContact.subject}</p>
                 <p><strong>Message:</strong></p>
-                <p className="text-gray-700 mt-1">{selectedContact.message}</p>
+                <p className="text-gray-700 mt-1 bg-white p-3 rounded">{selectedContact.message}</p>
               </div>
               
               <div>
@@ -255,9 +215,12 @@ const AdminContacts = () => {
                   onChange={(e) => setReplyMessage(e.target.value)}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   rows="6"
-                  placeholder="Type your reply here..."
+                  placeholder="Type your reply here... This will be sent as an email to the user."
                   disabled={sending}
                 />
+                <p className="text-sm text-gray-500 mt-2 flex items-center gap-1">
+                  <FaEnvelope className="text-blue-500" /> This reply will be emailed to {selectedContact.email}
+                </p>
               </div>
               
               <div className="flex gap-3">
@@ -271,9 +234,15 @@ const AdminContacts = () => {
                 <button 
                   onClick={() => sendReply(selectedContact._id)} 
                   disabled={sending || !replyMessage.trim()}
-                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {sending ? 'Sending...' : 'Send Reply'}
+                  {sending ? (
+                    <>Sending...</>
+                  ) : (
+                    <>
+                      <FaEnvelope /> Send Reply & Email
+                    </>
+                  )}
                 </button>
               </div>
             </div>
