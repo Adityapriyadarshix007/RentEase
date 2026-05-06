@@ -24,7 +24,6 @@ const AdminContacts = () => {
       const data = await response.json();
       setContacts(data.contacts || []);
     } catch (error) {
-      console.error('Error fetching contacts:', error);
       toast.error('Failed to load messages');
     } finally {
       setLoading(false);
@@ -42,7 +41,6 @@ const AdminContacts = () => {
       toast.success(`Message marked as ${status}`);
       fetchContacts();
     } catch (error) {
-      console.error('Error updating status:', error);
       toast.error('Failed to update');
     }
   };
@@ -74,15 +72,14 @@ const AdminContacts = () => {
       toast.dismiss();
       
       if (response.ok) {
-        toast.success('✅ Reply saved successfully!');
+        toast.success('Reply saved successfully!');
         setSelectedContact(null);
         setReplyMessage('');
         fetchContacts();
       } else {
-        toast.error('Failed to save reply: ' + (data.message || 'Unknown error'));
+        toast.error('Failed to save reply');
       }
     } catch (error) {
-      console.error('Reply error:', error);
       toast.dismiss();
       toast.error('Network error. Could not send reply.');
     } finally {
@@ -101,22 +98,21 @@ const AdminContacts = () => {
         toast.success('Message deleted');
         fetchContacts();
       } catch (error) {
-        console.error('Error deleting:', error);
         toast.error('Failed to delete');
       }
     }
   };
 
   const getStatusColor = (status) => {
-    switch(status) {
-      case 'unread': return 'bg-red-100 text-red-800';
-      case 'read': return 'bg-yellow-100 text-yellow-800';
-      case 'replied': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+    if (status === 'unread') return 'bg-red-100 text-red-800';
+    if (status === 'read') return 'bg-yellow-100 text-yellow-800';
+    if (status === 'replied') return 'bg-green-100 text-green-800';
+    return 'bg-gray-100 text-gray-800';
   };
 
-  if (loading) return <div className="p-8 text-center">Loading messages...</div>;
+  if (loading) {
+    return <div className="p-8 text-center">Loading messages...</div>;
+  }
 
   return (
     <div className="p-6">
@@ -186,10 +182,9 @@ const AdminContacts = () => {
         </div>
       </div>
       
-      {/* Reply Modal */}
       {selectedContact && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
             <div className="flex justify-between items-start mb-4">
               <h2 className="text-2xl font-bold">Reply to {selectedContact.name}</h2>
               <button onClick={() => setSelectedContact(null)} className="text-gray-500 text-2xl hover:text-gray-700">×</button>
