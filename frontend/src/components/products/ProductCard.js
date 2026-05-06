@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { FaStar, FaStarHalfAlt, FaRegStar } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
@@ -38,9 +39,7 @@ const ProductCard = ({ product }) => {
               src={product.images[0]}
               alt={product.name}
               className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-              onError={(e) => {
-                e.target.src = 'https://via.placeholder.com/300x200?text=Product';
-              }}
+              onError={(e) => { e.target.src = 'https://via.placeholder.com/300x200?text=Product'; }}
             />
           ) : (
             <div className="text-6xl">🛋️</div>
@@ -56,9 +55,7 @@ const ProductCard = ({ product }) => {
         </Link>
         
         <div className="flex items-center gap-2 mt-1">
-          <div className="flex gap-0.5">
-            {renderStars(product.rating || 0)}
-          </div>
+          <div className="flex gap-0.5">{renderStars(product.rating || 0)}</div>
           <span className="text-xs text-gray-500">({product.numReviews || 0})</span>
         </div>
         
@@ -69,10 +66,7 @@ const ProductCard = ({ product }) => {
             <span className="text-xl font-bold text-blue-600">₹{product.monthlyRent}</span>
             <span className="text-gray-500 text-xs">/month</span>
           </div>
-          <button
-            onClick={handleAddToCart}
-            className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700 transition cursor-pointer"
-          >
+          <button onClick={handleAddToCart} className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700 transition cursor-pointer">
             Rent Now
           </button>
         </div>
