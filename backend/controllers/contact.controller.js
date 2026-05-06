@@ -13,8 +13,9 @@ try {
   Contact = mongoose.model('Contact', contactSchema);
 }
 
-// Email transporter
+// Create email transporter
 let transporter = null;
+
 if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
@@ -28,11 +29,11 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   });
   console.log('✅ Email transporter configured');
 } else {
-  console.log('⚠️ Email credentials not set. Emails will not be sent.');
+  console.log('⚠️ Email credentials missing. Emails will not be sent.');
 }
 
-// Send email function
-const sendReplyEmail = async (contact, replyMessage) => {
+// Function to send email
+async function sendReplyEmail(contact, replyMessage) {
   if (!transporter) {
     console.log('Email disabled - no transporter');
     return false;
@@ -44,26 +45,29 @@ const sendReplyEmail = async (contact, replyMessage) => {
       to: contact.email,
       subject: `Re: ${contact.subject} - RentEase Support`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: linear-gradient(135deg, #3B82F6, #1E3A8A); padding: 20px; text-align: center; color: white;">
-            <h1 style="margin: 0;">RentEase Support</h1>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 10px;">
+          <div style="background: linear-gradient(135deg, #3B82F6, #1E3A8A); padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; color: white;">RentEase Support</h1>
           </div>
-          <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none;">
+          <div style="padding: 20px;">
             <p>Dear <strong>${contact.name}</strong>,</p>
             <p>Thank you for contacting RentEase. Here's our response to your query:</p>
-            <div style="background: #f3f4f6; padding: 15px; border-left: 4px solid #3B82F6; margin: 15px 0;">
+            
+            <div style="background: #f3f4f6; padding: 15px; border-left: 4px solid #3B82F6; margin: 20px 0;">
               <p style="margin: 0; color: #6b7280;"><strong>Your Message:</strong></p>
               <p style="margin: 10px 0 0 0;">${contact.message}</p>
             </div>
-            <div style="background: #e8f4fd; padding: 15px; border-radius: 5px; margin: 15px 0;">
+            
+            <div style="background: #e8f4fd; padding: 15px; border-radius: 5px; margin: 20px 0;">
               <p style="margin: 0; color: #3B82F6;"><strong>Our Response:</strong></p>
               <p style="margin: 10px 0 0 0;">${replyMessage}</p>
             </div>
+            
             <p>If you have any further questions, please don't hesitate to contact us again.</p>
-            <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #e0e0e0;">
             <p style="font-size: 12px; color: #6b7280; text-align: center;">
               &copy; 2024 RentEase. All rights reserved.<br>
-              123 Business Park, Mumbai, India
+              <a href="https://rentease-frontend-ul7h.onrender.com" style="color: #3B82F6;">Visit our website</a>
             </p>
           </div>
         </div>
@@ -71,13 +75,13 @@ const sendReplyEmail = async (contact, replyMessage) => {
     };
     
     const info = await transporter.sendMail(mailOptions);
-    console.log('✅ Email sent to:', contact.email);
+    console.log('✅ Email sent to:', contact.email, 'Message ID:', info.messageId);
     return true;
   } catch (error) {
     console.error('❌ Email failed:', error.message);
     return false;
   }
-};
+}
 
 const submitContact = async (req, res) => {
   try {
@@ -138,7 +142,7 @@ const updateContactStatus = async (req, res) => {
     
     res.json({ 
       success: true, 
-      message: emailSent ? 'Reply saved and email sent!' : 'Reply saved but email failed.',
+      message: emailSent ? 'Reply saved and email sent to user!' : 'Reply saved but email failed. Check email settings.',
       emailSent 
     });
   } catch (error) {
