@@ -9,6 +9,9 @@ const AdminContacts = () => {
   const [replyMessage, setReplyMessage] = useState('');
   const [sending, setSending] = useState(false);
 
+  // Use the live backend URL directly
+  const API_BASE_URL = 'https://rentease-backend-njvk.onrender.com';
+
   useEffect(() => {
     fetchContacts();
   }, []);
@@ -16,9 +19,22 @@ const AdminContacts = () => {
   const fetchContacts = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://rentease-backend-njvk.onrender.com/api/contact', {
-        headers: { 'Authorization': `Bearer ${token}` }
+      if (!token) {
+        toast.error('Please login again');
+        return;
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/api/contact`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
       const data = await response.json();
       setContacts(data.contacts || []);
     } catch (error) {
@@ -32,16 +48,24 @@ const AdminContacts = () => {
   const updateStatus = async (id, status) => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`https://rentease-backend-njvk.onrender.com/api/contact/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/contact/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}` 
+        },
         body: JSON.stringify({ status })
       });
-      toast.success(`Message marked as ${status}`);
-      fetchContacts();
+      
+      if (response.ok) {
+        toast.success(`Message marked as ${status}`);
+        fetchContacts();
+      } else {
+        toast.error('Failed to update status');
+      }
     } catch (error) {
       console.error('Error updating status:', error);
-      toast.error('Failed to update');
+      toast.error('Network error');
     }
   };
 
@@ -56,16 +80,29 @@ const AdminContacts = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://rentease-backend-njvk.onrender.com/api/contact/${id}`, {
+      if (!token) {
+        toast.error('Please login again');
+        setSending(false);
+        return;
+      }
+      
+      console.log('Sending reply to:', `${API_BASE_URL}/api/contact/${id}`);
+      console.log('Reply message:', replyMessage);
+      
+      const response = await fetch(`${API_BASE_URL}/api/contact/${id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json', 
-          'Authorization': `Bearer ${token}` 
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ status: 'replied', replyMessage })
+        body: JSON.stringify({ 
+          status: 'replied', 
+          replyMessage: replyMessage 
+        })
       });
       
       const data = await response.json();
+      console.log('Response:', data);
       
       toast.dismiss();
       
@@ -75,7 +112,7 @@ const AdminContacts = () => {
         setReplyMessage('');
         fetchContacts();
       } else {
-        toast.error('Failed to save reply: ' + (data.message || 'Unknown error'));
+        toast.error(data.message || 'Failed to save reply');
       }
     } catch (error) {
       console.error('Reply error:', error);
@@ -87,19 +124,24 @@ const AdminContacts = () => {
   };
 
   const deleteContact = async (id) => {
-    if (window.confirm('Delete this message?')) {
-      try {
-        const token = localStorage.getItem('token');
-        await fetch(`https://rentease-backend-njvk.onrender.com/api/contact/${id}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+    if (!window.confirm('Delete this message?')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/contact/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
         toast.success('Message deleted');
         fetchContacts();
-      } catch (error) {
-        console.error('Error deleting:', error);
+      } else {
         toast.error('Failed to delete');
       }
+    } catch (error) {
+      console.error('Error deleting:', error);
+      toast.error('Network error');
     }
   };
 
@@ -118,7 +160,7 @@ const AdminContacts = () => {
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">Contact Messages</h1>
       <p className="text-gray-500 mb-4 flex items-center gap-2">
-        <FaEnvelope className="text-blue-500" /> Click the reply button to respond to messages.
+        <FaEnvelope className="text-blue-500" /> Click the reply button (green) to respond to messages.
       </p>
       
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -150,22 +192,34 @@ const AdminContacts = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex gap-2">
-                      <button onClick={() => setSelectedContact(contact)} className="text-blue-600 hover:text-blue-800" title="View">
+                      <button 
+                        onClick={() => setSelectedContact(contact)} 
+                        className="text-blue-600 hover:text-blue-800" 
+                        title="View Details"
+                      >
                         <FaEye />
                       </button>
-                      {contact.status !== 'read' && contact.status !== 'replied' && (
-                        <button onClick={() => updateStatus(contact._id, 'read')} className="text-yellow-600 hover:text-yellow-800" title="Mark Read">
+                      {contact.status === 'unread' && (
+                        <button 
+                          onClick={() => updateStatus(contact._id, 'read')} 
+                          className="text-yellow-600 hover:text-yellow-800" 
+                          title="Mark as Read"
+                        >
                           <FaCheckDouble />
                         </button>
                       )}
                       <button 
                         onClick={() => { setSelectedContact(contact); setReplyMessage(''); }} 
                         className="text-green-600 hover:text-green-800" 
-                        title="Reply"
+                        title="Send Reply"
                       >
                         <FaReply />
                       </button>
-                      <button onClick={() => deleteContact(contact._id)} className="text-red-600 hover:text-red-800" title="Delete">
+                      <button 
+                        onClick={() => deleteContact(contact._id)} 
+                        className="text-red-600 hover:text-red-800" 
+                        title="Delete"
+                      >
                         <FaTrash />
                       </button>
                     </div>

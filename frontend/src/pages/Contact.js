@@ -11,6 +11,8 @@ const Contact = () => {
   });
   const [submitting, setSubmitting] = useState(false);
 
+  const API_BASE_URL = 'https://rentease-backend-njvk.onrender.com';
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -19,11 +21,6 @@ const Contact = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    
-    // Use the live backend URL
-    const API_BASE_URL = 'https://rentease-backend-njvk.onrender.com';
-    
-    console.log('Sending to:', `${API_BASE_URL}/api/contact`);
     
     try {
       const response = await fetch(`${API_BASE_URL}/api/contact`, {
@@ -37,19 +34,20 @@ const Contact = () => {
       const data = await response.json();
       
       if (response.ok) {
-        toast.success('Message sent successfully! We will get back to you soon.');
+        toast.success('✅ Message sent successfully! We will get back to you soon.');
         setFormData({ name: '', email: '', subject: '', message: '' });
       } else {
-        toast.error(data.message || 'Failed to send message. Please try again.');
+        toast.error(data.message || 'Failed to send message');
       }
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Network error. Please check your connection and try again.');
+      toast.error('Network error. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
+  // ... rest of the component remains the same
   const contactInfo = [
     { icon: <FaMapMarkerAlt className="text-primary text-2xl" />, title: 'Visit Us', details: ['123 Business Park', 'Mumbai, Maharashtra 400001', 'India'] },
     { icon: <FaPhone className="text-primary text-2xl" />, title: 'Call Us', details: ['+91 1234567890', '+91 9876543210'] },
@@ -65,7 +63,6 @@ const Contact = () => {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Contact Form */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-semibold mb-4">Send us a Message</h2>
           <form onSubmit={handleSubmit}>
@@ -125,7 +122,6 @@ const Contact = () => {
           </form>
         </div>
         
-        {/* Contact Info */}
         <div className="space-y-6">
           {contactInfo.map((info, index) => (
             <div key={index} className="bg-white rounded-lg shadow-md p-6">
