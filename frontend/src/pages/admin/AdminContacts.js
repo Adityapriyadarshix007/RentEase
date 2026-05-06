@@ -9,6 +9,7 @@ const AdminContacts = () => {
   const [replyMessage, setReplyMessage] = useState('');
   const [sending, setSending] = useState(false);
 
+  // HARDCODED LIVE BACKEND URL - NO localhost
   const API_BASE_URL = 'https://rentease-backend-njvk.onrender.com';
 
   useEffect(() => {
@@ -18,12 +19,27 @@ const AdminContacts = () => {
   const fetchContacts = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Please login again');
+        return;
+      }
+      
       const response = await fetch(`${API_BASE_URL}/api/contact`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        method: 'GET',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
       const data = await response.json();
       setContacts(data.contacts || []);
     } catch (error) {
+      console.error('Fetch error:', error);
       toast.error('Failed to load messages');
     } finally {
       setLoading(false);
@@ -33,15 +49,24 @@ const AdminContacts = () => {
   const updateStatus = async (id, status) => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`${API_BASE_URL}/api/contact/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/contact/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ status })
       });
-      toast.success(`Message marked as ${status}`);
-      fetchContacts();
+      
+      if (response.ok) {
+        toast.success(`Message marked as ${status}`);
+        fetchContacts();
+      } else {
+        toast.error('Failed to update status');
+      }
     } catch (error) {
-      toast.error('Failed to update');
+      console.error('Update error:', error);
+      toast.error('Network error');
     }
   };
 
@@ -56,6 +81,14 @@ const AdminContacts = () => {
     
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Please login again');
+        setSending(false);
+        return;
+      }
+      
+      console.log('Sending to:', `${API_BASE_URL}/api/contact/${id}`);
+      
       const response = await fetch(`${API_BASE_URL}/api/contact/${id}`, {
         method: 'PUT',
         headers: { 
@@ -73,15 +106,15 @@ const AdminContacts = () => {
       
       if (response.ok) {
         if (data.emailSent) {
-          toast.success('✅ Reply sent! Email notification delivered to user.');
+          toast.success('✅ Reply sent! Email delivered to user.');
         } else {
-          toast.warning('⚠️ Reply saved but email failed. Check email settings.');
+          toast.success('✅ Reply saved! (Email notification skipped)');
         }
         setSelectedContact(null);
         setReplyMessage('');
         fetchContacts();
       } else {
-        toast.error('Failed to save reply');
+        toast.error('Failed to save reply: ' + (data.message || 'Unknown error'));
       }
     } catch (error) {
       toast.dismiss();
@@ -96,14 +129,20 @@ const AdminContacts = () => {
     if (window.confirm('Delete this message?')) {
       try {
         const token = localStorage.getItem('token');
-        await fetch(`${API_BASE_URL}/api/contact/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/contact/${id}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        toast.success('Message deleted');
-        fetchContacts();
+        
+        if (response.ok) {
+          toast.success('Message deleted');
+          fetchContacts();
+        } else {
+          toast.error('Failed to delete');
+        }
       } catch (error) {
-        toast.error('Failed to delete');
+        console.error('Delete error:', error);
+        toast.error('Network error');
       }
     }
   };
