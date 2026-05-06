@@ -11,7 +11,13 @@ const app = express();
 
 // CORS configuration
 const corsOptions = {
-  origin: ['http://localhost:3000', 'http://localhost:3001'],
+  origin: [
+  'http://localhost:3000', 
+  'http://localhost:3001',
+  'https://rentease-frontend-ul7h.onrender.com',
+  'https://rentease-frontend.onrender.com',
+  'https://rentease-frontend-mu.vercel.app'
+],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
