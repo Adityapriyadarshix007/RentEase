@@ -50,7 +50,7 @@ export const CartProvider = ({ children }) => {
           quantity: updatedItems[existingItemIndex].quantity + quantity,
           tenureMonths: tenureMonths
         };
-        // Only show one toast
+        // Only ONE toast notification
         toast.success(`Updated ${product.name} quantity to ${updatedItems[existingItemIndex].quantity}`);
         return updatedItems;
       } else {
@@ -65,7 +65,7 @@ export const CartProvider = ({ children }) => {
           category: product.category,
           subCategory: product.subCategory
         };
-        // Only show one toast
+        // Only ONE toast notification
         toast.success(`${product.name} added to cart!`);
         return [...prevItems, newItem];
       }

@@ -2,7 +2,6 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { FaStar, FaStarHalfAlt, FaRegStar } from 'react-icons/fa';
-import toast from 'react-hot-toast';
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
@@ -10,8 +9,8 @@ const ProductCard = ({ product }) => {
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    // Only add to cart - toast is handled inside addToCart function
     addToCart(product);
-    toast.success(`${product.name} added to cart`);
   };
 
   const renderStars = (rating) => {
@@ -65,7 +64,10 @@ const ProductCard = ({ product }) => {
             <span className="text-2xl font-bold text-blue-600">₹{product.monthlyRent}</span>
             <span className="text-gray-500 text-sm">/month</span>
           </div>
-          <button onClick={handleAddToCart} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+          <button 
+            onClick={handleAddToCart} 
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition cursor-pointer"
+          >
             Rent Now
           </button>
         </div>
