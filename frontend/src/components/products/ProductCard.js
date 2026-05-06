@@ -7,12 +7,16 @@ import toast from 'react-hot-toast';
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
 
-  const handleAddToCart = () => {
-    addToCart(product);
-    toast.success(`${product.name} added to cart`);
+  const handleAddToCart = (e) => {
+    e.preventDefault(); // Prevent event bubbling
+    e.stopPropagation(); // Stop propagation
+    
+    const success = addToCart(product);
+    if (success) {
+      toast.success(`${product.name} added to cart`);
+    }
   };
 
-  // Function to render stars based on rating
   const renderStars = (rating) => {
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -51,29 +55,28 @@ const ProductCard = ({ product }) => {
       
       <div className="p-4">
         <Link to={`/products/${product._id}`}>
-          <h3 className="font-semibold text-lg mb-1 hover:text-blue-600 transition line-clamp-1">
+          <h3 className="font-semibold text-base mb-1 hover:text-blue-600 transition line-clamp-2 min-h-[48px]">
             {product.name}
           </h3>
         </Link>
         
-        {/* Ratings Section - NEW */}
         <div className="flex items-center gap-2 mt-1">
           <div className="flex gap-0.5">
             {renderStars(product.rating || 0)}
           </div>
-          <span className="text-xs text-gray-500">({product.numReviews || 0} reviews)</span>
+          <span className="text-xs text-gray-500">({product.numReviews || 0})</span>
         </div>
         
-        <p className="text-gray-500 text-sm mb-2">{product.subCategory}</p>
+        <p className="text-gray-500 text-xs mt-1">{product.subCategory}</p>
         
         <div className="flex justify-between items-center mt-3">
           <div>
-            <span className="text-2xl font-bold text-blue-600">₹{product.monthlyRent}</span>
-            <span className="text-gray-500 text-sm">/month</span>
+            <span className="text-xl font-bold text-blue-600">₹{product.monthlyRent}</span>
+            <span className="text-gray-500 text-xs">/month</span>
           </div>
           <button
             onClick={handleAddToCart}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+            className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700 transition"
           >
             Rent Now
           </button>
