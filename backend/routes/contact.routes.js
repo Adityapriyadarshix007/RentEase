@@ -9,10 +9,10 @@ const {
 } = require('../controllers/contact.controller');
 const { protect, admin } = require('../middleware/auth.middleware');
 
-// Public route - anyone can submit contact form
+// Public route - anyone can submit
 router.post('/', submitContact);
 
-// Admin only routes
+// Admin only routes (protected)
 router.get('/', protect, admin, getAllContacts);
 router.get('/:id', protect, admin, getContactById);
 router.put('/:id', protect, admin, updateContactStatus);
