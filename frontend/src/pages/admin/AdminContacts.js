@@ -22,6 +22,7 @@ const AdminContacts = () => {
       const data = await response.json();
       setContacts(data.contacts || []);
     } catch (error) {
+      console.error('Error fetching contacts:', error);
       toast.error('Failed to load messages');
     } finally {
       setLoading(false);
@@ -39,6 +40,7 @@ const AdminContacts = () => {
       toast.success(`Message marked as ${status}`);
       fetchContacts();
     } catch (error) {
+      console.error('Error updating status:', error);
       toast.error('Failed to update');
     }
   };
@@ -50,7 +52,7 @@ const AdminContacts = () => {
     }
     
     setSending(true);
-    const loadingToast = toast.loading('Sending reply and email notification...');
+    toast.loading('Sending reply...');
     
     try {
       const token = localStorage.getItem('token');
@@ -65,14 +67,10 @@ const AdminContacts = () => {
       
       const data = await response.json();
       
-      toast.dismiss(loadingToast);
+      toast.dismiss();
       
       if (response.ok) {
-        if (data.emailSent) {
-          toast.success('✅ Reply sent! Email notification delivered to user.');
-        } else {
-          toast.warning('⚠️ Reply saved but email notification failed. Check email settings.');
-        }
+        toast.success('✅ Reply saved successfully!');
         setSelectedContact(null);
         setReplyMessage('');
         fetchContacts();
@@ -80,8 +78,8 @@ const AdminContacts = () => {
         toast.error('Failed to save reply: ' + (data.message || 'Unknown error'));
       }
     } catch (error) {
-      toast.dismiss(loadingToast);
       console.error('Reply error:', error);
+      toast.dismiss();
       toast.error('Network error. Could not send reply.');
     } finally {
       setSending(false);
@@ -99,6 +97,7 @@ const AdminContacts = () => {
         toast.success('Message deleted');
         fetchContacts();
       } catch (error) {
+        console.error('Error deleting:', error);
         toast.error('Failed to delete');
       }
     }
@@ -119,7 +118,7 @@ const AdminContacts = () => {
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">Contact Messages</h1>
       <p className="text-gray-500 mb-4 flex items-center gap-2">
-        <FaEnvelope className="text-blue-500" /> When you reply, an email notification will be sent to the user.
+        <FaEnvelope className="text-blue-500" /> Click the reply button to respond to messages.
       </p>
       
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -145,9 +144,6 @@ const AdminContacts = () => {
                     <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(contact.status)}`}>
                       {contact.status}
                     </span>
-                    {contact.status === 'replied' && (
-                      <span className="ml-2 text-xs text-green-600">(Email sent)</span>
-                    )}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {new Date(contact.createdAt).toLocaleDateString()}
@@ -165,7 +161,7 @@ const AdminContacts = () => {
                       <button 
                         onClick={() => { setSelectedContact(contact); setReplyMessage(''); }} 
                         className="text-green-600 hover:text-green-800" 
-                        title="Send Reply"
+                        title="Reply"
                       >
                         <FaReply />
                       </button>
@@ -205,12 +201,9 @@ const AdminContacts = () => {
                   onChange={(e) => setReplyMessage(e.target.value)}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   rows="6"
-                  placeholder="Type your reply here... The user will receive this via email."
+                  placeholder="Type your reply here..."
                   disabled={sending}
                 />
-                <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
-                  <FaEnvelope className="text-blue-500" /> This reply will be sent as an email to {selectedContact.email}
-                </p>
               </div>
               
               <div className="flex gap-3">
@@ -226,7 +219,7 @@ const AdminContacts = () => {
                   disabled={sending || !replyMessage.trim()}
                   className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {sending ? 'Sending...' : 'Send Reply & Email'}
+                  {sending ? 'Sending...' : 'Send Reply'}
                 </button>
               </div>
             </div>
