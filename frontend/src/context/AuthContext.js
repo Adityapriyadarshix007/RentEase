@@ -11,7 +11,8 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
 
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+  // Use environment variable or fallback to localhost for development
+  const API_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
 
   const fetchUser = useCallback(async () => {
     try {
@@ -54,6 +55,9 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
+      console.log('Registering at:', `${API_URL}/api/auth/register`);
+      console.log('User data:', { ...userData, password: '***' });
+      
       const response = await axios.post(`${API_URL}/api/auth/register`, userData);
       const { token, ...userInfo } = response.data;
       localStorage.setItem('token', token);
@@ -63,6 +67,7 @@ export const AuthProvider = ({ children }) => {
       toast.success('Account created successfully!');
       return true;
     } catch (error) {
+      console.error('Registration error:', error.response?.data);
       toast.error(error.response?.data?.message || 'Registration failed');
       return false;
     }
