@@ -11,9 +11,6 @@ const Contact = () => {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  // Use the live backend URL
-  const API_URL = 'https://rentease-backend-njvk.onrender.com';
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -23,11 +20,13 @@ const Contact = () => {
     e.preventDefault();
     setSubmitting(true);
     
-    console.log('Sending to:', `${API_URL}/api/contact`);
-    console.log('Data:', formData);
+    // Use the live backend URL
+    const API_BASE_URL = 'https://rentease-backend-njvk.onrender.com';
+    
+    console.log('Sending to:', `${API_BASE_URL}/api/contact`);
     
     try {
-      const response = await fetch(`${API_URL}/api/contact`, {
+      const response = await fetch(`${API_BASE_URL}/api/contact`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -35,9 +34,7 @@ const Contact = () => {
         body: JSON.stringify(formData)
       });
       
-      console.log('Response status:', response.status);
       const data = await response.json();
-      console.log('Response data:', data);
       
       if (response.ok) {
         toast.success('Message sent successfully! We will get back to you soon.');
@@ -46,7 +43,7 @@ const Contact = () => {
         toast.error(data.message || 'Failed to send message. Please try again.');
       }
     } catch (error) {
-      console.error('Error details:', error);
+      console.error('Error:', error);
       toast.error('Network error. Please check your connection and try again.');
     } finally {
       setSubmitting(false);
