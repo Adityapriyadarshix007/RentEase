@@ -7,6 +7,7 @@ const AdminContacts = () => {
   const [loading, setLoading] = useState(true);
   const [selectedContact, setSelectedContact] = useState(null);
   const [replyMessage, setReplyMessage] = useState('');
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     fetchContacts();
@@ -48,26 +49,42 @@ const AdminContacts = () => {
       return;
     }
     
+    setSending(true);
+    toast.loading('Sending reply...', { id: 'reply-sending' });
+    
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`https://rentease-backend-njvk.onrender.com/api/contact/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}` 
+        },
         body: JSON.stringify({ status: 'replied', replyMessage })
       });
       
       const data = await response.json();
       
+      toast.dismiss('reply-sending');
+      
       if (response.ok) {
-        toast.success(data.emailSent ? 'Reply sent to user\'s email!' : 'Reply saved (email notification failed)');
+        if (data.emailSent) {
+          toast.success('✅ Reply sent successfully! Email notification delivered.');
+        } else {
+          toast.warning('⚠️ Reply saved but email notification failed. Check email settings.');
+        }
         setSelectedContact(null);
         setReplyMessage('');
         fetchContacts();
       } else {
-        toast.error('Failed to send reply');
+        toast.error('Failed to send reply: ' + (data.message || 'Unknown error'));
       }
     } catch (error) {
-      toast.error('Failed to send reply');
+      toast.dismiss('reply-sending');
+      console.error('Reply error:', error);
+      toast.error('Network error. Could not send reply.');
+    } finally {
+      setSending(false);
     }
   };
 
@@ -101,7 +118,7 @@ const AdminContacts = () => {
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">Contact Messages</h1>
-      <p className="text-gray-500 mb-4">When you reply, an email will be sent to the user.</p>
+      <p className="text-gray-500 mb-4">📧 When you reply, an email will be sent to the user.</p>
       
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
@@ -125,24 +142,25 @@ const AdminContacts = () => {
                   <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(contact.status)}`}>
                     {contact.status}
                   </span>
-                  {contact.status === 'replied' && (
-                    <span className="ml-2 text-xs text-green-600">(Email sent)</span>
-                  )}
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500">
                   {new Date(contact.createdAt).toLocaleDateString()}
                 </td>
-                <td className="px-6 py-4 text-sm">
+                <td className="px-6 py-4">
                   <div className="flex gap-2">
-                    <button onClick={() => setSelectedContact(contact)} className="text-blue-600 hover:text-blue-800" title="View">
+                    <button onClick={() => setSelectedContact(contact)} className="text-blue-600 hover:text-blue-800" title="View Details">
                       <FaEye />
                     </button>
                     {contact.status !== 'read' && (
-                      <button onClick={() => updateStatus(contact._id, 'read')} className="text-yellow-600 hover:text-yellow-800" title="Mark Read">
+                      <button onClick={() => updateStatus(contact._id, 'read')} className="text-yellow-600 hover:text-yellow-800" title="Mark as Read">
                         <FaCheckDouble />
                       </button>
                     )}
-                    <button onClick={() => { setSelectedContact(contact); setReplyMessage(contact.replyMessage || ''); }} className="text-green-600 hover:text-green-800" title="Reply">
+                    <button 
+                      onClick={() => { setSelectedContact(contact); setReplyMessage(''); }} 
+                      className="text-green-600 hover:text-green-800" 
+                      title="Send Reply"
+                    >
                       <FaReply />
                     </button>
                     <button onClick={() => deleteContact(contact._id)} className="text-red-600 hover:text-red-800" title="Delete">
@@ -167,12 +185,10 @@ const AdminContacts = () => {
             
             <div className="space-y-4">
               <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="font-semibold">From:</p>
-                <p>{selectedContact.name} ({selectedContact.email})</p>
-                <p className="font-semibold mt-2">Subject:</p>
-                <p>{selectedContact.subject}</p>
-                <p className="font-semibold mt-2">Message:</p>
-                <p className="text-gray-700">{selectedContact.message}</p>
+                <p><strong>From:</strong> {selectedContact.name} ({selectedContact.email})</p>
+                <p><strong>Subject:</strong> {selectedContact.subject}</p>
+                <p><strong>Message:</strong></p>
+                <p className="text-gray-700 mt-1">{selectedContact.message}</p>
               </div>
               
               <div>
@@ -183,18 +199,27 @@ const AdminContacts = () => {
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   rows="6"
                   placeholder="Type your reply here... The user will receive this via email."
+                  disabled={sending}
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  <FaEnvelope className="inline mr-1" /> This reply will be sent as an email to the user.
+                  <FaEnvelope className="inline mr-1" /> This reply will be sent as an email to {selectedContact.email}
                 </p>
               </div>
               
               <div className="flex gap-3">
-                <button onClick={() => setSelectedContact(null)} className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">
+                <button 
+                  onClick={() => setSelectedContact(null)} 
+                  className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
+                  disabled={sending}
+                >
                   Cancel
                 </button>
-                <button onClick={() => sendReply(selectedContact._id)} className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                  Send Reply & Email
+                <button 
+                  onClick={() => sendReply(selectedContact._id)} 
+                  disabled={sending || !replyMessage.trim()}
+                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {sending ? 'Sending...' : 'Send Reply & Email'}
                 </button>
               </div>
             </div>

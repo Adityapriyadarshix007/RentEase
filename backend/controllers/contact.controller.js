@@ -1,16 +1,25 @@
 const mongoose = require('mongoose');
 const nodemailer = require('nodemailer');
 
-// Email transporter configuration (using environment variables)
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-  port: process.env.EMAIL_PORT || 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
+// Email transporter configuration
+let transporter;
+try {
+  transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.EMAIL_PORT) || 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    },
+    tls: {
+      rejectUnauthorized: false
+    }
+  });
+  console.log('Email transporter configured');
+} catch (error) {
+  console.error('Email transporter error:', error.message);
+}
 
 let Contact;
 try {
@@ -27,6 +36,14 @@ try {
 // Function to send email reply
 const sendReplyEmail = async (contact, replyMessage) => {
   try {
+    console.log('Attempting to send email to:', contact.email);
+    console.log('Using email account:', process.env.EMAIL_USER);
+    
+    if (!transporter) {
+      console.error('Email transporter not configured');
+      return false;
+    }
+    
     const mailOptions = {
       from: `"RentEase Support" <${process.env.EMAIL_USER || 'support@rentease.com'}>`,
       to: contact.email,
@@ -41,7 +58,7 @@ const sendReplyEmail = async (contact, replyMessage) => {
             <p style="font-size: 16px; color: #333;">Thank you for reaching out to us. Regarding your query:</p>
             <div style="background-color: #f8f9fa; padding: 15px; border-left: 4px solid #3B82F6; margin: 15px 0;">
               <p style="margin: 0; color: #666;"><strong>Your Message:</strong></p>
-              <p style="margin: 5px 0 0 0; color: #333;">${contact.message.substring(0, 200)}${contact.message.length > 200 ? '...' : ''}</p>
+              <p style="margin: 5px 0 0 0; color: #333;">${contact.message}</p>
             </div>
             <p style="font-size: 16px; color: #333;"><strong>Our Response:</strong></p>
             <div style="background-color: #e8f4fd; padding: 15px; border-radius: 8px; margin: 10px 0;">
@@ -49,17 +66,18 @@ const sendReplyEmail = async (contact, replyMessage) => {
             </div>
             <p style="font-size: 14px; color: #666; margin-top: 20px;">If you have any further questions, feel free to reply to this email.</p>
             <hr style="margin: 20px 0; border: none; border-top: 1px solid #e0e0e0;">
-            <p style="font-size: 12px; color: #999; text-align: center;">This is an automated response from RentEase. Please do not reply directly to this email.</p>
+            <p style="font-size: 12px; color: #999; text-align: center;">This is a response from RentEase Support Team.</p>
           </div>
         </div>
       `
     };
     
-    await transporter.sendMail(mailOptions);
-    console.log(`Reply email sent to ${contact.email}`);
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully:', info.messageId);
     return true;
   } catch (error) {
-    console.error('Error sending reply email:', error);
+    console.error('Error sending reply email:', error.message);
+    console.error('Full error:', error);
     return false;
   }
 };
@@ -114,21 +132,25 @@ const updateContactStatus = async (req, res) => {
     if (!contact) return res.status(404).json({ message: 'Contact not found' });
     
     contact.status = status;
+    let emailSent = false;
     
     if (replyMessage) {
       contact.replyMessage = replyMessage;
       contact.replySentAt = new Date();
       
-      // Send email notification to the user
-      const emailSent = await sendReplyEmail(contact, replyMessage);
-      if (!emailSent) {
-        console.log('Warning: Email notification failed, but reply was saved');
-      }
+      // Try to send email
+      emailSent = await sendReplyEmail(contact, replyMessage);
+      console.log(`Email sent status: ${emailSent}`);
     }
     
     await contact.save();
-    res.json({ success: true, message: 'Reply sent and contact updated', emailSent: !!replyMessage });
+    res.json({ 
+      success: true, 
+      message: emailSent ? 'Reply sent via email!' : 'Reply saved (email notification failed - check email settings)',
+      emailSent 
+    });
   } catch (error) {
+    console.error('Error updating contact:', error);
     res.status(500).json({ message: error.message });
   }
 };
