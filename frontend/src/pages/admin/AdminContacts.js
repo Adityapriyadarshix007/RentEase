@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaEye, FaCheckDouble, FaReply, FaTrash } from 'react-icons/fa';
+import { FaEye, FaCheckDouble, FaReply, FaTrash, FaEnvelope } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const AdminContacts = () => {
@@ -44,20 +44,28 @@ const AdminContacts = () => {
 
   const sendReply = async (id) => {
     if (!replyMessage.trim()) {
-      toast.error('Please enter a reply');
+      toast.error('Please enter a reply message');
       return;
     }
+    
     try {
       const token = localStorage.getItem('token');
-      await fetch(`https://rentease-backend-njvk.onrender.com/api/contact/${id}`, {
+      const response = await fetch(`https://rentease-backend-njvk.onrender.com/api/contact/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ status: 'replied', replyMessage })
       });
-      toast.success('Reply sent');
-      setSelectedContact(null);
-      setReplyMessage('');
-      fetchContacts();
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        toast.success(data.emailSent ? 'Reply sent to user\'s email!' : 'Reply saved (email notification failed)');
+        setSelectedContact(null);
+        setReplyMessage('');
+        fetchContacts();
+      } else {
+        toast.error('Failed to send reply');
+      }
     } catch (error) {
       toast.error('Failed to send reply');
     }
@@ -93,16 +101,106 @@ const AdminContacts = () => {
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">Contact Messages</h1>
+      <p className="text-gray-500 mb-4">When you reply, an email will be sent to the user.</p>
+      
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50"><tr><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th></tr></thead>
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+            </tr>
+          </thead>
           <tbody className="divide-y divide-gray-200">
-            {contacts.map((contact) => (<tr key={contact._id} className="hover:bg-gray-50"><td className="px-6 py-4 text-sm text-gray-900">{contact.name}</td><td className="px-6 py-4 text-sm text-gray-500">{contact.email}</td><td className="px-6 py-4 text-sm text-gray-500">{contact.subject}</td><td className="px-6 py-4"><span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(contact.status)}`}>{contact.status}</span></td><td className="px-6 py-4 text-sm text-gray-500">{new Date(contact.createdAt).toLocaleDateString()}</td><td className="px-6 py-4"><div className="flex gap-2"><button onClick={() => setSelectedContact(contact)} className="text-blue-600" title="View"><FaEye /></button>{contact.status !== 'read' && <button onClick={() => updateStatus(contact._id, 'read')} className="text-yellow-600" title="Mark Read"><FaCheckDouble /></button>}<button onClick={() => { setSelectedContact(contact); setReplyMessage(''); }} className="text-green-600" title="Reply"><FaReply /></button><button onClick={() => deleteContact(contact._id)} className="text-red-600" title="Delete"><FaTrash /></button></div></td></tr>))}
+            {contacts.map((contact) => (
+              <tr key={contact._id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 text-sm text-gray-900">{contact.name}</td>
+                <td className="px-6 py-4 text-sm text-gray-500">{contact.email}</td>
+                <td className="px-6 py-4 text-sm text-gray-500">{contact.subject}</td>
+                <td className="px-6 py-4">
+                  <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(contact.status)}`}>
+                    {contact.status}
+                  </span>
+                  {contact.status === 'replied' && (
+                    <span className="ml-2 text-xs text-green-600">(Email sent)</span>
+                  )}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500">
+                  {new Date(contact.createdAt).toLocaleDateString()}
+                </td>
+                <td className="px-6 py-4 text-sm">
+                  <div className="flex gap-2">
+                    <button onClick={() => setSelectedContact(contact)} className="text-blue-600 hover:text-blue-800" title="View">
+                      <FaEye />
+                    </button>
+                    {contact.status !== 'read' && (
+                      <button onClick={() => updateStatus(contact._id, 'read')} className="text-yellow-600 hover:text-yellow-800" title="Mark Read">
+                        <FaCheckDouble />
+                      </button>
+                    )}
+                    <button onClick={() => { setSelectedContact(contact); setReplyMessage(contact.replyMessage || ''); }} className="text-green-600 hover:text-green-800" title="Reply">
+                      <FaReply />
+                    </button>
+                    <button onClick={() => deleteContact(contact._id)} className="text-red-600 hover:text-red-800" title="Delete">
+                      <FaTrash />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
       
-      {selectedContact && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto"><div className="flex justify-between items-start mb-4"><h2 className="text-2xl font-bold">Message Details</h2><button onClick={() => setSelectedContact(null)} className="text-gray-500 text-2xl">×</button></div><p><strong>From:</strong> {selectedContact.name} ({selectedContact.email})</p><p><strong>Subject:</strong> {selectedContact.subject}</p><p><strong>Message:</strong></p><p className="bg-gray-50 p-3 rounded mt-1">{selectedContact.message}</p><div className="border-t pt-3 mt-3"><textarea value={replyMessage} onChange={(e) => setReplyMessage(e.target.value)} className="w-full px-4 py-2 border rounded-lg" rows="4" placeholder="Type your reply..." /><div className="flex gap-3 mt-3"><button onClick={() => updateStatus(selectedContact._id, 'read')} className="flex-1 bg-yellow-600 text-white px-4 py-2 rounded">Mark as Read</button><button onClick={() => sendReply(selectedContact._id)} className="flex-1 bg-green-600 text-white px-4 py-2 rounded">Send Reply</button></div></div></div></div>)}
+      {/* Reply Modal */}
+      {selectedContact && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-4">
+              <h2 className="text-2xl font-bold">Reply to {selectedContact.name}</h2>
+              <button onClick={() => setSelectedContact(null)} className="text-gray-500 text-2xl hover:text-gray-700">×</button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="font-semibold">From:</p>
+                <p>{selectedContact.name} ({selectedContact.email})</p>
+                <p className="font-semibold mt-2">Subject:</p>
+                <p>{selectedContact.subject}</p>
+                <p className="font-semibold mt-2">Message:</p>
+                <p className="text-gray-700">{selectedContact.message}</p>
+              </div>
+              
+              <div>
+                <label className="block font-medium mb-2">Your Reply *</label>
+                <textarea
+                  value={replyMessage}
+                  onChange={(e) => setReplyMessage(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  rows="6"
+                  placeholder="Type your reply here... The user will receive this via email."
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  <FaEnvelope className="inline mr-1" /> This reply will be sent as an email to the user.
+                </p>
+              </div>
+              
+              <div className="flex gap-3">
+                <button onClick={() => setSelectedContact(null)} className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">
+                  Cancel
+                </button>
+                <button onClick={() => sendReply(selectedContact._id)} className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                  Send Reply & Email
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
