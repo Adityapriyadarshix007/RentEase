@@ -11,6 +11,7 @@ const ProductCard = ({ product }) => {
     e.preventDefault();
     e.stopPropagation();
     addToCart(product);
+    toast.success(`${product.name} added to cart`);
   };
 
   const renderStars = (rating) => {
@@ -20,11 +21,11 @@ const ProductCard = ({ product }) => {
     
     for (let i = 1; i <= 5; i++) {
       if (i <= fullStars) {
-        stars.push(<FaStar key={i} className="text-yellow-400 text-sm" />);
+        stars.push(<FaStar key={i} className="text-yellow-400" />);
       } else if (i === fullStars + 1 && hasHalfStar) {
-        stars.push(<FaStarHalfAlt key={i} className="text-yellow-400 text-sm" />);
+        stars.push(<FaStarHalfAlt key={i} className="text-yellow-400" />);
       } else {
-        stars.push(<FaRegStar key={i} className="text-gray-300 text-sm" />);
+        stars.push(<FaRegStar key={i} className="text-gray-300" />);
       }
     }
     return stars;
@@ -49,9 +50,7 @@ const ProductCard = ({ product }) => {
       
       <div className="p-4">
         <Link to={`/products/${product._id}`}>
-          <h3 className="font-semibold text-base mb-1 hover:text-blue-600 transition line-clamp-2 min-h-[48px]">
-            {product.name}
-          </h3>
+          <h3 className="font-semibold text-lg mb-1 hover:text-blue-600 transition line-clamp-1">{product.name}</h3>
         </Link>
         
         <div className="flex items-center gap-2 mt-1">
@@ -59,14 +58,14 @@ const ProductCard = ({ product }) => {
           <span className="text-xs text-gray-500">({product.numReviews || 0})</span>
         </div>
         
-        <p className="text-gray-500 text-xs mt-1">{product.subCategory}</p>
+        <p className="text-gray-500 text-sm mb-2">{product.subCategory}</p>
         
         <div className="flex justify-between items-center mt-3">
           <div>
-            <span className="text-xl font-bold text-blue-600">₹{product.monthlyRent}</span>
-            <span className="text-gray-500 text-xs">/month</span>
+            <span className="text-2xl font-bold text-blue-600">₹{product.monthlyRent}</span>
+            <span className="text-gray-500 text-sm">/month</span>
           </div>
-          <button onClick={handleAddToCart} className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700 transition cursor-pointer">
+          <button onClick={handleAddToCart} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
             Rent Now
           </button>
         </div>
