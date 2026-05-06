@@ -77,19 +77,27 @@ const getUserRentals = async (req, res) => {
     
     res.json({ success: true, rentals: populatedRentals });
   } catch (error) {
-    console.error('Error fetching rentals:', error);
+    console.error('Error fetching user rentals:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
 const getAllRentals = async (req, res) => {
   try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
+    }
+    
     const rentals = await Rental.find({}).sort({ createdAt: -1 });
     
     const populatedRentals = await Promise.all(rentals.map(async (rental) => {
       const product = await mongoose.connection.db.collection('products').findOne({ _id: rental.product });
       const user = await mongoose.connection.db.collection('users').findOne({ _id: rental.user });
-      return { ...rental._doc, product, user };
+      return {
+        ...rental._doc,
+        product: product || null,
+        user: user ? { name: user.name, email: user.email, _id: user._id } : null
+      };
     }));
     
     res.json({ success: true, rentals: populatedRentals });
@@ -132,8 +140,6 @@ const cancelRental = async (req, res) => {
   }
 };
 
-module.exports = { createRental, getUserRentals, getAllRentals, getRentalById, cancelRental };
-
 const updateRentalStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -145,7 +151,6 @@ const updateRentalStatus = async (req, res) => {
     
     rental.status = status;
     await rental.save();
-    
     res.json({ success: true, message: 'Rental status updated successfully' });
   } catch (error) {
     console.error('Error updating rental status:', error);
@@ -153,56 +158,11 @@ const updateRentalStatus = async (req, res) => {
   }
 };
 
-module.exports = { createRental, getUserRentals, getAllRentals, getRentalById, cancelRental, updateRentalStatus };
-
-const getAllRentals = async (req, res) => {
-  try {
-    // Check if user is admin
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Access denied. Admin only.' });
-    }
-    
-    const rentals = await Rental.find({}).sort({ createdAt: -1 });
-    
-    // Populate product and user details
-    const populatedRentals = await Promise.all(rentals.map(async (rental) => {
-      const product = await mongoose.connection.db.collection('products').findOne({ 
-        _id: rental.product 
-      });
-      const user = await mongoose.connection.db.collection('users').findOne({ 
-        _id: rental.user 
-      });
-      return {
-        ...rental._doc,
-        product: product || null,
-        user: user ? { name: user.name, email: user.email, _id: user._id } : null
-      };
-    }));
-    
-    res.json({ success: true, rentals: populatedRentals });
-  } catch (error) {
-    console.error('Error fetching all rentals:', error);
-    res.status(500).json({ message: error.message });
-  }
+module.exports = { 
+  createRental, 
+  getUserRentals, 
+  getAllRentals, 
+  getRentalById, 
+  cancelRental, 
+  updateRentalStatus 
 };
-
-const updateRentalStatus = async (req, res) => {
-  try {
-    const { status } = req.body;
-    const rental = await Rental.findById(req.params.id);
-    
-    if (!rental) {
-      return res.status(404).json({ message: 'Rental not found' });
-    }
-    
-    rental.status = status;
-    await rental.save();
-    
-    res.json({ success: true, message: 'Rental status updated successfully' });
-  } catch (error) {
-    console.error('Error updating rental status:', error);
-    res.status(500).json({ message: error.message });
-  }
-};
-
-module.exports = { createRental, getUserRentals, getAllRentals, getRentalById, cancelRental, updateRentalStatus };
