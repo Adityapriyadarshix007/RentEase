@@ -104,3 +104,30 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   });
 }
 // Force deploy - Thu May  7 07:30:22 IST 2026
+
+// Test email endpoint
+app.post('/api/test-email', async (req, res) => {
+  const nodemailer = require('nodemailer');
+  const transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    port: parseInt(process.env.EMAIL_PORT),
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+  
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: 'apsp15012005@gmail.com',
+      subject: 'Test Email',
+      text: 'This is a test email from RentEase backend!'
+    });
+    res.json({ success: true, message: 'Test email sent!' });
+  } catch (error) {
+    console.error('Test email error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
