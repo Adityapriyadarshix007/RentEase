@@ -24,6 +24,13 @@ const Contact = () => {
     e.preventDefault();
     setSubmitting(true);
     
+    // Validate form data
+    if (!formData.name || !formData.email) {
+      toast.error('Name and email are required');
+      setSubmitting(false);
+      return;
+    }
+    
     try {
       // Include userId if user is logged in
       const payload = {
@@ -34,7 +41,7 @@ const Contact = () => {
         userId: user?._id || null
       };
       
-      console.log('Sending message with userId:', user?._id);
+      console.log('Sending message:', payload);
       
       const response = await fetch(`${API_BASE_URL}/api/contact`, {
         method: 'POST',
@@ -48,7 +55,13 @@ const Contact = () => {
       
       if (response.ok) {
         toast.success('✅ Message sent successfully! We will respond within 24 hours.');
-        setFormData(prev => ({ ...prev, subject: '', message: '' }));
+        setFormData(prev => ({ 
+          ...prev, 
+          subject: '', 
+          message: '',
+          name: user?.name || '',
+          email: user?.email || ''
+        }));
       } else {
         toast.error(data.message || 'Failed to send message');
       }
@@ -86,27 +99,47 @@ const Contact = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-gray-700 mb-2">Your Name *</label>
-                <input 
-                  type="text" 
-                  name="name" 
-                  value={formData.name} 
-                  onChange={handleChange} 
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-                  required 
-                  disabled={!!user}
-                />
+                {user ? (
+                  <input 
+                    type="text" 
+                    name="name" 
+                    value={formData.name} 
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border rounded-lg bg-gray-100" 
+                    readOnly
+                  />
+                ) : (
+                  <input 
+                    type="text" 
+                    name="name" 
+                    value={formData.name} 
+                    onChange={handleChange} 
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                    required 
+                  />
+                )}
               </div>
               <div>
                 <label className="block text-gray-700 mb-2">Email Address *</label>
-                <input 
-                  type="email" 
+                {user ? (
+                  <input 
+                    type="email" 
                     name="email" 
-                  value={formData.email} 
-                  onChange={handleChange} 
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-                  required 
-                  disabled={!!user}
-                />
+                    value={formData.email} 
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border rounded-lg bg-gray-100" 
+                    readOnly
+                  />
+                ) : (
+                  <input 
+                    type="email" 
+                    name="email" 
+                    value={formData.email} 
+                    onChange={handleChange} 
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                    required 
+                  />
+                )}
               </div>
               <div>
                 <label className="block text-gray-700 mb-2">Subject *</label>

@@ -5,7 +5,7 @@ const { protect, admin } = require('../middleware/auth.middleware');
 
 console.log('🔧 Contact routes loaded');
 
-// Contact Schema with userId reference
+// Contact Schema
 const contactSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true },
@@ -23,9 +23,20 @@ const Contact = mongoose.model('Contact', contactSchema);
 // POST - Submit contact form
 router.post('/', async (req, res) => {
   try {
-    const { name, email, subject, message, userId } = req.body;
+    let { name, email, subject, message, userId } = req.body;
     
-    console.log(`📝 New contact message from: ${email}, UserId: ${userId || 'Not logged in'}`);
+    // If user is logged in but didn't send name/email, use from session? 
+    // Actually the frontend should always send these, but let's log what we receive
+    console.log('📝 Received contact submission:', { name, email, subject, userId });
+    
+    // Validate required fields
+    if (!name || !email || !subject || !message) {
+      console.log('❌ Missing required fields:', { name: !!name, email: !!email, subject: !!subject, message: !!message });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'All fields (name, email, subject, message) are required' 
+      });
+    }
     
     const contact = new Contact({ 
       name, 
@@ -35,9 +46,10 @@ router.post('/', async (req, res) => {
       userId: userId || null,
       status: 'unread'
     });
+    
     await contact.save();
     
-    console.log(`✅ Contact saved with ID: ${contact._id}`);
+    console.log(`✅ Contact saved with ID: ${contact._id} from ${email}`);
     res.status(201).json({ success: true, message: 'Message sent successfully!' });
   } catch (error) {
     console.error('❌ Error saving contact:', error);
@@ -48,9 +60,8 @@ router.post('/', async (req, res) => {
 // GET - User's own messages (authenticated users)
 router.get('/my-messages', protect, async (req, res) => {
   try {
-    console.log(`📋 Fetching messages for user ID: ${req.user._id}, Email: ${req.user.email}`);
+    console.log(`📋 Fetching messages for user: ${req.user.email} (ID: ${req.user._id})`);
     
-    // Find messages by userId OR email
     const messages = await Contact.find({ 
       $or: [
         { userId: req.user._id },
@@ -58,13 +69,7 @@ router.get('/my-messages', protect, async (req, res) => {
       ]
     }).sort({ createdAt: -1 });
     
-    console.log(`✅ Found ${messages.length} messages for user ${req.user.email}`);
-    
-    // Log each message for debugging
-    messages.forEach(msg => {
-      console.log(`   - ${msg.subject} (${msg.status}) - Reply: ${msg.replyMessage ? 'Yes' : 'No'}`);
-    });
-    
+    console.log(`✅ Found ${messages.length} messages`);
     res.json({ success: true, messages });
   } catch (error) {
     console.error('Error fetching user messages:', error);
@@ -74,9 +79,7 @@ router.get('/my-messages', protect, async (req, res) => {
 
 // GET - All contacts (admin only)
 router.get('/', protect, admin, async (req, res) => {
-  console.log('📋 Admin fetching all contacts');
   const contacts = await Contact.find({}).sort({ createdAt: -1 });
-  console.log(`✅ Found ${contacts.length} total contacts`);
   res.json({ success: true, contacts });
 });
 
@@ -103,7 +106,7 @@ router.put('/:id', protect, admin, async (req, res) => {
     
     res.json({ success: true, message: 'Reply saved!', emailSent: false });
   } catch (error) {
-    console.error('❌ Error updating contact:', error);
+    console.error('❌ Error:', error);
     res.status(500).json({ message: error.message });
   }
 });
