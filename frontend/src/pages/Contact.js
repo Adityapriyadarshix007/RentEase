@@ -6,8 +6,8 @@ import toast from 'react-hot-toast';
 const Contact = () => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
+    name: user?.name || '',
+    email: user?.email || '',
     subject: '',
     message: ''
   });
@@ -27,9 +27,14 @@ const Contact = () => {
     try {
       // Include userId if user is logged in
       const payload = {
-        ...formData,
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
         userId: user?._id || null
       };
+      
+      console.log('Sending message with userId:', user?._id);
       
       const response = await fetch(`${API_BASE_URL}/api/contact`, {
         method: 'POST',
@@ -43,7 +48,7 @@ const Contact = () => {
       
       if (response.ok) {
         toast.success('✅ Message sent successfully! We will respond within 24 hours.');
-        setFormData({ name: '', email: '', subject: '', message: '' });
+        setFormData(prev => ({ ...prev, subject: '', message: '' }));
       } else {
         toast.error(data.message || 'Failed to send message');
       }
@@ -67,7 +72,11 @@ const Contact = () => {
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold mb-2">Contact Us</h1>
         <p className="text-gray-600">We'd love to hear from you. Get in touch with us for any queries.</p>
-        {user && <p className="text-sm text-green-600 mt-2">✓ Logged in as {user.email}. You can track your messages in "My Messages".</p>}
+        {user && (
+          <p className="text-sm text-green-600 mt-2">
+            ✓ Logged in as {user.email}. Your messages will be saved to your account.
+          </p>
+        )}
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -77,21 +86,55 @@ const Contact = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-gray-700 mb-2">Your Name *</label>
-                <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required />
+                <input 
+                  type="text" 
+                  name="name" 
+                  value={formData.name} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  required 
+                  disabled={!!user}
+                />
               </div>
               <div>
                 <label className="block text-gray-700 mb-2">Email Address *</label>
-                <input type="email" name="email" value={user?.email || formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required disabled={!!user} />
+                <input 
+                  type="email" 
+                    name="email" 
+                  value={formData.email} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  required 
+                  disabled={!!user}
+                />
               </div>
               <div>
                 <label className="block text-gray-700 mb-2">Subject *</label>
-                <input type="text" name="subject" value={formData.subject} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required />
+                <input 
+                  type="text" 
+                  name="subject" 
+                  value={formData.subject} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  required 
+                />
               </div>
               <div>
                 <label className="block text-gray-700 mb-2">Message *</label>
-                <textarea name="message" value={formData.message} onChange={handleChange} rows="5" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required />
+                <textarea 
+                  name="message" 
+                  value={formData.message} 
+                  onChange={handleChange} 
+                  rows="5" 
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  required 
+                />
               </div>
-              <button type="submit" disabled={submitting} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50">
+              <button 
+                type="submit" 
+                disabled={submitting} 
+                className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50"
+              >
                 {submitting ? 'Sending...' : 'Send Message'}
               </button>
             </div>
