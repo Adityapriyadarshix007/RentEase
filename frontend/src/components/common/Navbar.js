@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
-import { FaShoppingCart, FaUser, FaSignOutAlt, FaTachometerAlt, FaBars, FaTimes, FaHome } from 'react-icons/fa';
+import { FaShoppingCart, FaUser, FaSignOutAlt, FaTachometerAlt, FaBars, FaTimes, FaHome, FaEnvelope } from 'react-icons/fa';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -32,11 +32,8 @@ const Navbar = () => {
     <nav className="bg-white shadow-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo with Home Icon */}
-          <Link 
-            to={user ? "/products" : "/login"} 
-            className="flex items-center space-x-2 group cursor-pointer"
-          >
+          {/* Logo */}
+          <Link to={user ? "/products" : "/login"} className="flex items-center space-x-2 group cursor-pointer">
             <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-2 rounded-lg transform group-hover:scale-105 transition duration-200">
               <FaHome className="text-white text-xl" />
             </div>
@@ -51,110 +48,55 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-8">
             {user && (
               <>
-                <Link 
-                  to="/products" 
-                  className={`text-gray-700 hover:text-blue-600 transition font-medium ${isActive('/products') ? 'text-blue-600' : ''}`}
-                >
-                  Products
-                </Link>
-                <Link 
-                  to="/my-rentals" 
-                  className={`text-gray-700 hover:text-blue-600 transition font-medium ${isActive('/my-rentals') ? 'text-blue-600' : ''}`}
-                >
-                  My Rentals
-                </Link>
-                <Link 
-                  to="/maintenance" 
-                  className={`text-gray-700 hover:text-blue-600 transition font-medium ${isActive('/maintenance') ? 'text-blue-600' : ''}`}
-                >
-                  Support
-                </Link>
+                <Link to="/products" className={`text-gray-700 hover:text-blue-600 transition font-medium ${isActive('/products') ? 'text-blue-600' : ''}`}>Products</Link>
+                <Link to="/my-rentals" className={`text-gray-700 hover:text-blue-600 transition font-medium ${isActive('/my-rentals') ? 'text-blue-600' : ''}`}>My Rentals</Link>
+                <Link to="/maintenance" className={`text-gray-700 hover:text-blue-600 transition font-medium ${isActive('/maintenance') ? 'text-blue-600' : ''}`}>Support</Link>
               </>
             )}
-            <Link 
-              to="/about" 
-              className={`text-gray-700 hover:text-blue-600 transition font-medium ${isActive('/about') ? 'text-blue-600' : ''}`}
-            >
-              About
-            </Link>
-            <Link 
-              to="/contact" 
-              className={`text-gray-700 hover:text-blue-600 transition font-medium ${isActive('/contact') ? 'text-blue-600' : ''}`}
-            >
-              Contact
-            </Link>
+            <Link to="/about" className={`text-gray-700 hover:text-blue-600 transition font-medium ${isActive('/about') ? 'text-blue-600' : ''}`}>About</Link>
+            <Link to="/contact" className={`text-gray-700 hover:text-blue-600 transition font-medium ${isActive('/contact') ? 'text-blue-600' : ''}`}>Contact</Link>
           </div>
 
           {/* Right Section */}
           <div className="flex items-center space-x-4">
-            {/* Cart Icon */}
             {user && (
-              <Link 
-                to="/cart" 
-                className="relative hover:opacity-80 transition cursor-pointer"
-              >
+              <Link to="/cart" className="relative hover:opacity-80 transition cursor-pointer">
                 <FaShoppingCart className="text-2xl text-gray-700 hover:text-blue-600 transition" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
-                    {cartCount}
-                  </span>
-                )}
+                {cartCount > 0 && <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">{cartCount}</span>}
               </Link>
             )}
 
-            {/* User Menu */}
             {user ? (
               <div className="relative">
-                <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition cursor-pointer"
-                >
+                <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition cursor-pointer">
                   <FaUser />
                   <span className="hidden sm:inline">{user.name?.split(' ')[0] || 'User'}</span>
                 </button>
                 
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50 border">
-                    <button
-                      onClick={() => handleNavigation('/profile')}
-                      className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition cursor-pointer"
-                    >
-                      <FaUser className="inline mr-2" />
-                      Profile
+                    <button onClick={() => handleNavigation('/profile')} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition cursor-pointer">
+                      <FaUser className="inline mr-2" /> Profile
+                    </button>
+                    <button onClick={() => handleNavigation('/my-messages')} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition cursor-pointer">
+                      <FaEnvelope className="inline mr-2" /> My Messages
                     </button>
                     {user.role === 'admin' && (
-                      <button
-                        onClick={() => handleNavigation('/admin')}
-                        className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition cursor-pointer"
-                      >
-                        <FaTachometerAlt className="inline mr-2" />
-                        Dashboard
+                      <button onClick={() => handleNavigation('/admin')} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition cursor-pointer">
+                        <FaTachometerAlt className="inline mr-2" /> Dashboard
                       </button>
                     )}
-                    <button
-                      onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 transition cursor-pointer"
-                    >
-                      <FaSignOutAlt className="inline mr-2" />
-                      Logout
+                    <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 transition cursor-pointer">
+                      <FaSignOutAlt className="inline mr-2" /> Logout
                     </button>
                   </div>
                 )}
               </div>
             ) : (
-              <button
-                onClick={() => navigate('/login')}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition cursor-pointer"
-              >
-                Login
-              </button>
+              <button onClick={() => navigate('/login')} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition cursor-pointer">Login</button>
             )}
 
-            {/* Mobile menu button */}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden text-gray-700 hover:text-blue-600 transition cursor-pointer"
-            >
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="md:hidden text-gray-700 hover:text-blue-600 transition cursor-pointer">
               {isMobileMenuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
             </button>
           </div>
@@ -166,38 +108,13 @@ const Navbar = () => {
             <div className="flex flex-col space-y-3">
               {user && (
                 <>
-                  <button
-                    onClick={() => handleNavigation('/products')}
-                    className="text-gray-700 hover:text-blue-600 transition py-2 text-left cursor-pointer"
-                  >
-                    Products
-                  </button>
-                  <button
-                    onClick={() => handleNavigation('/my-rentals')}
-                    className="text-gray-700 hover:text-blue-600 transition py-2 text-left cursor-pointer"
-                  >
-                    My Rentals
-                  </button>
-                  <button
-                    onClick={() => handleNavigation('/maintenance')}
-                    className="text-gray-700 hover:text-blue-600 transition py-2 text-left cursor-pointer"
-                  >
-                    Support
-                  </button>
+                  <button onClick={() => handleNavigation('/products')} className="text-gray-700 hover:text-blue-600 transition py-2 text-left cursor-pointer">Products</button>
+                  <button onClick={() => handleNavigation('/my-rentals')} className="text-gray-700 hover:text-blue-600 transition py-2 text-left cursor-pointer">My Rentals</button>
+                  <button onClick={() => handleNavigation('/maintenance')} className="text-gray-700 hover:text-blue-600 transition py-2 text-left cursor-pointer">Support</button>
                 </>
               )}
-              <button
-                onClick={() => handleNavigation('/about')}
-                className="text-gray-700 hover:text-blue-600 transition py-2 text-left cursor-pointer"
-              >
-                About
-              </button>
-              <button
-                onClick={() => handleNavigation('/contact')}
-                className="text-gray-700 hover:text-blue-600 transition py-2 text-left cursor-pointer"
-              >
-                Contact
-              </button>
+              <button onClick={() => handleNavigation('/about')} className="text-gray-700 hover:text-blue-600 transition py-2 text-left cursor-pointer">About</button>
+              <button onClick={() => handleNavigation('/contact')} className="text-gray-700 hover:text-blue-600 transition py-2 text-left cursor-pointer">Contact</button>
             </div>
           </div>
         )}

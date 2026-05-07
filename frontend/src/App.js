@@ -27,6 +27,7 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
 import Cancellation from './pages/Cancellation';
+import MyMessages from './pages/MyMessages';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -70,71 +71,18 @@ function App() {
                 <Route path="/maintenance" element={<ProtectedRoute><Maintenance /></ProtectedRoute>} />
                 <Route path="/maintenance/:id" element={<ProtectedRoute><MaintenanceDetail /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/my-messages" element={<ProtectedRoute><MyMessages /></ProtectedRoute>} />
                 
-                {/* Admin Routes with Sidebar */}
-                <Route path="/admin" element={
-                  <ProtectedRoute adminOnly>
-                    <AdminLayout>
-                      <AdminDashboard />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/users" element={
-                  <ProtectedRoute adminOnly>
-                    <AdminLayout>
-                      <AdminUsers />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/products" element={
-                  <ProtectedRoute adminOnly>
-                    <AdminLayout>
-                      <AdminProducts />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/rentals" element={
-                  <ProtectedRoute adminOnly>
-                    <AdminLayout>
-                      <AdminRentals />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/maintenance" element={
-                  <ProtectedRoute adminOnly>
-                    <AdminLayout>
-                      <AdminMaintenance />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/categories" element={
-                  <ProtectedRoute adminOnly>
-                    <AdminLayout>
-                      <AdminCategories />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/analytics" element={
-                  <ProtectedRoute adminOnly>
-                    <AdminLayout>
-                      <AdminAnalytics />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/images" element={
-                  <ProtectedRoute adminOnly>
-                    <AdminLayout>
-                      <AdminImages />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/contacts" element={
-                  <ProtectedRoute adminOnly>
-                    <AdminLayout>
-                      <AdminContacts />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                } />
+                {/* Admin Routes */}
+                <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />
+                <Route path="/admin/users" element={<ProtectedRoute adminOnly><AdminLayout><AdminUsers /></AdminLayout></ProtectedRoute>} />
+                <Route path="/admin/products" element={<ProtectedRoute adminOnly><AdminLayout><AdminProducts /></AdminLayout></ProtectedRoute>} />
+                <Route path="/admin/rentals" element={<ProtectedRoute adminOnly><AdminLayout><AdminRentals /></AdminLayout></ProtectedRoute>} />
+                <Route path="/admin/maintenance" element={<ProtectedRoute adminOnly><AdminLayout><AdminMaintenance /></AdminLayout></ProtectedRoute>} />
+                <Route path="/admin/categories" element={<ProtectedRoute adminOnly><AdminLayout><AdminCategories /></AdminLayout></ProtectedRoute>} />
+                <Route path="/admin/analytics" element={<ProtectedRoute adminOnly><AdminLayout><AdminAnalytics /></AdminLayout></ProtectedRoute>} />
+                <Route path="/admin/images" element={<ProtectedRoute adminOnly><AdminLayout><AdminImages /></AdminLayout></ProtectedRoute>} />
+                <Route path="/admin/contacts" element={<ProtectedRoute adminOnly><AdminLayout><AdminContacts /></AdminLayout></ProtectedRoute>} />
                 
                 {/* 404 */}
                 <Route path="*" element={<Navigate to="/products" replace />} />
