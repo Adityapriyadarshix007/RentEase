@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaMapMarkerAlt, FaPhone, FaEnvelope, FaClock } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -6,14 +6,25 @@ import toast from 'react-hot-toast';
 const Contact = () => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
+    name: '',
+    email: '',
     subject: '',
     message: ''
   });
   const [submitting, setSubmitting] = useState(false);
 
   const API_BASE_URL = 'https://rentease-backend-njvk.onrender.com';
+
+  // Pre-fill form when user is logged in
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.name || '',
+        email: user.email || ''
+      }));
+    }
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -22,17 +33,28 @@ const Contact = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
     
-    // Validate form data
-    if (!formData.name || !formData.email) {
-      toast.error('Name and email are required');
-      setSubmitting(false);
+    // Validate required fields
+    if (!formData.name.trim()) {
+      toast.error('Please enter your name');
+      return;
+    }
+    if (!formData.email.trim()) {
+      toast.error('Please enter your email address');
+      return;
+    }
+    if (!formData.subject.trim()) {
+      toast.error('Please enter a subject');
+      return;
+    }
+    if (!formData.message.trim()) {
+      toast.error('Please enter your message');
       return;
     }
     
+    setSubmitting(true);
+    
     try {
-      // Include userId if user is logged in
       const payload = {
         name: formData.name,
         email: formData.email,
@@ -41,7 +63,7 @@ const Contact = () => {
         userId: user?._id || null
       };
       
-      console.log('Sending message:', payload);
+      console.log('Sending message:', { ...payload, message: '***' });
       
       const response = await fetch(`${API_BASE_URL}/api/contact`, {
         method: 'POST',
@@ -87,7 +109,7 @@ const Contact = () => {
         <p className="text-gray-600">We'd love to hear from you. Get in touch with us for any queries.</p>
         {user && (
           <p className="text-sm text-green-600 mt-2">
-            ✓ Logged in as {user.email}. Your messages will be saved to your account.
+            ✓ Logged in as {user.email}. Your email is pre-filled.
           </p>
         )}
       </div>
@@ -99,56 +121,42 @@ const Contact = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-gray-700 mb-2">Your Name *</label>
-                {user ? (
-                  <input 
-                    type="text" 
-                    name="name" 
-                    value={formData.name} 
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border rounded-lg bg-gray-100" 
-                    readOnly
-                  />
-                ) : (
-                  <input 
-                    type="text" 
-                    name="name" 
-                    value={formData.name} 
-                    onChange={handleChange} 
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-                    required 
-                  />
-                )}
+                <input 
+                  type="text" 
+                  name="name" 
+                  value={formData.name} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  placeholder="Enter your full name"
+                  required 
+                />
               </div>
               <div>
                 <label className="block text-gray-700 mb-2">Email Address *</label>
-                {user ? (
-                  <input 
-                    type="email" 
-                    name="email" 
-                    value={formData.email} 
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border rounded-lg bg-gray-100" 
-                    readOnly
-                  />
-                ) : (
-                  <input 
-                    type="email" 
-                    name="email" 
-                    value={formData.email} 
-                    onChange={handleChange} 
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-                    required 
-                  />
+                <input 
+                  type="email" 
+                  name="email" 
+                  value={formData.email} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  placeholder="your@email.com"
+                  required 
+                />
+                {user && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Using your account email: {user.email}
+                  </p>
                 )}
               </div>
               <div>
                 <label className="block text-gray-700 mb-2">Subject *</label>
                 <input 
                   type="text" 
-                  name="subject" 
+                    name="subject" 
                   value={formData.subject} 
                   onChange={handleChange} 
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  placeholder="What is this regarding?"
                   required 
                 />
               </div>
@@ -160,6 +168,7 @@ const Contact = () => {
                   onChange={handleChange} 
                   rows="5" 
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  placeholder="Please provide details about your inquiry..."
                   required 
                 />
               </div>
