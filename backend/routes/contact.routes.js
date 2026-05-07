@@ -1,10 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-const nodemailer = require('nodemailer');
 const { protect, admin } = require('../middleware/auth.middleware');
 
-console.log('🔧 Contact routes loaded with email support');
+console.log('🔧 Contact routes loaded with Brevo API');
 
 // Contact Schema
 const contactSchema = new mongoose.Schema({
@@ -15,41 +14,32 @@ const contactSchema = new mongoose.Schema({
 
 const Contact = mongoose.model('Contact', contactSchema);
 
-// Email transporter
-let transporter = null;
-if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-  transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.EMAIL_PORT) || 587,
-    secure: false,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    },
-    tls: { rejectUnauthorized: false }
-  });
-  console.log('✅ Email transporter ready');
-}
-
-// Function to send email
-async function sendEmail(contact, replyMessage) {
-  if (!transporter) {
-    console.log('❌ No email transporter');
+// Send email using Brevo REST API
+async function sendEmailViaBrevo(contact, replyMessage) {
+  const BREVO_API_KEY = process.env.EMAIL_PASS;
+  
+  if (!BREVO_API_KEY) {
+    console.log('❌ No Brevo API key');
     return false;
   }
   
   try {
-    console.log(`📧 Sending email to ${contact.email}...`);
-    await transporter.sendMail({
-      from: `"RentEase Support" <${process.env.EMAIL_USER}>`,
-      to: contact.email,
-      subject: `Re: ${contact.subject} - RentEase Support`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px;">
-          <div style="background: #3B82F6; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
-            <h1 style="color: white; margin: 0;">RentEase Support</h1>
-          </div>
-          <div style="padding: 20px;">
+    console.log(`📧 Sending email to ${contact.email} via Brevo API...`);
+    
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'api-key': BREVO_API_KEY
+      },
+      body: JSON.stringify({
+        sender: { name: 'RentEase Support', email: 'apsp15012005@gmail.com' },
+        to: [{ email: contact.email, name: contact.name }],
+        subject: `Re: ${contact.subject} - RentEase Support`,
+        htmlContent: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px;">
+            <h2 style="color: #3B82F6;">RentEase Support</h2>
             <p>Dear <strong>${contact.name}</strong>,</p>
             <p>Thank you for contacting us. Here's our response:</p>
             <div style="background: #f3f4f6; padding: 15px; border-left: 4px solid #3B82F6; margin: 20px 0;">
@@ -62,11 +52,19 @@ async function sendEmail(contact, replyMessage) {
             </div>
             <p>Best regards,<br>RentEase Team</p>
           </div>
-        </div>
-      `
+        `
+      })
     });
-    console.log(`✅ Email sent to ${contact.email}`);
-    return true;
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      console.log(`✅ Email sent via Brevo API to ${contact.email}`);
+      return true;
+    } else {
+      console.error(`❌ Brevo API error:`, data);
+      return false;
+    }
   } catch (error) {
     console.error(`❌ Email failed: ${error.message}`);
     return false;
@@ -75,7 +73,6 @@ async function sendEmail(contact, replyMessage) {
 
 // POST - Submit contact form
 router.post('/', async (req, res) => {
-  console.log('📝 POST /api/contact received');
   try {
     const { name, email, subject, message } = req.body;
     const contact = new Contact({ name, email, subject, message });
@@ -90,24 +87,16 @@ router.post('/', async (req, res) => {
 
 // GET - All contacts (admin only)
 router.get('/', protect, admin, async (req, res) => {
-  console.log('📋 GET /api/contact - Admin access');
-  try {
-    const contacts = await Contact.find({}).sort({ createdAt: -1 });
-    res.json({ success: true, contacts });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+  const contacts = await Contact.find({}).sort({ createdAt: -1 });
+  res.json({ success: true, contacts });
 });
 
 // PUT - Update contact (admin only)
 router.put('/:id', protect, admin, async (req, res) => {
-  console.log('✏️ PUT /api/contact/:id - Admin access');
   try {
     const { status, replyMessage } = req.body;
     const contact = await Contact.findById(req.params.id);
     if (!contact) return res.status(404).json({ message: 'Contact not found' });
-    
-    console.log(`Updating contact ${contact._id} to status: ${status}`);
     
     contact.status = status;
     let emailSent = false;
@@ -115,17 +104,14 @@ router.put('/:id', protect, admin, async (req, res) => {
     if (replyMessage) {
       contact.replyMessage = replyMessage;
       contact.replySentAt = new Date();
-      console.log(`📧 Attempting to send email to ${contact.email}...`);
-      emailSent = await sendEmail(contact, replyMessage);
-      console.log(`📧 Email result: ${emailSent ? 'SENT ✅' : 'FAILED ❌'}`);
+      emailSent = await sendEmailViaBrevo(contact, replyMessage);
     }
     
     await contact.save();
-    
     res.json({ 
       success: true, 
       message: emailSent ? 'Reply saved and email sent!' : 'Reply saved but email failed',
-      emailSent: emailSent 
+      emailSent 
     });
   } catch (error) {
     console.error('❌ Error:', error);
@@ -135,13 +121,8 @@ router.put('/:id', protect, admin, async (req, res) => {
 
 // DELETE - Delete contact (admin only)
 router.delete('/:id', protect, admin, async (req, res) => {
-  console.log('🗑️ DELETE /api/contact/:id');
-  try {
-    await Contact.findByIdAndDelete(req.params.id);
-    res.json({ success: true, message: 'Contact deleted' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+  await Contact.findByIdAndDelete(req.params.id);
+  res.json({ success: true, message: 'Contact deleted' });
 });
 
 module.exports = router;
