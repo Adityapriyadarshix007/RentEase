@@ -126,3 +126,15 @@ router.delete('/:id', protect, admin, async (req, res) => {
 });
 
 module.exports = router;
+
+// GET - User's own messages (authenticated users)
+router.get('/my-messages', protect, async (req, res) => {
+  try {
+    const Contact = mongoose.model('Contact');
+    const messages = await Contact.find({ email: req.user.email }).sort({ createdAt: -1 });
+    res.json({ success: true, messages });
+  } catch (error) {
+    console.error('Error fetching user messages:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
