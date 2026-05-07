@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaMapMarkerAlt, FaPhone, FaEnvelope, FaClock } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
-import { contactService } from '../services/api';
 import toast from 'react-hot-toast';
 
 const Contact = () => {
@@ -13,6 +12,9 @@ const Contact = () => {
     message: ''
   });
   const [submitting, setSubmitting] = useState(false);
+
+  // Hardcode the API URL for production
+  const API_URL = 'https://rentease-backend-njvk.onrender.com';
 
   useEffect(() => {
     if (user) {
@@ -32,23 +34,54 @@ const Contact = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.name.trim() || !formData.email.trim() || !formData.subject.trim() || !formData.message.trim()) {
-      toast.error('Please fill in all fields');
+    // Validate form
+    if (!formData.name.trim()) {
+      toast.error('Please enter your name');
+      return;
+    }
+    if (!formData.email.trim()) {
+      toast.error('Please enter your email');
+      return;
+    }
+    if (!formData.subject.trim()) {
+      toast.error('Please enter a subject');
+      return;
+    }
+    if (!formData.message.trim()) {
+      toast.error('Please enter your message');
       return;
     }
     
     setSubmitting(true);
+    toast.loading('Sending message...', { id: 'contact-send' });
     
     try {
       const payload = {
-        ...formData,
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
         userId: user?._id || null
       };
       
-      const response = await contactService.submitContact(payload);
+      console.log('Sending to:', `${API_URL}/api/contact`);
+      console.log('Payload:', { ...payload, message: '***' });
       
-      if (response.data.success) {
-        toast.success('✅ Message sent successfully!');
+      const response = await fetch(`${API_URL}/api/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await response.json();
+      console.log('Response:', data);
+      
+      toast.dismiss('contact-send');
+      
+      if (response.ok) {
+        toast.success('✅ Message sent successfully! We will respond within 24 hours.');
         setFormData(prev => ({ 
           ...prev, 
           subject: '', 
@@ -57,11 +90,12 @@ const Contact = () => {
           email: user?.email || ''
         }));
       } else {
-        toast.error(response.data.message || 'Failed to send message');
+        toast.error(data.message || 'Failed to send message');
       }
     } catch (error) {
+      toast.dismiss('contact-send');
       console.error('Error:', error);
-      toast.error('Network error. Please try again.');
+      toast.error('Network error. Please check your connection.');
     } finally {
       setSubmitting(false);
     }
@@ -93,21 +127,57 @@ const Contact = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-gray-700 mb-2">Your Name *</label>
-                <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg" required />
+                <input 
+                  type="text" 
+                  name="name" 
+                  value={formData.name} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  placeholder="Enter your name"
+                  required 
+                />
               </div>
               <div>
                 <label className="block text-gray-700 mb-2">Email Address *</label>
-                <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg" required />
+                <input 
+                  type="email" 
+                  name="email" 
+                  value={formData.email} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  placeholder="your@email.com"
+                  required 
+                />
               </div>
               <div>
                 <label className="block text-gray-700 mb-2">Subject *</label>
-                <input type="text" name="subject" value={formData.subject} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg" required />
+                <input 
+                  type="text" 
+                  name="subject" 
+                  value={formData.subject} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  placeholder="What is this regarding?"
+                  required 
+                />
               </div>
               <div>
                 <label className="block text-gray-700 mb-2">Message *</label>
-                <textarea name="message" value={formData.message} onChange={handleChange} rows="5" className="w-full px-4 py-2 border rounded-lg" required />
+                <textarea 
+                  name="message" 
+                  value={formData.message} 
+                  onChange={handleChange} 
+                  rows="5" 
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  placeholder="Please provide details about your inquiry..."
+                  required 
+                />
               </div>
-              <button type="submit" disabled={submitting} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50">
+              <button 
+                type="submit" 
+                disabled={submitting} 
+                className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50"
+              >
                 {submitting ? 'Sending...' : 'Send Message'}
               </button>
             </div>
