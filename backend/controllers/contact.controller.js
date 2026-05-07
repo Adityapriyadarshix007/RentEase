@@ -16,6 +16,9 @@ try {
 // Create email transporter
 let transporter = null;
 
+console.log('EMAIL_USER:', process.env.EMAIL_USER ? 'Set' : 'Not set');
+console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? 'Set' : 'Not set');
+
 if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
@@ -35,11 +38,13 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
 // Function to send email
 async function sendReplyEmail(contact, replyMessage) {
   if (!transporter) {
-    console.log('Email disabled - no transporter');
+    console.log('❌ Email disabled - no transporter');
     return false;
   }
   
   try {
+    console.log(`📧 Attempting to send email to: ${contact.email}`);
+    
     const mailOptions = {
       from: `"RentEase Support" <${process.env.EMAIL_USER}>`,
       to: contact.email,
@@ -66,8 +71,7 @@ async function sendReplyEmail(contact, replyMessage) {
             <p>If you have any further questions, please don't hesitate to contact us again.</p>
             <hr style="margin: 20px 0; border: none; border-top: 1px solid #e0e0e0;">
             <p style="font-size: 12px; color: #6b7280; text-align: center;">
-              &copy; 2024 RentEase. All rights reserved.<br>
-              <a href="https://rentease-frontend-ul7h.onrender.com" style="color: #3B82F6;">Visit our website</a>
+              &copy; 2024 RentEase. All rights reserved.
             </p>
           </div>
         </div>
@@ -75,10 +79,12 @@ async function sendReplyEmail(contact, replyMessage) {
     };
     
     const info = await transporter.sendMail(mailOptions);
-    console.log('✅ Email sent to:', contact.email, 'Message ID:', info.messageId);
+    console.log('✅ Email sent successfully to:', contact.email);
+    console.log('📧 Message ID:', info.messageId);
     return true;
   } catch (error) {
     console.error('❌ Email failed:', error.message);
+    console.error('Full error:', error);
     return false;
   }
 }
@@ -129,12 +135,13 @@ const updateContactStatus = async (req, res) => {
       contact.replyMessage = replyMessage;
       contact.replySentAt = new Date();
       
-      // Send email notification
+      console.log(`📧 Sending reply to ${contact.email}...`);
       emailSent = await sendReplyEmail(contact, replyMessage);
+      
       if (emailSent) {
         console.log(`✅ Reply email sent to ${contact.email}`);
       } else {
-        console.log(`⚠️ Could not send email to ${contact.email}`);
+        console.log(`⚠️ Failed to send email to ${contact.email}`);
       }
     }
     
@@ -142,7 +149,7 @@ const updateContactStatus = async (req, res) => {
     
     res.json({ 
       success: true, 
-      message: emailSent ? 'Reply saved and email sent to user!' : 'Reply saved but email failed. Check email settings.',
+      message: emailSent ? 'Reply saved and email sent!' : 'Reply saved but email failed.',
       emailSent 
     });
   } catch (error) {
