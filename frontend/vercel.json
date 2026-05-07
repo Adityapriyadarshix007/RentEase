@@ -16,6 +16,7 @@
     }
   ],
   "env": {
-    "REACT_APP_API_URL": "https://your-backend-url.onrender.com/api"
+    "REACT_APP_API_URL": "https://rentease-backend-njvk.onrender.com",
+    "REACT_APP_ENV": "vercel"
   }
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaMapMarkerAlt, FaPhone, FaEnvelope, FaClock } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import { contactService } from '../services/api';
 import toast from 'react-hot-toast';
 
 const Contact = () => {
@@ -13,9 +14,6 @@ const Contact = () => {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  const API_BASE_URL = 'https://rentease-backend-njvk.onrender.com';
-
-  // Pre-fill form when user is logged in
   useEffect(() => {
     if (user) {
       setFormData(prev => ({
@@ -34,21 +32,8 @@ const Contact = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate required fields
-    if (!formData.name.trim()) {
-      toast.error('Please enter your name');
-      return;
-    }
-    if (!formData.email.trim()) {
-      toast.error('Please enter your email address');
-      return;
-    }
-    if (!formData.subject.trim()) {
-      toast.error('Please enter a subject');
-      return;
-    }
-    if (!formData.message.trim()) {
-      toast.error('Please enter your message');
+    if (!formData.name.trim() || !formData.email.trim() || !formData.subject.trim() || !formData.message.trim()) {
+      toast.error('Please fill in all fields');
       return;
     }
     
@@ -56,27 +41,14 @@ const Contact = () => {
     
     try {
       const payload = {
-        name: formData.name,
-        email: formData.email,
-        subject: formData.subject,
-        message: formData.message,
+        ...formData,
         userId: user?._id || null
       };
       
-      console.log('Sending message:', { ...payload, message: '***' });
+      const response = await contactService.submitContact(payload);
       
-      const response = await fetch(`${API_BASE_URL}/api/contact`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
-      
-      const data = await response.json();
-      
-      if (response.ok) {
-        toast.success('✅ Message sent successfully! We will respond within 24 hours.');
+      if (response.data.success) {
+        toast.success('✅ Message sent successfully!');
         setFormData(prev => ({ 
           ...prev, 
           subject: '', 
@@ -85,7 +57,7 @@ const Contact = () => {
           email: user?.email || ''
         }));
       } else {
-        toast.error(data.message || 'Failed to send message');
+        toast.error(response.data.message || 'Failed to send message');
       }
     } catch (error) {
       console.error('Error:', error);
@@ -109,7 +81,7 @@ const Contact = () => {
         <p className="text-gray-600">We'd love to hear from you. Get in touch with us for any queries.</p>
         {user && (
           <p className="text-sm text-green-600 mt-2">
-            ✓ Logged in as {user.email}. Your email is pre-filled.
+            ✓ Logged in as {user.email}
           </p>
         )}
       </div>
@@ -121,62 +93,21 @@ const Contact = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-gray-700 mb-2">Your Name *</label>
-                <input 
-                  type="text" 
-                  name="name" 
-                  value={formData.name} 
-                  onChange={handleChange} 
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-                  placeholder="Enter your full name"
-                  required 
-                />
+                <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg" required />
               </div>
               <div>
                 <label className="block text-gray-700 mb-2">Email Address *</label>
-                <input 
-                  type="email" 
-                  name="email" 
-                  value={formData.email} 
-                  onChange={handleChange} 
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-                  placeholder="your@email.com"
-                  required 
-                />
-                {user && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Using your account email: {user.email}
-                  </p>
-                )}
+                <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg" required />
               </div>
               <div>
                 <label className="block text-gray-700 mb-2">Subject *</label>
-                <input 
-                  type="text" 
-                    name="subject" 
-                  value={formData.subject} 
-                  onChange={handleChange} 
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-                  placeholder="What is this regarding?"
-                  required 
-                />
+                <input type="text" name="subject" value={formData.subject} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg" required />
               </div>
               <div>
                 <label className="block text-gray-700 mb-2">Message *</label>
-                <textarea 
-                  name="message" 
-                  value={formData.message} 
-                  onChange={handleChange} 
-                  rows="5" 
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-                  placeholder="Please provide details about your inquiry..."
-                  required 
-                />
+                <textarea name="message" value={formData.message} onChange={handleChange} rows="5" className="w-full px-4 py-2 border rounded-lg" required />
               </div>
-              <button 
-                type="submit" 
-                disabled={submitting} 
-                className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50"
-              >
+              <button type="submit" disabled={submitting} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50">
                 {submitting ? 'Sending...' : 'Send Message'}
               </button>
             </div>

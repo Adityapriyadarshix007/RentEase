@@ -1,11 +1,23 @@
 import axios from 'axios';
 
-// Use environment variable for API URL
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+// Determine API URL based on environment
+const getApiUrl = () => {
+  // For production (Render or Vercel)
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://rentease-backend-njvk.onrender.com/api';
+  }
+  // For development (localhost)
+  return 'http://localhost:5001/api';
+};
+
+const API_URL = process.env.REACT_APP_API_URL || getApiUrl();
+
+console.log('🔧 API URL:', API_URL);
 
 const api = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
+  timeout: 30000,
 });
 
 api.interceptors.request.use((config) => {
@@ -58,10 +70,16 @@ export const adminService = {
   getUsers: (params) => api.get('/admin/users', { params }),
   updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
   deleteUser: (id) => api.delete(`/admin/users/${id}`),
+  getAnalytics: (params) => api.get('/admin/analytics', { params }),
 };
 
 export const categoryService = {
   getCategories: () => api.get('/categories'),
+};
+
+export const contactService = {
+  submitContact: (data) => api.post('/contact', data),
+  getMyMessages: () => api.get('/contact/my-messages'),
 };
 
 export default api;

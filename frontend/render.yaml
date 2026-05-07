@@ -2,7 +2,7 @@ services:
   - type: static
     name: rentease-frontend
     env: static
-    buildCommand: npm run build
+    buildCommand: CI=false npm run build
     staticPublishPath: build
     routes:
       - type: rewrite
