@@ -16,8 +16,12 @@ try {
 // Create email transporter
 let transporter = null;
 
-console.log('EMAIL_USER:', process.env.EMAIL_USER ? 'Set' : 'Not set');
-console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? 'Set' : 'Not set');
+console.log('=== EMAIL CONFIGURATION CHECK ===');
+console.log('EMAIL_USER:', process.env.EMAIL_USER ? '✅ Set' : '❌ Not set');
+console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? '✅ Set' : '❌ Not set');
+console.log('EMAIL_HOST:', process.env.EMAIL_HOST || 'smtp.gmail.com');
+console.log('EMAIL_PORT:', process.env.EMAIL_PORT || 587);
+console.log('================================');
 
 if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   transporter = nodemailer.createTransport({
@@ -29,6 +33,15 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
       pass: process.env.EMAIL_PASS
     },
     tls: { rejectUnauthorized: false }
+  });
+  
+  // Verify transporter configuration
+  transporter.verify(function(error, success) {
+    if (error) {
+      console.error('❌ Email transporter verification failed:', error.message);
+    } else {
+      console.log('✅ Email transporter verified and ready!');
+    }
   });
   console.log('✅ Email transporter configured');
 } else {
@@ -44,6 +57,7 @@ async function sendReplyEmail(contact, replyMessage) {
   
   try {
     console.log(`📧 Attempting to send email to: ${contact.email}`);
+    console.log(`📧 Reply message length: ${replyMessage.length} characters`);
     
     const mailOptions = {
       from: `"RentEase Support" <${process.env.EMAIL_USER}>`,
@@ -71,7 +85,8 @@ async function sendReplyEmail(contact, replyMessage) {
             <p>If you have any further questions, please don't hesitate to contact us again.</p>
             <hr style="margin: 20px 0; border: none; border-top: 1px solid #e0e0e0;">
             <p style="font-size: 12px; color: #6b7280; text-align: center;">
-              &copy; 2024 RentEase. All rights reserved.
+              &copy; 2024 RentEase. All rights reserved.<br>
+              <a href="https://rentease-frontend-ul7h.onrender.com" style="color: #3B82F6;">Visit our website</a>
             </p>
           </div>
         </div>
@@ -79,12 +94,15 @@ async function sendReplyEmail(contact, replyMessage) {
     };
     
     const info = await transporter.sendMail(mailOptions);
-    console.log('✅ Email sent successfully to:', contact.email);
+    console.log('✅ Email sent successfully!');
     console.log('📧 Message ID:', info.messageId);
+    console.log('📧 Recipient:', contact.email);
     return true;
   } catch (error) {
-    console.error('❌ Email failed:', error.message);
-    console.error('Full error:', error);
+    console.error('❌ Email failed:');
+    console.error('   Error message:', error.message);
+    console.error('   Error code:', error.code);
+    if (error.response) console.error('   Response:', error.response);
     return false;
   }
 }
@@ -114,6 +132,7 @@ const getAllContacts = async (req, res) => {
       return res.status(403).json({ message: 'Access denied. Admin only.' });
     }
     const contacts = await Contact.find({}).sort({ createdAt: -1 });
+    console.log(`📋 Retrieved ${contacts.length} contacts`);
     res.json({ success: true, contacts });
   } catch (error) {
     console.error('Error fetching contacts:', error);
@@ -127,6 +146,8 @@ const updateContactStatus = async (req, res) => {
     const contact = await Contact.findById(req.params.id);
     
     if (!contact) return res.status(404).json({ message: 'Contact not found' });
+    
+    console.log(`📝 Updating contact ${contact._id} to status: ${status}`);
     
     contact.status = status;
     let emailSent = false;
@@ -147,10 +168,16 @@ const updateContactStatus = async (req, res) => {
     
     await contact.save();
     
+    const responseMessage = emailSent 
+      ? 'Reply saved and email sent!' 
+      : 'Reply saved but email failed. Check email configuration.';
+    
+    console.log(`✅ Contact updated. Email sent: ${emailSent}`);
+    
     res.json({ 
       success: true, 
-      message: emailSent ? 'Reply saved and email sent!' : 'Reply saved but email failed.',
-      emailSent 
+      message: responseMessage,
+      emailSent: emailSent 
     });
   } catch (error) {
     console.error('Error updating contact:', error);
@@ -162,6 +189,7 @@ const deleteContact = async (req, res) => {
   try {
     const contact = await Contact.findByIdAndDelete(req.params.id);
     if (!contact) return res.status(404).json({ message: 'Contact not found' });
+    console.log(`🗑️ Deleted contact ${contact._id}`);
     res.json({ success: true, message: 'Contact deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });
