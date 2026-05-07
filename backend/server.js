@@ -73,3 +73,33 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+
+// Email configuration - runs on server startup
+console.log('\n=== EMAIL CONFIGURATION CHECK ===');
+console.log('EMAIL_USER:', process.env.EMAIL_USER ? '✅ Set' : '❌ Not set');
+console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? '✅ Set' : '❌ Not set');
+console.log('EMAIL_HOST:', process.env.EMAIL_HOST || 'smtp.gmail.com');
+console.log('EMAIL_PORT:', process.env.EMAIL_PORT || 587);
+console.log('================================\n');
+
+if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+  const nodemailer = require('nodemailer');
+  const testTransporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.EMAIL_PORT) || 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    },
+    tls: { rejectUnauthorized: false }
+  });
+  
+  testTransporter.verify(function(error, success) {
+    if (error) {
+      console.error('❌ Email verification failed:', error.message);
+    } else {
+      console.log('✅ Email transporter is ready to send emails!');
+    }
+  });
+}
