@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { FaEnvelope, FaCheckCircle, FaClock } from 'react-icons/fa';
+import { FaEnvelope, FaCheckCircle, FaClock, FaReply, FaUser } from 'react-icons/fa';
 
 const MyMessages = () => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -14,13 +15,29 @@ const MyMessages = () => {
   const fetchMyMessages = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Please login to view your messages');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Fetching messages for user:', user?.email);
+      
       const response = await fetch('https://rentease-backend-njvk.onrender.com/api/contact/my-messages', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
       const data = await response.json();
+      console.log('Messages received:', data.messages?.length);
       setMessages(data.messages || []);
+      setError(null);
     } catch (error) {
       console.error('Error fetching messages:', error);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -40,6 +57,17 @@ const MyMessages = () => {
     return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
   }
 
+  if (error) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-16 text-center">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <p className="text-red-600">Error: {error}</p>
+          <button onClick={fetchMyMessages} className="mt-4 bg-blue-600 text-white px-4 py-2 rounded">Try Again</button>
+        </div>
+      </div>
+    );
+  }
+
   if (messages.length === 0) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-16 text-center">
@@ -53,8 +81,8 @@ const MyMessages = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">My Messages</h1>
-      <p className="text-gray-600 mb-6">Track your support requests and see responses from our team.</p>
+      <h1 className="text-3xl font-bold mb-2">My Messages</h1>
+      <p className="text-gray-600 mb-6">You have {messages.length} message(s). Track your support requests and see responses.</p>
       
       <div className="space-y-4">
         {messages.map((msg) => (
@@ -62,18 +90,21 @@ const MyMessages = () => {
             <div className="flex justify-between items-start mb-3">
               <div>
                 <h3 className="text-xl font-semibold">{msg.subject}</h3>
-                <p className="text-sm text-gray-500">{new Date(msg.createdAt).toLocaleDateString()}</p>
+                <p className="text-sm text-gray-500">{new Date(msg.createdAt).toLocaleDateString()} at {new Date(msg.createdAt).toLocaleTimeString()}</p>
               </div>
               {getStatusBadge(msg.status)}
             </div>
             
             <div className="bg-gray-50 p-4 rounded-lg mb-3">
+              <p className="text-sm text-gray-500 mb-1">Your Message:</p>
               <p className="text-gray-700">{msg.message}</p>
             </div>
             
             {msg.replyMessage && (
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                <p className="font-semibold text-blue-800 mb-2">📝 Support Response:</p>
+                <p className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                  <FaReply /> Support Response:
+                </p>
                 <p className="text-gray-700">{msg.replyMessage}</p>
                 {msg.replySentAt && (
                   <p className="text-xs text-gray-500 mt-2">Replied on: {new Date(msg.replySentAt).toLocaleDateString()}</p>

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { FaMapMarkerAlt, FaPhone, FaEnvelope, FaClock } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const Contact = () => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -23,18 +25,24 @@ const Contact = () => {
     setSubmitting(true);
     
     try {
+      // Include userId if user is logged in
+      const payload = {
+        ...formData,
+        userId: user?._id || null
+      };
+      
       const response = await fetch(`${API_BASE_URL}/api/contact`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
       
       const data = await response.json();
       
       if (response.ok) {
-        toast.success('✅ Message sent successfully! We will get back to you soon.');
+        toast.success('✅ Message sent successfully! We will respond within 24 hours.');
         setFormData({ name: '', email: '', subject: '', message: '' });
       } else {
         toast.error(data.message || 'Failed to send message');
@@ -47,7 +55,6 @@ const Contact = () => {
     }
   };
 
-  // ... rest of the component remains the same
   const contactInfo = [
     { icon: <FaMapMarkerAlt className="text-primary text-2xl" />, title: 'Visit Us', details: ['123 Business Park', 'Mumbai, Maharashtra 400001', 'India'] },
     { icon: <FaPhone className="text-primary text-2xl" />, title: 'Call Us', details: ['+91 1234567890', '+91 9876543210'] },
@@ -60,6 +67,7 @@ const Contact = () => {
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold mb-2">Contact Us</h1>
         <p className="text-gray-600">We'd love to hear from you. Get in touch with us for any queries.</p>
+        {user && <p className="text-sm text-green-600 mt-2">✓ Logged in as {user.email}. You can track your messages in "My Messages".</p>}
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -69,53 +77,21 @@ const Contact = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-gray-700 mb-2">Your Name *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-                />
+                <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required />
               </div>
               <div>
                 <label className="block text-gray-700 mb-2">Email Address *</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-                />
+                <input type="email" name="email" value={user?.email || formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required disabled={!!user} />
               </div>
               <div>
                 <label className="block text-gray-700 mb-2">Subject *</label>
-                <input
-                  type="text"
-                  name="subject"
-                  value={formData.subject}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-                />
+                <input type="text" name="subject" value={formData.subject} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required />
               </div>
               <div>
                 <label className="block text-gray-700 mb-2">Message *</label>
-                <textarea
-                  name="message"
-                  value={formData.message}
-                  onChange={handleChange}
-                  rows="5"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-                />
+                <textarea name="message" value={formData.message} onChange={handleChange} rows="5" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required />
               </div>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50"
-              >
+              <button type="submit" disabled={submitting} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50">
                 {submitting ? 'Sending...' : 'Send Message'}
               </button>
             </div>
@@ -129,9 +105,7 @@ const Contact = () => {
                 <div className="flex-shrink-0">{info.icon}</div>
                 <div>
                   <h3 className="text-xl font-semibold mb-2">{info.title}</h3>
-                  {info.details.map((detail, i) => (
-                    <p key={i} className="text-gray-600">{detail}</p>
-                  ))}
+                  {info.details.map((detail, i) => (<p key={i} className="text-gray-600">{detail}</p>))}
                 </div>
               </div>
             </div>
