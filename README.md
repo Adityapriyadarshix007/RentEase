@@ -186,7 +186,8 @@ Home Page
 Product Listing
 
 
-<img width="1512" height="827" src="https://github.com/user-attachments/assets/1eba0148-1339-49e2-8bdf-5259be4e0bf5" />
+<img width="1512" height="827" alt="Screenshot 2026-05-08 at 8 04 59 PM" src="https://github.com/user-attachments/assets/8e317d17-ae88-4b99-abe6-585581607474" />
+
 
 
 Cart Page
