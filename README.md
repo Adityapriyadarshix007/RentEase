@@ -178,19 +178,27 @@ Screenshots
 
 Home Page
 
+
 <img width="1512" height="827" src="https://github.com/user-attachments/assets/4ea83851-e00f-40aa-8b83-3dae4b5faa05" />
+
 
 Product Listing
 
+
 <img width="1512" height="827" src="https://github.com/user-attachments/assets/1eba0148-1339-49e2-8bdf-5259be4e0bf5" />
+
 
 Cart Page
 
+
 <img width="1512" height="827" src="https://github.com/user-attachments/assets/814bdd17-8990-43c9-b103-9d8c1a24f128" />
+
 
 Admin Dashboard
 
+
 <img width="1512" height="827" src="https://github.com/user-attachments/assets/b6bc3e89-e332-4c28-992c-e067f953670e" />
+
 
 Why This Project Matters
 
