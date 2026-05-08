@@ -1,78 +1,210 @@
-# RentEase - Furniture & Appliance Rental Platform
+# RentEase – Furniture & Appliance Rental Platform
 
-![RentEase Banner](https://via.placeholder.com/1200x400?text=RentEase)
+## Project Overview
 
-## 🏠 Overview
+RentEase is a full-stack web application developed to simplify the process of renting furniture and home appliances online. It is designed for students, working professionals, and individuals who need products for temporary use without making a large upfront purchase.
 
-RentEase is a comprehensive web platform that allows users to rent furniture and appliances on a monthly basis, providing flexible, affordable, and convenient solutions for urban living. Students and working professionals can now enjoy quality products without the burden of ownership.
+Many people relocate for education, internships, or jobs and often require essential products such as beds, study tables, chairs, refrigerators, washing machines, and other household items for a limited period. Buying these products for short-term use can be expensive and inconvenient.
 
-## ✨ Features
+RentEase solves this problem by providing a rental-based digital platform where users can browse products, select rental duration, place orders, track rentals, and raise maintenance requests when needed.
 
-### 👤 User Features
-- **User Authentication**: Secure register/login with JWT
-- **Product Catalog**: Browse furniture & appliances with advanced filtering
-- **Product Details**: View specifications, pricing, and rental options
-- **Shopping Cart**: Add/remove items, update quantity and tenure
-- **Checkout Process**: Schedule delivery, choose payment method
-- **Rental Management**: Track active, pending, and completed rentals
-- **Maintenance Requests**: Submit and track support tickets
-- **User Profile**: Update personal information and change password
-- **Order History**: View all past rental transactions
+The project demonstrates practical full-stack development skills including frontend development, backend API creation, authentication, database management, and scalable project structuring.
 
-### 👑 Admin Features
-- **Dashboard**: Real-time stats and analytics
-- **User Management**: View, edit, and manage user accounts
-- **Product Management**: CRUD operations for products
-- **Rental Management**: Track and update rental status
-- **Maintenance Management**: Assign and resolve support tickets
-- **Category Management**: Manage product categories
-- **Analytics**: Revenue trends and category distribution
+---
 
-## 🚀 Technology Stack
+## Problem Statement
+
+People staying temporarily in a city often struggle to arrange furniture and appliances. Purchasing products for short durations leads to unnecessary expenses, transportation issues, and resale difficulties.
+
+There is a need for an online platform where users can rent products monthly according to their needs conveniently and affordably.
+
+---
+
+## Objectives
+
+- Provide an online rental platform for furniture and appliances.
+- Reduce the financial burden of purchasing expensive products.
+- Offer flexible rental durations.
+- Build a secure and smooth booking system.
+- Create an admin dashboard for management.
+- Demonstrate real-world MERN stack implementation.
+
+---
+
+## Main Features
+
+### User Features
+
+- User registration and login
+- JWT-based authentication
+- Browse all rental products
+- Search and filter products
+- View detailed product information
+- Add and remove items from cart
+- Select rental duration
+- Place rental orders
+- Track active and completed rentals
+- Raise maintenance requests
+- Manage user profile
+
+### Admin Features
+
+- Dashboard with analytics
+- Product management (Add / Edit / Delete)
+- Category management
+- Order management
+- User management
+- Complaint/support ticket management
+- Revenue and usage insights
+
+---
+
+## Technology Stack
 
 ### Frontend
-- **React 18** - UI Library
-- **Tailwind CSS** - Styling
-- **React Router v6** - Navigation
-- **Axios** - API calls
-- **React Hot Toast** - Notifications
-- **React Icons** - Icons
-- **Chart.js** - Analytics charts
+
+- React.js
+- Tailwind CSS
+- React Router DOM
+- Axios
+- React Icons
+- Chart.js
 
 ### Backend
-- **Node.js** - Runtime
-- **Express.js** - Web framework
-- **MongoDB** - Database
-- **Mongoose** - ODM
-- **JWT** - Authentication
-- **bcryptjs** - Password hashing
-- **Nodemailer** - Email service
 
-## 📦 Installation
+- Node.js
+- Express.js
+- MongoDB
+- Mongoose
+- JWT
+- bcryptjs
 
-### Prerequisites
-- Node.js (v14 or higher)
-- MongoDB (v4.4 or higher)
-- npm or yarn
+---
 
-### Backend Setup
+## Database Collections
 
-```bash
-# Clone the repository
+- Users
+- Products
+- Categories
+- Orders
+- Rentals
+- Maintenance Requests
+
+---
+
+###Installation & Setup
+
+Prerequisites
+
+Install the following:
+
+* Node.js
+* npm
+* MongoDB
+
+###Clone Repository
+
 git clone https://github.com/yourusername/rentease.git
 cd rentease
 
-# Install backend dependencies
+##Backend Setup
+
 cd backend
 npm install
-
-# Create environment file
-cp .env.example .env
-
-# Update .env with your configuration
-# PORT=5000
-# MONGODB_URI=mongodb://localhost:27017/rentease
-# JWT_SECRET=your_super_secret_key
-
-# Start backend server
 npm run dev
+
+##Frontend Setup
+
+cd frontend
+npm install
+npm start
+
+
+##Environment Variables
+
+Create a .env file inside the backend folder:
+
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/rentease
+JWT_SECRET=your_secret_key
+
+
+Challenges Faced During Development
+
+* Managing frontend and backend authentication flow
+* Designing MongoDB schema relationships
+* Handling cart state and rental duration logic
+* Updating rental order statuses
+* Solving CORS and deployment issues
+* Creating responsive UI across devices
+
+
+What I Learned
+
+* React component architecture
+* REST API development
+* MongoDB schema design
+* JWT authentication
+* Protected routes
+* State management
+* CRUD operations
+* Full-stack deployment workflow
+
+⸻
+
+Current Limitations
+
+* Payment gateway not integrated yet
+* Live order tracking unavailable
+* Email notifications can be improved
+* Multi-city inventory system not implemented
+
+⸻
+
+Future Enhancements
+
+* Razorpay / Stripe integration
+* Mobile application
+* AI-based product recommendations
+* Subscription rental plans
+* Live chat support
+* Real-time delivery tracking
+
+⸻
+
+Live Demo Link:- 
+
+Screenshots
+
+Home Page
+
+<img width="1512" height="827" src="https://github.com/user-attachments/assets/4ea83851-e00f-40aa-8b83-3dae4b5faa05" />
+
+Product Listing
+
+<img width="1512" height="827" src="https://github.com/user-attachments/assets/1eba0148-1339-49e2-8bdf-5259be4e0bf5" />
+
+Cart Page
+
+<img width="1512" height="827" src="https://github.com/user-attachments/assets/814bdd17-8990-43c9-b103-9d8c1a24f128" />
+
+Admin Dashboard
+
+<img width="1512" height="827" src="https://github.com/user-attachments/assets/b6bc3e89-e332-4c28-992c-e067f953670e" />
+
+Why This Project Matters
+
+RentEase solves a practical, real-world problem for students and temporary residents by making essential household products accessible without ownership costs.
+
+It also demonstrates the ability to build business-oriented full-stack web applications using modern technologies.
+
+Author
+
+Aditya Priyadarshi
+
+⸻
+
+License
+
+Developed for academic learning and portfolio purposes.
+
