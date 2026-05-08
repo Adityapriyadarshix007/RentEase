@@ -179,7 +179,8 @@ Screenshots
 Home Page
 
 
-<img width="1512" height="827" src="https://github.com/user-attachments/assets/4ea83851-e00f-40aa-8b83-3dae4b5faa05" />
+<img width="1512" height="827" alt="Screenshot 2026-05-08 at 8 01 38 PM" src="https://github.com/user-attachments/assets/8edf2cb8-8a4a-4b44-aff2-3f13d6a1c275" />
+
 
 
 Product Listing
