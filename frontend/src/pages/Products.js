@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/products/ProductCard';
-import { FaFilter, FaTimes } from 'react-icons/fa';
+import { FaFilter, FaTimes, FaSearch } from 'react-icons/fa';
 
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [pagination, setPagination] = useState({
     total: 0,
     currentPage: 1,
@@ -26,9 +28,8 @@ const Products = () => {
     page: parseInt(searchParams.get('page')) || 1
   });
 
-  const [searchInput, setSearchInput] = useState('');
-  const [priceMinInput, setPriceMinInput] = useState('');
-  const [priceMaxInput, setPriceMaxInput] = useState('');
+  // Debounce timer
+  const debounceTimer = useRef(null);
 
   const categories = ['Furniture', 'Appliances'];
   const subCategories = {
@@ -36,6 +37,24 @@ const Products = () => {
     Appliances: ['Fridge', 'Washing Machine', 'TV', 'AC', 'Microwave']
   };
 
+  // Handle search input change with debounce
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchInput(value);
+    
+    // Clear previous timer
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    
+    // Set new timer
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(value);
+      setFilters(prev => ({ ...prev, search: value, page: 1 }));
+    }, 500);
+  };
+
+  // Fetch products when filters change
   useEffect(() => {
     fetchProducts();
   }, [filters]);
@@ -72,6 +91,10 @@ const Products = () => {
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
+    if (key === 'search') {
+      setSearchInput(value);
+      setDebouncedSearch(value);
+    }
     setShowFilters(false);
   };
 
@@ -87,8 +110,7 @@ const Products = () => {
       page: 1
     });
     setSearchInput('');
-    setPriceMinInput('');
-    setPriceMaxInput('');
+    setDebouncedSearch('');
   };
 
   const handlePageChange = (page) => {
@@ -157,6 +179,34 @@ const Products = () => {
         </button>
       </div>
 
+      {/* Search Bar - Prominent at top */}
+      <div className="mb-6">
+        <div className="relative">
+          <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search products by name... (e.g., 'Sofa', 'Bed', 'TV')"
+            value={searchInput}
+            onChange={handleSearchChange}
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+          />
+          {searchInput && (
+            <button
+              onClick={() => {
+                setSearchInput('');
+                handleFilterChange('search', '');
+              }}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <FaTimes />
+            </button>
+          )}
+        </div>
+        <p className="text-sm text-gray-500 mt-1">
+          Type product name - matches will appear automatically after you stop typing
+        </p>
+      </div>
+
       {/* Filter Bar - Desktop */}
       <div className="hidden lg:block bg-white rounded-lg shadow-md p-4 mb-6">
         <div className="flex flex-wrap gap-4 items-end">
@@ -165,7 +215,7 @@ const Products = () => {
             <select
               value={filters.category}
               onChange={(e) => handleFilterChange('category', e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Categories</option>
               {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
@@ -187,21 +237,10 @@ const Products = () => {
           )}
 
           <div className="flex-1 min-w-[150px]">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg"
-            />
-          </div>
-
-          <div className="flex-1 min-w-[150px]">
             <label className="block text-sm font-medium text-gray-700 mb-1">Min Price</label>
             <input
               type="number"
-              placeholder="Min"
+              placeholder="Min ₹"
               value={filters.minPrice}
               onChange={(e) => handleFilterChange('minPrice', e.target.value)}
               className="w-full px-3 py-2 border rounded-lg"
@@ -212,7 +251,7 @@ const Products = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">Max Price</label>
             <input
               type="number"
-              placeholder="Max"
+              placeholder="Max ₹"
               value={filters.maxPrice}
               onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
               className="w-full px-3 py-2 border rounded-lg"
@@ -251,7 +290,30 @@ const Products = () => {
               <button onClick={() => setShowFilters(false)} className="text-gray-500"><FaTimes size={24} /></button>
             </div>
             <div className="space-y-4">
-              <div><label className="block text-sm font-medium mb-1">Category</label><select value={filters.category} onChange={(e) => handleFilterChange('category', e.target.value)} className="w-full px-3 py-2 border rounded-lg"><option value="">All</option>{categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}</select></div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Category</label>
+                <select value={filters.category} onChange={(e) => handleFilterChange('category', e.target.value)} className="w-full px-3 py-2 border rounded-lg">
+                  <option value="">All</option>
+                  {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                </select>
+              </div>
+              {filters.category && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Sub Category</label>
+                  <select value={filters.subCategory} onChange={(e) => handleFilterChange('subCategory', e.target.value)} className="w-full px-3 py-2 border rounded-lg">
+                    <option value="">All</option>
+                    {subCategories[filters.category]?.map(sub => <option key={sub} value={sub}>{sub}</option>)}
+                  </select>
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium mb-1">Min Price</label>
+                <input type="number" placeholder="Min" value={filters.minPrice} onChange={(e) => handleFilterChange('minPrice', e.target.value)} className="w-full px-3 py-2 border rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Max Price</label>
+                <input type="number" placeholder="Max" value={filters.maxPrice} onChange={(e) => handleFilterChange('maxPrice', e.target.value)} className="w-full px-3 py-2 border rounded-lg" />
+              </div>
               <button onClick={clearFilters} className="w-full bg-gray-500 text-white py-2 rounded-lg">Clear All</button>
             </div>
           </div>
@@ -263,6 +325,7 @@ const Products = () => {
         <div className="bg-white rounded-lg shadow-md p-12 text-center">
           <div className="text-6xl mb-4">🔍</div>
           <h3 className="text-xl font-semibold mb-2">No Products Found</h3>
+          <p className="text-gray-500">Try adjusting your search or filters</p>
           <button onClick={clearFilters} className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg">Clear Filters</button>
         </div>
       ) : (
@@ -271,7 +334,7 @@ const Products = () => {
             {products.map(product => <ProductCard key={product._id} product={product} />)}
           </div>
 
-          {/* Pagination - 1, 2, 3, 4, 5... */}
+          {/* Pagination */}
           {pagination.totalPages > 1 && (
             <div className="flex justify-center gap-2 mt-8">
               <button onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={pagination.currentPage === 1} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50">Previous</button>
