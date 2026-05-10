@@ -35,7 +35,7 @@ const contactSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
-  userHasSeen: {
+  userHasReadReply: {
     type: Boolean,
     default: false
   },

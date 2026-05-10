@@ -12,41 +12,33 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
   
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
 
   const cartCount = getCartCount();
 
-  // Fetch unread messages count - optimized
+  // Fetch unread messages count using dedicated endpoint
   const fetchUnreadCount = useCallback(async () => {
-    if (!user || isLoading) return;
+    if (!user) return;
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://rentease-backend-njvk.onrender.com/api/contact/my-messages', {
+      const response = await fetch('https://rentease-backend-njvk.onrender.com/api/contact/unread-count', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
-      const messages = data.messages || [];
-      
-      // Count only messages that have a reply and user hasn't seen them
-      const count = messages.filter(msg => 
-        msg.replyMessage && msg.replyMessage.length > 0 && !msg.userHasSeen
-      ).length;
-      
-      setUnreadCount(count);
+      setUnreadCount(data.count || 0);
     } catch (error) {
       console.error('Error fetching unread count:', error);
     }
-  }, [user, isLoading]);
+  }, [user]);
 
   useEffect(() => {
     if (user) {
       fetchUnreadCount();
-      // Refresh count every 60 seconds instead of 30
-      const interval = setInterval(fetchUnreadCount, 60000);
+      // Refresh count every 30 seconds
+      const interval = setInterval(fetchUnreadCount, 30000);
       return () => clearInterval(interval);
     }
   }, [user, fetchUnreadCount]);
@@ -98,10 +90,10 @@ const Navbar = () => {
     // Close dropdown immediately for responsive feel
     setIsDropdownOpen(false);
     
-    // Mark messages as seen in background (don't wait)
+    // Mark messages as read in background (don't wait)
     if (unreadCount > 0) {
       // Fire and forget - don't await
-      fetch('https://rentease-backend-njvk.onrender.com/api/contact/mark-all-seen', {
+      fetch('https://rentease-backend-njvk.onrender.com/api/contact/mark-all-read', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -170,6 +162,7 @@ const Navbar = () => {
                 >
                   <FaUser />
                   <span className="hidden sm:inline">{user.name?.split(' ')[0] || 'User'}</span>
+                  {/* Notification badge on profile button */}
                   {unreadCount > 0 && (
                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center animate-pulse">
                       {unreadCount > 99 ? '99+' : unreadCount}
@@ -187,6 +180,7 @@ const Navbar = () => {
                     </button>
                     <button onClick={handleMyMessagesClick} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition cursor-pointer relative">
                       <FaEnvelope className="inline mr-2" /> My Messages
+                      {/* Notification badge on My Messages menu item */}
                       {unreadCount > 0 && (
                         <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center">
                           {unreadCount > 99 ? '99+' : unreadCount}
