@@ -19,7 +19,7 @@ const corsOptions = {
   optionsSuccessStatus: 204
 };
 
-// Session configuration
+// Session configuration for Passport (ONLY ONCE)
 const session = require('express-session');
 app.use(session({
   secret: process.env.SESSION_SECRET || 'rentease-session-secret',
@@ -27,6 +27,11 @@ app.use(session({
   saveUninitialized: false,
   cookie: { secure: process.env.NODE_ENV === 'production', maxAge: 24 * 60 * 60 * 1000 }
 }));
+
+// Initialize Passport
+const passport = require('./config/passport');
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
@@ -67,36 +72,6 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({
-    message: err.message || 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err : {}
-  });
-});
-
-const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
-module.exports = app;
-
-// Session configuration for Passport
-const session = require('express-session');
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'rentease-session-secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production' }
-}));
-
-// Initialize Passport
-const passport = require('./config/passport');
-app.use(passport.initialize());
-app.use(passport.session());
-
 // Google Auth Routes
 app.get('/api/auth/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
@@ -110,11 +85,12 @@ app.get('/api/auth/google/callback',
     const token = jwt.sign(
       { id: req.user._id },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRE }
+      { expiresIn: process.env.JWT_EXPIRE || '365d' }
     );
     
     // Redirect to frontend with token
-    res.redirect(`${process.env.FRONTEND_URL}/google-auth?token=${token}`);
+    const frontendUrl = process.env.FRONTEND_URL || 'https://rentease-app-2026.vercel.app';
+    res.redirect(`${frontendUrl}/google-auth?token=${token}`);
   }
 );
 
@@ -136,3 +112,19 @@ app.get('/api/auth/google/logout', (req, res) => {
     res.json({ success: true, message: 'Logged out successfully' });
   });
 });
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({
+    message: err.message || 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err : {}
+  });
+});
+
+const PORT = process.env.PORT || 5001;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+module.exports = app;
