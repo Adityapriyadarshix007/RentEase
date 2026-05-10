@@ -96,7 +96,7 @@ const Terms = () => {
           </section>
           
           <div className="text-sm text-gray-500 pt-4 border-t">
-            Last updated: January 1, 2024
+            Last updated: January 1, 2026
           </div>
         </div>
       </div>
