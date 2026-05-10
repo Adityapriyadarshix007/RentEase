@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { FaEnvelope, FaCheckCircle, FaClock, FaReply, FaUser } from 'react-icons/fa';
-import { notificationService } from '../services/notificationService';
+import { FaEnvelope, FaCheckCircle, FaClock, FaReply } from 'react-icons/fa';
 
 const MyMessages = () => {
   const [messages, setMessages] = useState([]);
@@ -13,32 +12,6 @@ const MyMessages = () => {
     fetchMyMessages();
   }, []);
 
-  // Mark messages as read when viewed
-  useEffect(() => {
-    const markMessagesAsRead = async () => {
-      if (messages.length === 0) return;
-      
-      // Find unread messages (status === 'unread' or has no reply)
-      const unreadMessages = messages.filter(msg => 
-        msg.status === 'unread' || (msg.status === 'read' && !msg.replyMessage)
-      );
-      
-      for (const msg of unreadMessages) {
-        await notificationService.markAsRead(msg._id);
-      }
-      
-      // If any messages were marked as read, refresh the list to update status
-      if (unreadMessages.length > 0) {
-        // Small delay to allow backend to process
-        setTimeout(() => {
-          fetchMyMessages();
-        }, 500);
-      }
-    };
-    
-    markMessagesAsRead();
-  }, [messages]);
-
   const fetchMyMessages = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -47,8 +20,6 @@ const MyMessages = () => {
         setLoading(false);
         return;
       }
-      
-      console.log('Fetching messages for user:', user?.email, 'ID:', user?._id);
       
       const response = await fetch('https://rentease-backend-njvk.onrender.com/api/contact/my-messages', {
         headers: { 
@@ -62,7 +33,6 @@ const MyMessages = () => {
       }
       
       const data = await response.json();
-      console.log('Messages received:', data.messages?.length);
       setMessages(data.messages || []);
       setError(null);
     } catch (error) {
@@ -116,7 +86,7 @@ const MyMessages = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-2">My Messages</h1>
-      <p className="text-gray-600 mb-6">You have {messages.length} message(s). Track your support requests and see responses.</p>
+      <p className="text-gray-600 mb-6">You have {messages.length} message(s).</p>
       
       <div className="space-y-4">
         {messages.map((msg) => (
@@ -125,7 +95,7 @@ const MyMessages = () => {
               <div>
                 <h3 className="text-xl font-semibold">{msg.subject}</h3>
                 <p className="text-sm text-gray-500">
-                  {new Date(msg.createdAt).toLocaleDateString()} at {new Date(msg.createdAt).toLocaleTimeString()}
+                  {new Date(msg.createdAt).toLocaleDateString()}
                 </p>
               </div>
               {getStatusBadge(msg.status, msg.replyMessage && msg.replyMessage.length > 0)}
