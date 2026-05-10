@@ -12,21 +12,21 @@ const GoogleAuthHandler = () => {
     const error = urlParams.get('error');
     
     console.log('Google Auth Handler - Token:', token ? 'Present' : 'Missing');
-    console.log('Current URL:', window.location.href);
     
     if (token) {
       // Store token
       localStorage.setItem('token', token);
       toast.success('Successfully logged in with Google!');
       
-      // Redirect to complete profile or products
-      // For now, go to products page
-      navigate('/products');
+      // Small delay to ensure token is saved
+      setTimeout(() => {
+        navigate('/products');
+      }, 500);
     } else if (error === 'google_auth_failed') {
       toast.error('Google authentication failed. Please try again.');
       navigate('/login');
     } else {
-      // No token in URL, check if user is already logged in
+      // Check if already logged in
       const existingToken = localStorage.getItem('token');
       if (existingToken) {
         navigate('/products');

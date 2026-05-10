@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaEnvelope, FaLock, FaGoogle, FaGithub, FaApple } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaGoogle } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const Login = () => {
@@ -218,19 +218,6 @@ const Login = () => {
             <FaGoogle className="text-red-500" size={18} />
             <span>Continue with Google</span>
           </button>
-          
-          {/* Optional: Add more social logins */}
-          {/* 
-          <button className="w-full flex items-center justify-center gap-3 px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-            <FaGithub className="text-gray-800" size={18} />
-            <span>Continue with GitHub</span>
-          </button>
-          
-          <button className="w-full flex items-center justify-center gap-3 px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-            <FaApple className="text-gray-800" size={18} />
-            <span>Continue with Apple</span>
-          </button>
-          */}
         </div>
 
         {/* Sign Up Link */}
@@ -240,18 +227,6 @@ const Login = () => {
             Create a free account
           </Link>
         </p>
-
-        {/* Demo Credentials */}
-        <div className="mt-4 bg-blue-50 rounded-lg p-4 border border-blue-100">
-          <p className="text-xs font-semibold text-blue-800 text-center mb-2">Demo Credentials</p>
-          <div className="text-xs text-blue-700 text-center space-y-1">
-            <p>📧 User: user@rentease.com / 🔑 user123</p>
-            <p>👑 Admin: admin@rentease.com / 🔑 admin123</p>
-          </div>
-          <p className="text-xs text-gray-500 text-center mt-2">
-            Or use your Google account to sign in instantly
-          </p>
-        </div>
       </div>
 
       {/* Forgot Password Modal */}

@@ -11,7 +11,7 @@ const app = express();
 
 // CORS configuration
 const corsOptions = {
-  origin: '*',
+  origin: ['http://localhost:3000', 'https://rentease-frontend-ul7h.onrender.com', 'https://rentease-app-2026.vercel.app'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
@@ -19,26 +19,45 @@ const corsOptions = {
   optionsSuccessStatus: 204
 };
 
-// Session configuration
-const session = require('express-session');
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'rentease-session-secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production', maxAge: 24 * 60 * 60 * 1000 }
-}));
-
-// Initialize Passport
-const passport = require('./config/passport');
-app.use(passport.initialize());
-app.use(passport.session());
-
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 app.use(morgan('dev'));
+
+// Session configuration - IMPROVED
+const session = require('express-session');
+const MongoDBStore = require('connect-mongodb-session')(session);
+
+// Store sessions in MongoDB for persistence
+const store = new MongoDBStore({
+  uri: process.env.MONGODB_URI,
+  collection: 'sessions',
+  expires: 1000 * 60 * 60 * 24 * 7 // 7 days
+});
+
+store.on('error', function(error) {
+  console.error('Session store error:', error);
+});
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'rentease-session-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  store: store,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    sameSite: 'lax'
+  }
+}));
+
+// Initialize Passport
+const passport = require('./config/passport');
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Database connection
 const connectDB = async () => {
@@ -72,13 +91,24 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
 
-// Google Auth Routes
+// Google Auth Routes - IMPROVED
 app.get('/api/auth/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
+  (req, res, next) => {
+    // Store the return URL in session
+    req.session.returnTo = req.query.returnTo || req.headers.referer;
+    next();
+  },
+  passport.authenticate('google', { 
+    scope: ['profile', 'email'],
+    prompt: 'select_account'
+  })
 );
 
 app.get('/api/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/login' }),
+  passport.authenticate('google', { 
+    failureRedirect: '/login',
+    failureMessage: true
+  }),
   (req, res) => {
     console.log('Google auth successful for user:', req.user?.email);
     
@@ -87,13 +117,19 @@ app.get('/api/auth/google/callback',
     const token = jwt.sign(
       { id: req.user._id },
       process.env.JWT_SECRET,
-      { expiresIn: '365d' }
+      { expiresIn: process.env.JWT_EXPIRE || '365d' }
     );
     
-    // Use FRONTEND_URL from environment
+    // Get return URL from session or use default
+    const returnTo = req.session.returnTo || process.env.FRONTEND_URL;
     const frontendUrl = process.env.FRONTEND_URL || 'https://rentease-frontend-ul7h.onrender.com';
+    
     console.log(`Redirecting to: ${frontendUrl}/google-auth?token=${token.substring(0, 20)}...`);
     
+    // Clear the returnTo from session
+    delete req.session.returnTo;
+    
+    // Redirect to frontend with token
     res.redirect(`${frontendUrl}/google-auth?token=${token}`);
   }
 );
@@ -113,6 +149,7 @@ app.get('/api/auth/google/user', (req, res) => {
 app.get('/api/auth/google/logout', (req, res) => {
   req.logout((err) => {
     if (err) return res.status(500).json({ message: err.message });
+    req.session.destroy();
     res.json({ success: true, message: 'Logged out successfully' });
   });
 });
