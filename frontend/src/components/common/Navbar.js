@@ -3,7 +3,6 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { FaShoppingCart, FaUser, FaSignOutAlt, FaTachometerAlt, FaBars, FaTimes, FaHome, FaEnvelope } from 'react-icons/fa';
-import { notificationService } from '../../services/notificationService';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -20,20 +19,33 @@ const Navbar = () => {
   const cartCount = getCartCount();
 
   // Fetch unread message count
+  const fetchUnreadCount = async () => {
+    if (!user) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://rentease-backend-njvk.onrender.com/api/contact/my-messages', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      const messages = data.messages || [];
+      const count = messages.filter(msg => 
+        msg.status === 'unread' || (msg.status === 'read' && !msg.replyMessage)
+      ).length;
+      setUnreadCount(count);
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
+
   useEffect(() => {
     if (user) {
       fetchUnreadCount();
-      
       // Refresh count every 30 seconds
       const interval = setInterval(fetchUnreadCount, 30000);
       return () => clearInterval(interval);
     }
   }, [user]);
-
-  const fetchUnreadCount = async () => {
-    const count = await notificationService.getUnreadMessageCount();
-    setUnreadCount(count);
-  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -71,7 +83,6 @@ const Navbar = () => {
 
   const handleNavigation = (path) => {
     if (path === '/my-messages') {
-      // Reset unread count when navigating to messages
       setUnreadCount(0);
     }
     navigate(path);
@@ -81,9 +92,6 @@ const Navbar = () => {
 
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
-    if (!isDropdownOpen && unreadCount > 0) {
-      // Optional: Don't reset count here, only when actually viewing messages
-    }
   };
 
   const isActive = (path) => location.pathname === path;
@@ -148,8 +156,8 @@ const Navbar = () => {
                     <button onClick={() => handleNavigation('/my-messages')} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition cursor-pointer relative">
                       <FaEnvelope className="inline mr-2" /> My Messages
                       {unreadCount > 0 && (
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
-                          {unreadCount > 9 ? '9+' : unreadCount}
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center animate-pulse">
+                          {unreadCount > 99 ? '99+' : unreadCount}
                         </span>
                       )}
                     </button>

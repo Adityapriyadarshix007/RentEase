@@ -9,7 +9,10 @@ export const notificationService = {
       
       const response = await api.get('/contact/my-messages');
       const messages = response.data.messages || [];
-      const unreadCount = messages.filter(msg => msg.status === 'unread' || msg.status === 'read' && !msg.replyMessage).length;
+      // Count messages that are unread or have no reply
+      const unreadCount = messages.filter(msg => 
+        msg.status === 'unread' || (msg.status === 'read' && !msg.replyMessage)
+      ).length;
       return unreadCount;
     } catch (error) {
       console.error('Error fetching unread count:', error);
