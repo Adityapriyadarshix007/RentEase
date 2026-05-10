@@ -139,10 +139,16 @@ const Navbar = () => {
                 <button
                   ref={buttonRef}
                   onClick={toggleDropdown}
-                  className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition cursor-pointer"
+                  className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition cursor-pointer relative"
                 >
                   <FaUser />
                   <span className="hidden sm:inline">{user.name?.split(' ')[0] || 'User'}</span>
+                  {/* Notification badge on the profile button itself */}
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center animate-pulse">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
                 </button>
                 
                 {isDropdownOpen && (
@@ -155,11 +161,6 @@ const Navbar = () => {
                     </button>
                     <button onClick={() => handleNavigation('/my-messages')} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition cursor-pointer relative">
                       <FaEnvelope className="inline mr-2" /> My Messages
-                      {unreadCount > 0 && (
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center animate-pulse">
-                          {unreadCount > 99 ? '99+' : unreadCount}
-                        </span>
-                      )}
                     </button>
                     {user.role === 'admin' && (
                       <button onClick={() => handleNavigation('/admin')} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition cursor-pointer">
