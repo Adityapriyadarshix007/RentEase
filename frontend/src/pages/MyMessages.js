@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { FaEnvelope, FaCheckCircle, FaClock, FaReply } from 'react-icons/fa';
+import { FaEnvelope, FaCheckCircle, FaClock, FaReply, FaCalendarAlt } from 'react-icons/fa';
 
 const MyMessages = () => {
   const [messages, setMessages] = useState([]);
@@ -11,6 +11,34 @@ const MyMessages = () => {
   useEffect(() => {
     fetchMyMessages();
   }, []);
+
+  // Mark messages as read when viewed
+  useEffect(() => {
+    const markMessagesAsRead = async () => {
+      if (messages.length === 0) return;
+      
+      const unreadMessages = messages.filter(msg => 
+        msg.replyMessage && msg.replyMessage.length > 0 && !msg.userHasReadReply
+      );
+      
+      if (unreadMessages.length > 0) {
+        try {
+          const token = localStorage.getItem('token');
+          await fetch('https://rentease-backend-njvk.onrender.com/api/contact/mark-all-read', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+        } catch (error) {
+          console.error('Error marking messages as read:', error);
+        }
+      }
+    };
+    
+    markMessagesAsRead();
+  }, [messages]);
 
   const fetchMyMessages = async () => {
     try {
@@ -43,9 +71,40 @@ const MyMessages = () => {
     }
   };
 
-  const getStatusBadge = (status, hasReply) => {
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const formatDateTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getStatusBadge = (status, hasReply, isRead) => {
     if (hasReply) {
-      return <span className="flex items-center gap-1 text-green-600"><FaCheckCircle /> Replied</span>;
+      if (isRead) {
+        return <span className="flex items-center gap-1 text-green-600"><FaCheckCircle /> Replied (Read)</span>;
+      }
+      return <span className="flex items-center gap-1 text-green-600"><FaReply /> New Reply</span>;
     }
     if (status === 'read') {
       return <span className="flex items-center gap-1 text-blue-600"><FaClock /> Read</span>;
@@ -94,11 +153,14 @@ const MyMessages = () => {
             <div className="flex justify-between items-start mb-3">
               <div>
                 <h3 className="text-xl font-semibold">{msg.subject}</h3>
-                <p className="text-sm text-gray-500">
-                  {new Date(msg.createdAt).toLocaleDateString()}
-                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <FaCalendarAlt className="text-gray-400 text-sm" />
+                  <p className="text-sm text-gray-500">
+                    {formatDate(msg.createdAt)} at {formatTime(msg.createdAt)}
+                  </p>
+                </div>
               </div>
-              {getStatusBadge(msg.status, msg.replyMessage && msg.replyMessage.length > 0)}
+              {getStatusBadge(msg.status, msg.replyMessage && msg.replyMessage.length > 0, msg.userHasReadReply)}
             </div>
             
             <div className="bg-gray-50 p-4 rounded-lg mb-3">
@@ -113,8 +175,9 @@ const MyMessages = () => {
                 </p>
                 <p className="text-gray-700">{msg.replyMessage}</p>
                 {msg.replySentAt && (
-                  <p className="text-xs text-gray-500 mt-2">
-                    Replied on: {new Date(msg.replySentAt).toLocaleDateString()}
+                  <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                    <FaCalendarAlt className="text-gray-400" size={10} />
+                    Replied on: {formatDateTime(msg.replySentAt)}
                   </p>
                 )}
               </div>
