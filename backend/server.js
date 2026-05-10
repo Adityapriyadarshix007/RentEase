@@ -11,7 +11,7 @@ const app = express();
 
 // CORS configuration
 const corsOptions = {
-  origin: ['http://localhost:3000', 'https://rentease-frontend-ul7h.onrender.com', 'https://rentease-app-final.vercel.app', 'https://rentease-app-2026.vercel.app'],
+  origin: ['http://localhost:3000', 'https://rentease-frontend-ul7h.onrender.com', 'https://rentease-app-fawn.vercel.app', 'https://rentease-app-2026.vercel.app'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
@@ -116,7 +116,7 @@ app.get('/api/auth/google/callback',
     );
     
     // IMPORTANT: Use the Vercel frontend URL
-    const frontendUrl = 'https://rentease-app-final.vercel.app';
+    const frontendUrl = 'https://rentease-app-fawn.vercel.app';
     console.log(`🔄 Redirecting to: ${frontendUrl}/google-auth?token=${token.substring(0, 30)}...`);
     
     // Redirect to frontend with token
