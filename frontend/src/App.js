@@ -8,6 +8,7 @@ import Footer from './components/common/Footer';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import AdminLayout from './components/layout/AdminLayout';
 import GoogleAuthHandler from './pages/GoogleAuthHandler';
+import CompleteProfile from './pages/CompleteProfile';
 
 // Pages
 import Login from './pages/Login';
@@ -90,6 +91,7 @@ function App() {
 
                 {/* Google Authenitication */}
                 <Route path="/google-auth" element={<GoogleAuthHandler />} />
+                <Route path="/complete-profile" element={<ProtectedRoute><CompleteProfile /></ProtectedRoute>} />
               </Routes>
             </main>
             <Footer />

@@ -16,19 +16,24 @@ passport.use(
         console.log('📧 Google profile received:', profile.emails[0].value);
         
         const email = profile.emails[0].value;
+        const name = profile.displayName;
+        const googleId = profile.id;
+        const profileImage = profile.photos[0]?.value || '';
         
         // Check if user already exists
-        let user = await User.findOne({ email });
+        let user = await User.findOne({ $or: [{ email }, { googleId }] });
         
         if (!user) {
-          // Create new user for first-time Google sign-in
+          // Create new user with Google data - missing fields will be optional
           user = new User({
-            name: profile.displayName,
+            name: name,
             email: email,
-            googleId: profile.id,
-            profileImage: profile.photos[0]?.value || '',
+            googleId: googleId,
+            profileImage: profileImage,
             isActive: true,
             role: 'user',
+            // These fields will be optional due to conditional required in schema
+            password: undefined,
             phone: '',
             address: {
               street: '',
@@ -42,9 +47,9 @@ passport.use(
           console.log(`✅ New user created via Google: ${email}`);
         } else if (!user.googleId) {
           // Link existing account with Google ID
-          user.googleId = profile.id;
-          if (profile.photos[0]?.value) {
-            user.profileImage = profile.photos[0].value;
+          user.googleId = googleId;
+          if (profileImage) {
+            user.profileImage = profileImage;
           }
           await user.save();
           console.log(`🔗 Google ID linked to existing user: ${email}`);

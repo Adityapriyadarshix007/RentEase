@@ -20,21 +20,53 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, 'Please add a password'],
+    required: function() {
+      // Password is only required for non-Google users
+      return !this.googleId;
+    },
     minlength: 6,
     select: false
   },
   phone: {
     type: String,
-    required: [true, 'Please add a phone number'],
+    required: function() {
+      // Phone is only required for non-Google users
+      return !this.googleId;
+    },
     match: [/^[0-9]{10}$/, 'Please add a valid 10-digit phone number']
   },
   address: {
-    street: { type: String, required: true },
-    city: { type: String, required: true },
-    state: { type: String, required: true },
-    pincode: { type: String, required: true, match: [/^[0-9]{6}$/, 'Please add a valid 6-digit pincode'] },
+    street: { 
+      type: String, 
+      required: function() {
+        return !this.googleId;
+      }
+    },
+    city: { 
+      type: String, 
+      required: function() {
+        return !this.googleId;
+      }
+    },
+    state: { 
+      type: String, 
+      required: function() {
+        return !this.googleId;
+      }
+    },
+    pincode: { 
+      type: String, 
+      required: function() {
+        return !this.googleId;
+      },
+      match: [/^[0-9]{6}$/, 'Please add a valid 6-digit pincode']
+    },
     landmark: { type: String }
+  },
+  googleId: {
+    type: String,
+    sparse: true,
+    unique: true
   },
   role: {
     type: String,
@@ -55,14 +87,16 @@ const userSchema = new mongoose.Schema({
   }
 });
 
+// Only hash password if it exists and is modified
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
+  if (!this.isModified('password') || !this.password) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
 
 userSchema.methods.comparePassword = async function(enteredPassword) {
+  if (!this.password) return false;
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
