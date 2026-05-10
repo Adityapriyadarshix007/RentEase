@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { FaEnvelope, FaCheckCircle, FaClock, FaReply, FaUser } from 'react-icons/fa';
+import { notificationService } from '../services/notificationService';
 
 const MyMessages = () => {
   const [messages, setMessages] = useState([]);
@@ -11,6 +12,32 @@ const MyMessages = () => {
   useEffect(() => {
     fetchMyMessages();
   }, []);
+
+  // Mark messages as read when viewed
+  useEffect(() => {
+    const markMessagesAsRead = async () => {
+      if (messages.length === 0) return;
+      
+      // Find unread messages (status === 'unread' or has no reply)
+      const unreadMessages = messages.filter(msg => 
+        msg.status === 'unread' || (msg.status === 'read' && !msg.replyMessage)
+      );
+      
+      for (const msg of unreadMessages) {
+        await notificationService.markAsRead(msg._id);
+      }
+      
+      // If any messages were marked as read, refresh the list to update status
+      if (unreadMessages.length > 0) {
+        // Small delay to allow backend to process
+        setTimeout(() => {
+          fetchMyMessages();
+        }, 500);
+      }
+    };
+    
+    markMessagesAsRead();
+  }, [messages]);
 
   const fetchMyMessages = async () => {
     try {

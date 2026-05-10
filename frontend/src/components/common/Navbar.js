@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { FaShoppingCart, FaUser, FaSignOutAlt, FaTachometerAlt, FaBars, FaTimes, FaHome, FaEnvelope } from 'react-icons/fa';
+import { notificationService } from '../../services/notificationService';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -11,12 +12,28 @@ const Navbar = () => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   
-  // Ref for dropdown menu
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
 
   const cartCount = getCartCount();
+
+  // Fetch unread message count
+  useEffect(() => {
+    if (user) {
+      fetchUnreadCount();
+      
+      // Refresh count every 30 seconds
+      const interval = setInterval(fetchUnreadCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  const fetchUnreadCount = async () => {
+    const count = await notificationService.getUnreadMessageCount();
+    setUnreadCount(count);
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -31,7 +48,6 @@ const Navbar = () => {
       }
     };
 
-    // Close on escape key
     const handleEscKey = (event) => {
       if (event.key === 'Escape' && isDropdownOpen) {
         setIsDropdownOpen(false);
@@ -54,6 +70,10 @@ const Navbar = () => {
   };
 
   const handleNavigation = (path) => {
+    if (path === '/my-messages') {
+      // Reset unread count when navigating to messages
+      setUnreadCount(0);
+    }
     navigate(path);
     setIsMobileMenuOpen(false);
     setIsDropdownOpen(false);
@@ -61,6 +81,9 @@ const Navbar = () => {
 
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
+    if (!isDropdownOpen && unreadCount > 0) {
+      // Optional: Don't reset count here, only when actually viewing messages
+    }
   };
 
   const isActive = (path) => location.pathname === path;
@@ -122,8 +145,13 @@ const Navbar = () => {
                     <button onClick={() => handleNavigation('/profile')} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition cursor-pointer">
                       <FaUser className="inline mr-2" /> Profile
                     </button>
-                    <button onClick={() => handleNavigation('/my-messages')} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition cursor-pointer">
+                    <button onClick={() => handleNavigation('/my-messages')} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition cursor-pointer relative">
                       <FaEnvelope className="inline mr-2" /> My Messages
+                      {unreadCount > 0 && (
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                      )}
                     </button>
                     {user.role === 'admin' && (
                       <button onClick={() => handleNavigation('/admin')} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition cursor-pointer">
