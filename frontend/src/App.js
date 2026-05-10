@@ -7,6 +7,7 @@ import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import AdminLayout from './components/layout/AdminLayout';
+import GoogleAuthHandler from './pages/GoogleAuthHandler';
 
 // Pages
 import Login from './pages/Login';
@@ -86,6 +87,9 @@ function App() {
                 
                 {/* 404 */}
                 <Route path="*" element={<Navigate to="/products" replace />} />
+
+                {/* Google Authenitication */}
+                <Route path="/google-auth" element={<GoogleAuthHandler />} />
               </Routes>
             </main>
             <Footer />

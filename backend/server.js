@@ -73,3 +73,57 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+
+// Session configuration for Passport
+const session = require('express-session');
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'rentease-session-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: process.env.NODE_ENV === 'production' }
+}));
+
+// Initialize Passport
+const passport = require('./config/passport');
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Google Auth Routes
+app.get('/api/auth/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+app.get('/api/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  (req, res) => {
+    // Generate JWT token for frontend
+    const jwt = require('jsonwebtoken');
+    const token = jwt.sign(
+      { id: req.user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRE }
+    );
+    
+    // Redirect to frontend with token
+    res.redirect(`${process.env.FRONTEND_URL}/google-auth?token=${token}`);
+  }
+);
+
+// Get current user after Google login
+app.get('/api/auth/google/user', (req, res) => {
+  if (req.isAuthenticated()) {
+    const user = req.user.toObject();
+    delete user.password;
+    res.json({ success: true, user });
+  } else {
+    res.status(401).json({ success: false, message: 'Not authenticated' });
+  }
+});
+
+// Logout route
+app.get('/api/auth/google/logout', (req, res) => {
+  req.logout((err) => {
+    if (err) return res.status(500).json({ message: err.message });
+    res.json({ success: true, message: 'Logged out successfully' });
+  });
+});
