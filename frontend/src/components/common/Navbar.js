@@ -18,7 +18,7 @@ const Navbar = () => {
 
   const cartCount = getCartCount();
 
-  // Fetch unread message count
+  // Fetch unread messages (only messages that have been replied to and not marked as read)
   const fetchUnreadCount = async () => {
     if (!user) return;
     
@@ -29,9 +29,13 @@ const Navbar = () => {
       });
       const data = await response.json();
       const messages = data.messages || [];
+      
+      // Count only messages that have a reply (admin responded) AND are NOT marked as read by user
+      // This shows when user receives a new reply
       const count = messages.filter(msg => 
-        msg.status === 'unread' || (msg.status === 'read' && !msg.replyMessage)
+        msg.replyMessage && msg.replyMessage.length > 0 && msg.userHasSeen !== true
       ).length;
+      
       setUnreadCount(count);
     } catch (error) {
       console.error('Error fetching unread count:', error);
@@ -41,7 +45,7 @@ const Navbar = () => {
   useEffect(() => {
     if (user) {
       fetchUnreadCount();
-      // Refresh count every 30 seconds
+      // Refresh count every 30 seconds to check for new replies
       const interval = setInterval(fetchUnreadCount, 30000);
       return () => clearInterval(interval);
     }
@@ -81,9 +85,34 @@ const Navbar = () => {
     setIsDropdownOpen(false);
   };
 
-  const handleNavigation = (path) => {
+  const handleNavigation = async (path) => {
     if (path === '/my-messages') {
-      setUnreadCount(0);
+      // When user clicks to view messages, mark them as seen
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('https://rentease-backend-njvk.onrender.com/api/contact/my-messages', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        const messages = data.messages || [];
+        
+        // Mark all replied messages as seen
+        for (const msg of messages) {
+          if (msg.replyMessage && msg.replyMessage.length > 0) {
+            await fetch(`https://rentease-backend-njvk.onrender.com/api/contact/${msg._id}`, {
+              method: 'PUT',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ userHasSeen: true })
+            });
+          }
+        }
+        setUnreadCount(0);
+      } catch (error) {
+        console.error('Error marking messages as seen:', error);
+      }
     }
     navigate(path);
     setIsMobileMenuOpen(false);
@@ -143,7 +172,7 @@ const Navbar = () => {
                 >
                   <FaUser />
                   <span className="hidden sm:inline">{user.name?.split(' ')[0] || 'User'}</span>
-                  {/* Notification badge on the profile button itself */}
+                  {/* Notification badge on the profile button when there are unread replies */}
                   {unreadCount > 0 && (
                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center animate-pulse">
                       {unreadCount > 99 ? '99+' : unreadCount}
@@ -161,6 +190,11 @@ const Navbar = () => {
                     </button>
                     <button onClick={() => handleNavigation('/my-messages')} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition cursor-pointer relative">
                       <FaEnvelope className="inline mr-2" /> My Messages
+                      {unreadCount > 0 && (
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center">
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                      )}
                     </button>
                     {user.role === 'admin' && (
                       <button onClick={() => handleNavigation('/admin')} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition cursor-pointer">

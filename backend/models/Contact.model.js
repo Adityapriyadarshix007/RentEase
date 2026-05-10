@@ -3,24 +3,24 @@ const mongoose = require('mongoose');
 const contactSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'Please provide your name'],
-    trim: true
+    required: true
   },
   email: {
     type: String,
-    required: [true, 'Please provide your email'],
-    lowercase: true,
-    match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please provide a valid email']
+    required: true
   },
   subject: {
     type: String,
-    required: [true, 'Please provide a subject'],
-    trim: true
+    required: true
   },
   message: {
     type: String,
-    required: [true, 'Please provide your message'],
-    trim: true
+    required: true
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
   },
   status: {
     type: String,
@@ -34,6 +34,10 @@ const contactSchema = new mongoose.Schema({
   replySentAt: {
     type: Date,
     default: null
+  },
+  userHasSeen: {
+    type: Boolean,
+    default: false
   },
   createdAt: {
     type: Date,
