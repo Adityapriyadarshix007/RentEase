@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -11,8 +11,41 @@ const Navbar = () => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  
+  // Ref for dropdown menu
+  const dropdownRef = useRef(null);
+  const buttonRef = useRef(null);
 
   const cartCount = getCartCount();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(event.target) &&
+        buttonRef.current && 
+        !buttonRef.current.contains(event.target)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    // Close on escape key
+    const handleEscKey = (event) => {
+      if (event.key === 'Escape' && isDropdownOpen) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscKey);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [isDropdownOpen]);
 
   const handleLogout = () => {
     logout();
@@ -24,6 +57,10 @@ const Navbar = () => {
     navigate(path);
     setIsMobileMenuOpen(false);
     setIsDropdownOpen(false);
+  };
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
   };
 
   const isActive = (path) => location.pathname === path;
@@ -68,13 +105,20 @@ const Navbar = () => {
 
             {user ? (
               <div className="relative">
-                <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition cursor-pointer">
+                <button
+                  ref={buttonRef}
+                  onClick={toggleDropdown}
+                  className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition cursor-pointer"
+                >
                   <FaUser />
                   <span className="hidden sm:inline">{user.name?.split(' ')[0] || 'User'}</span>
                 </button>
                 
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50 border">
+                  <div 
+                    ref={dropdownRef}
+                    className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50 border animate-fade-in"
+                  >
                     <button onClick={() => handleNavigation('/profile')} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition cursor-pointer">
                       <FaUser className="inline mr-2" /> Profile
                     </button>
