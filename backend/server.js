@@ -11,7 +11,7 @@ const app = express();
 
 // CORS configuration
 const corsOptions = {
-  origin: ['http://localhost:3000', 'https://rentease-frontend-ul7h.onrender.com', 'https://rentease-app-2026.vercel.app'],
+  origin: ['http://localhost:3000', 'https://rentease-frontend-ul7h.onrender.com', 'https://rentease-app-final.vercel.app', 'https://rentease-app-2026.vercel.app'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
@@ -26,7 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 app.use(morgan('dev'));
 
-// Session configuration - IMPROVED
+// Session configuration
 const session = require('express-session');
 const MongoDBStore = require('connect-mongodb-session')(session);
 
@@ -91,16 +91,11 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
 
-// Google Auth Routes - IMPROVED
+// Google Auth Routes
 app.get('/api/auth/google',
-  (req, res, next) => {
-    // Store the return URL in session
-    req.session.returnTo = req.query.returnTo || req.headers.referer;
-    next();
-  },
   passport.authenticate('google', { 
     scope: ['profile', 'email'],
-    prompt: 'select_account'
+    accessType: 'offline'
   })
 );
 
@@ -110,7 +105,7 @@ app.get('/api/auth/google/callback',
     failureMessage: true
   }),
   (req, res) => {
-    console.log('Google auth successful for user:', req.user?.email);
+    console.log('✅ Google auth successful for user:', req.user?.email);
     
     // Generate JWT token
     const jwt = require('jsonwebtoken');
@@ -120,21 +115,16 @@ app.get('/api/auth/google/callback',
       { expiresIn: process.env.JWT_EXPIRE || '365d' }
     );
     
-    // Get return URL from session or use default
-    const returnTo = req.session.returnTo || process.env.FRONTEND_URL;
-    const frontendUrl = process.env.FRONTEND_URL || 'https://rentease-frontend-ul7h.onrender.com';
-    
-    console.log(`Redirecting to: ${frontendUrl}/google-auth?token=${token.substring(0, 20)}...`);
-    
-    // Clear the returnTo from session
-    delete req.session.returnTo;
+    // IMPORTANT: Use the Vercel frontend URL
+    const frontendUrl = 'https://rentease-app-final.vercel.app';
+    console.log(`🔄 Redirecting to: ${frontendUrl}/google-auth?token=${token.substring(0, 30)}...`);
     
     // Redirect to frontend with token
     res.redirect(`${frontendUrl}/google-auth?token=${token}`);
   }
 );
 
-// Get current user
+// Get current user after Google login
 app.get('/api/auth/google/user', (req, res) => {
   if (req.isAuthenticated()) {
     const user = req.user.toObject();
