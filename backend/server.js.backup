@@ -9,7 +9,7 @@ dotenv.config();
 
 const app = express();
 
-// CORS configuration
+// CORS configuration - Allow all origins for testing
 const corsOptions = {
   origin: '*',
   credentials: true,
@@ -19,7 +19,7 @@ const corsOptions = {
   optionsSuccessStatus: 204
 };
 
-// Session configuration
+// Session configuration for Passport (ONLY ONCE)
 const session = require('express-session');
 app.use(session({
   secret: process.env.SESSION_SECRET || 'rentease-session-secret',
@@ -80,25 +80,36 @@ app.get('/api/auth/google',
 app.get('/api/auth/google/callback',
   passport.authenticate('google', { failureRedirect: '/login' }),
   (req, res) => {
-    console.log('Google auth successful for user:', req.user?.email);
-    
-    // Generate JWT token
-    const jwt = require('jsonwebtoken');
-    const token = jwt.sign(
-      { id: req.user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '365d' }
-    );
-    
-    // Use FRONTEND_URL from environment
-    const frontendUrl = process.env.FRONTEND_URL || 'https://rentease-frontend-ul7h.onrender.com';
-    console.log(`Redirecting to: ${frontendUrl}/google-auth?token=${token.substring(0, 20)}...`);
-    
-    res.redirect(`${frontendUrl}/google-auth?token=${token}`);
+    try {
+      // Generate JWT token for frontend
+      const jwt = require('jsonwebtoken');
+      const token = jwt.sign(
+        { id: req.user._id },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRE || '365d' }
+      );
+      
+      // Get the frontend URL from the request's referer or use environment variable
+      let frontendUrl = process.env.FRONTEND_URL || 'https://rentease-frontend-ul7h.onrender.com';
+      
+      // Check if request came from Vercel or Render
+      const referer = req.headers.referer || '';
+      if (referer.includes('vercel.app')) {
+        frontendUrl = 'https://rentease-app-2026.vercel.app';
+      } else if (referer.includes('onrender.com')) {
+        frontendUrl = 'https://rentease-frontend-ul7h.onrender.com';
+      }
+      
+      console.log(`Redirecting to: ${frontendUrl}/google-auth?token=${token.substring(0, 20)}...`);
+      res.redirect(`${frontendUrl}/google-auth?token=${token}`);
+    } catch (error) {
+      console.error('Google callback error:', error);
+      res.redirect('https://rentease-frontend-ul7h.onrender.com/login?error=google_auth_failed');
+    }
   }
 );
 
-// Get current user
+// Get current user after Google login
 app.get('/api/auth/google/user', (req, res) => {
   if (req.isAuthenticated()) {
     const user = req.user.toObject();
