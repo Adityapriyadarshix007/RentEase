@@ -19,6 +19,15 @@ const corsOptions = {
   optionsSuccessStatus: 204
 };
 
+// Session configuration
+const session = require('express-session');
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'rentease-session-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: process.env.NODE_ENV === 'production', maxAge: 24 * 60 * 60 * 1000 }
+}));
+
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());

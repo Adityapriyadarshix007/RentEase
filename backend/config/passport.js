@@ -2,15 +2,19 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User.model');
 
+console.log('🔧 Loading Passport configuration...');
+
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: `${process.env.BACKEND_URL}/api/auth/google/callback`,
+      callbackURL: `${process.env.BACKEND_URL || 'https://rentease-backend-njvk.onrender.com'}/api/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
+        console.log('📧 Google profile received:', profile.emails[0].value);
+        
         const email = profile.emails[0].value;
         
         // Check if user already exists
@@ -22,15 +26,16 @@ passport.use(
             name: profile.displayName,
             email: email,
             googleId: profile.id,
-            profileImage: profile.photos[0]?.value,
+            profileImage: profile.photos[0]?.value || '',
             isActive: true,
-            role: 'user', // Default role
+            role: 'user',
             phone: '',
             address: {
               street: '',
               city: '',
               state: '',
-              pincode: ''
+              pincode: '',
+              landmark: ''
             }
           });
           await user.save();
@@ -38,14 +43,18 @@ passport.use(
         } else if (!user.googleId) {
           // Link existing account with Google ID
           user.googleId = profile.id;
-          user.profileImage = profile.photos[0]?.value;
+          if (profile.photos[0]?.value) {
+            user.profileImage = profile.photos[0].value;
+          }
           await user.save();
           console.log(`🔗 Google ID linked to existing user: ${email}`);
+        } else {
+          console.log(`👋 Returning user: ${email}`);
         }
         
         return done(null, user);
       } catch (error) {
-        console.error('Google Strategy Error:', error);
+        console.error('❌ Google Strategy Error:', error.message);
         return done(error, null);
       }
     }
@@ -61,6 +70,7 @@ passport.deserializeUser(async (id, done) => {
     const user = await User.findById(id);
     done(null, user);
   } catch (error) {
+    console.error('Deserialize error:', error);
     done(error, null);
   }
 });
