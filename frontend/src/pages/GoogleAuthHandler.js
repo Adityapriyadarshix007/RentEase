@@ -1,12 +1,10 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const GoogleAuthHandler = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, needsProfileCompletion } = useAuth();
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -14,27 +12,30 @@ const GoogleAuthHandler = () => {
     const error = urlParams.get('error');
     
     console.log('Google Auth Handler - Token:', token ? 'Present' : 'Missing');
+    console.log('Current URL:', window.location.href);
     
     if (token) {
+      // Store token
       localStorage.setItem('token', token);
       toast.success('Successfully logged in with Google!');
       
-      // Small delay to ensure user data is loaded
-      setTimeout(() => {
-        if (needsProfileCompletion()) {
-          navigate('/complete-profile');
-        } else {
-          navigate('/products');
-        }
-      }, 500);
+      // Redirect to complete profile or products
+      // For now, go to products page
+      navigate('/products');
     } else if (error === 'google_auth_failed') {
       toast.error('Google authentication failed. Please try again.');
       navigate('/login');
     } else {
-      toast.error('Authentication failed. No token received.');
-      navigate('/login');
+      // No token in URL, check if user is already logged in
+      const existingToken = localStorage.getItem('token');
+      if (existingToken) {
+        navigate('/products');
+      } else {
+        toast.error('Authentication failed. No token received.');
+        navigate('/login');
+      }
     }
-  }, [location, navigate, needsProfileCompletion]);
+  }, [location, navigate]);
 
   return (
     <div className="flex justify-center items-center h-64">

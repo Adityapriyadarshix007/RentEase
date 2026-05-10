@@ -80,17 +80,32 @@ app.get('/api/auth/google',
 app.get('/api/auth/google/callback',
   passport.authenticate('google', { failureRedirect: '/login' }),
   (req, res) => {
-    // Generate JWT token for frontend
-    const jwt = require('jsonwebtoken');
-    const token = jwt.sign(
-      { id: req.user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRE || '365d' }
-    );
-    
-    // Redirect to frontend with token
-    const frontendUrl = process.env.FRONTEND_URL || 'https://rentease-app-2026.vercel.app';
-    res.redirect(`${frontendUrl}/google-auth?token=${token}`);
+    try {
+      // Generate JWT token for frontend
+      const jwt = require('jsonwebtoken');
+      const token = jwt.sign(
+        { id: req.user._id },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRE || '365d' }
+      );
+      
+      // Get the frontend URL from the request's referer or use environment variable
+      let frontendUrl = process.env.FRONTEND_URL || 'https://rentease-frontend-ul7h.onrender.com';
+      
+      // Check if request came from Vercel or Render
+      const referer = req.headers.referer || '';
+      if (referer.includes('vercel.app')) {
+        frontendUrl = 'https://rentease-app-2026.vercel.app';
+      } else if (referer.includes('onrender.com')) {
+        frontendUrl = 'https://rentease-frontend-ul7h.onrender.com';
+      }
+      
+      console.log(`Redirecting to: ${frontendUrl}/google-auth?token=${token.substring(0, 20)}...`);
+      res.redirect(`${frontendUrl}/google-auth?token=${token}`);
+    } catch (error) {
+      console.error('Google callback error:', error);
+      res.redirect('https://rentease-frontend-ul7h.onrender.com/login?error=google_auth_failed');
+    }
   }
 );
 
