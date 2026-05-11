@@ -160,4 +160,7 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
+const paymentRoutes = require('./routes/payment.routes');
+app.use('/api/payments', paymentRoutes);
+
 module.exports = app;

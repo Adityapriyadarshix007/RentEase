@@ -14,6 +14,9 @@ try {
     totalAmount: Number,
     securityDeposit: Number,
     status: String,
+    paymentStatus: { type: String, default: 'pending' },  // ← ADD THIS
+    paymentId: String,  // ← ADD THIS
+    paymentDate: Date,  // ← ADD THIS
     deliveryAddress: Object,
     deliveryDate: Date,
     deliverySlot: String,
@@ -41,6 +44,9 @@ const createRental = async (req, res) => {
     
     const totalAmount = product.monthlyRent * tenureMonths * (quantity || 1);
     
+    // Set paymentStatus based on payment method
+    const paymentStatus = paymentMethod === 'cod' ? 'pending' : 'paid';
+    
     const rental = new Rental({
       user: new mongoose.Types.ObjectId(req.user._id),
       product: new mongoose.Types.ObjectId(productId),
@@ -50,16 +56,24 @@ const createRental = async (req, res) => {
       monthlyRent: product.monthlyRent,
       totalAmount,
       securityDeposit: product.securityDeposit || 0,
-      status: 'pending',
+      status: paymentMethod === 'cod' ? 'pending' : 'active',
+      paymentStatus: paymentStatus,  // ← SET PAYMENT STATUS
       deliveryAddress,
       deliveryDate: new Date(deliveryDate),
       deliverySlot,
       paymentMethod,
+      paymentDate: paymentMethod === 'cod' ? null : new Date(),
       createdAt: new Date()
     });
     
     await rental.save();
-    res.status(201).json({ success: true, rental });
+    
+    // Return rental with payment info
+    res.status(201).json({ 
+      success: true, 
+      rental,
+      needsPayment: paymentMethod !== 'cod'
+    });
   } catch (error) {
     console.error('Error creating rental:', error);
     res.status(500).json({ message: error.message });
