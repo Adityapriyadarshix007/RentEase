@@ -6,16 +6,29 @@ const {
   getUserById,
   updateUser, 
   deleteUser,
-  getAnalytics 
+  getAnalytics,
+  exportAnalyticsData,
+  getRealtimeUpdates
 } = require('../controllers/admin.controller');
 const { protect, admin } = require('../middleware/auth.middleware');
 
+// All routes require authentication and admin role
 router.use(protect, admin);
+
+// Dashboard
 router.get('/dashboard', getDashboardStats);
+
+// Real-time updates (for auto-refresh)
+router.get('/realtime-updates', getRealtimeUpdates);
+
+// Analytics
+router.get('/analytics', getAnalytics);
+router.get('/export', exportAnalyticsData);
+
+// User management
 router.get('/users', getAllUsers);
 router.get('/users/:id', getUserById);
 router.put('/users/:id', updateUser);
 router.delete('/users/:id', deleteUser);
-router.get('/analytics', getAnalytics);
 
 module.exports = router;
