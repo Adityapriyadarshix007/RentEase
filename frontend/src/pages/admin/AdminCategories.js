@@ -25,10 +25,14 @@ const AdminCategories = () => {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}/api/categories`);
       const data = await response.json();
-      setCategories(data.categories || []);
+      if (data.success) {
+        setCategories(data.categories || []);
+      } else {
+        setCategories([]);
+      }
     } catch (error) {
       console.error('Error fetching categories:', error);
-      toast.error('Failed to fetch categories');
+      setCategories([]);
     } finally {
       setLoading(false);
     }
@@ -58,6 +62,9 @@ const AdminCategories = () => {
       
       const method = editingCategory ? 'PUT' : 'POST';
       
+      console.log('Sending request to:', url);
+      console.log('With data:', formData);
+      
       const response = await fetch(url, {
         method,
         headers: {
@@ -71,7 +78,7 @@ const AdminCategories = () => {
       
       toast.dismiss(loadingToast);
       
-      if (response.ok) {
+      if (response.ok && data.success) {
         toast.success(editingCategory ? 'Category updated successfully' : 'Category created successfully');
         setShowModal(false);
         resetForm();
@@ -82,7 +89,7 @@ const AdminCategories = () => {
     } catch (error) {
       toast.dismiss(loadingToast);
       console.error('Error saving category:', error);
-      toast.error('Network error. Please try again.');
+      toast.error('Network error. Please check your connection.');
     }
   };
 
@@ -104,7 +111,8 @@ const AdminCategories = () => {
         toast.success('Category deleted successfully');
         fetchCategories();
       } else {
-        toast.error('Failed to delete category');
+        const data = await response.json();
+        toast.error(data.message || 'Failed to delete category');
       }
     } catch (error) {
       toast.dismiss(loadingToast);

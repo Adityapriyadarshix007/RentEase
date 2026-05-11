@@ -1,22 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose');
 const { protect, admin } = require('../middleware/auth.middleware');
+const Category = require('../models/Category.Model');
 
-// Category Schema
-const categorySchema = new mongoose.Schema({
-  name: { type: String, required: true, unique: true },
-  slug: { type: String, required: true, unique: true },
-  description: { type: String, default: '' },
-  image: { type: String, default: '' },
-  isActive: { type: Boolean, default: true },
-  order: { type: Number, default: 0 },
-  createdAt: { type: Date, default: Date.now }
-});
-
-const Category = mongoose.model('Category', categorySchema);
-
-// GET all categories - PUBLIC (no auth needed)
+// GET all categories - PUBLIC
 router.get('/', async (req, res) => {
   try {
     const categories = await Category.find({ isActive: true }).sort({ order: 1, name: 1 });
@@ -42,7 +29,6 @@ router.get('/:id', async (req, res) => {
 router.post('/', protect, admin, async (req, res) => {
   try {
     console.log('📝 Creating category with data:', req.body);
-    console.log('👤 User:', req.user.email, 'Role:', req.user.role);
     
     const { name, slug, description, image, order } = req.body;
     
@@ -50,7 +36,6 @@ router.post('/', protect, admin, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Name and slug are required' });
     }
     
-    // Check if category already exists
     const existing = await Category.findOne({ $or: [{ name }, { slug }] });
     if (existing) {
       return res.status(400).json({ success: false, message: 'Category with this name or slug already exists' });
