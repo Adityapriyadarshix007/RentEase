@@ -8,7 +8,14 @@ const Products = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
-  const [categories, setCategories] = useState([]);
+  const [dynamicCategories, setDynamicCategories] = useState([]);
+  
+  // Static categories (pre-existing)
+  const staticCategories = ['Furniture', 'Appliances'];
+  
+  // Combine static + dynamic categories
+  const allCategories = [...staticCategories, ...dynamicCategories.filter(cat => !staticCategories.includes(cat.name))];
+  
   const [pagination, setPagination] = useState({
     total: 0,
     currentPage: 1,
@@ -33,6 +40,8 @@ const Products = () => {
   const [minPriceInput, setMinPriceInput] = useState(filters.minPrice);
   const [maxPriceInput, setMaxPriceInput] = useState(filters.maxPrice);
 
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+
   // Fetch categories from backend
   useEffect(() => {
     fetchCategories();
@@ -40,11 +49,10 @@ const Products = () => {
 
   const fetchCategories = async () => {
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
       const response = await fetch(`${API_BASE_URL}/api/categories`);
       const data = await response.json();
       if (data.success) {
-        setCategories(data.categories || []);
+        setDynamicCategories(data.categories || []);
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -70,7 +78,6 @@ const Products = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
       const params = new URLSearchParams();
       if (filters.category) params.append('category', filters.category);
       if (filters.subCategory) params.append('subCategory', filters.subCategory);
@@ -242,9 +249,16 @@ const Products = () => {
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Categories</option>
-              {categories.map((cat) => (
-                <option key={cat._id} value={cat.name}>{cat.name}</option>
+              {/* Show static categories first (Furniture, Appliances) */}
+              {staticCategories.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
               ))}
+              {/* Show dynamic categories that are not already in static list */}
+              {dynamicCategories
+                .filter(cat => !staticCategories.includes(cat.name))
+                .map((cat) => (
+                  <option key={cat._id} value={cat.name}>{cat.name}</option>
+                ))}
             </select>
           </div>
 
@@ -326,9 +340,16 @@ const Products = () => {
                   className="w-full px-3 py-2 border rounded-lg"
                 >
                   <option value="">All Categories</option>
-                  {categories.map((cat) => (
-                    <option key={cat._id} value={cat.name}>{cat.name}</option>
+                  {/* Show static categories first (Furniture, Appliances) */}
+                  {staticCategories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
                   ))}
+                  {/* Show dynamic categories that are not already in static list */}
+                  {dynamicCategories
+                    .filter(cat => !staticCategories.includes(cat.name))
+                    .map((cat) => (
+                      <option key={cat._id} value={cat.name}>{cat.name}</option>
+                    ))}
                 </select>
               </div>
               <div>
