@@ -13,6 +13,13 @@ const getDashboardStats = async (req, res) => {
     const totalVendors = await User.countDocuments({ role: 'vendor' });
     const totalCategories = await Category.countDocuments();
     
+    // Calculate TOTAL REVENUE (all time) - This updates with every purchase
+    const totalRevenue = await Rental.aggregate([
+      { $match: { paymentStatus: { $in: ['paid', 'completed'] } } },
+      { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+    ]);
+    
+    // Calculate CURRENT MONTH REVENUE (for reference)
     const currentDate = new Date();
     const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
@@ -22,19 +29,53 @@ const getDashboardStats = async (req, res) => {
       { $group: { _id: null, total: { $sum: '$totalAmount' } } }
     ]);
     
-    const recentRentals = await Rental.find().populate('user', 'name email').populate('product', 'name category monthlyRent images').sort({ createdAt: -1 }).limit(10);
-    const recentUsers = await User.find().select('-password').sort({ createdAt: -1 }).limit(5);
-    const recentProducts = await Product.find().sort({ createdAt: -1 }).limit(5);
+    // Calculate LAST 30 DAYS REVENUE
+    const last30Days = new Date();
+    last30Days.setDate(last30Days.getDate() - 30);
+    const last30DaysRevenue = await Rental.aggregate([
+      { 
+        $match: { 
+          paymentStatus: { $in: ['paid', 'completed'] },
+          createdAt: { $gte: last30Days }
+        } 
+      },
+      { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+    ]);
+    
+    const recentRentals = await Rental.find()
+      .populate('user', 'name email')
+      .populate('product', 'name category monthlyRent images')
+      .sort({ createdAt: -1 })
+      .limit(10);
+    
+    const recentUsers = await User.find()
+      .select('-password')
+      .sort({ createdAt: -1 })
+      .limit(5);
+    
+    const recentProducts = await Product.find()
+      .sort({ createdAt: -1 })
+      .limit(5);
     
     res.json({
       success: true,
       stats: {
-        totalUsers, totalProducts, activeRentals, pendingMaintenance, totalVendors, totalCategories,
-        monthlyRevenue: currentMonthRevenue[0]?.total || 0
+        totalUsers,
+        totalProducts,
+        activeRentals,
+        pendingMaintenance,
+        totalVendors,
+        totalCategories,
+        totalRevenue: totalRevenue[0]?.total || 0,
+        monthlyRevenue: currentMonthRevenue[0]?.total || 0,
+        last30DaysRevenue: last30DaysRevenue[0]?.total || 0
       },
-      recentRentals, recentUsers, recentProducts
+      recentRentals,
+      recentUsers,
+      recentProducts
     });
   } catch (error) {
+    console.error('Dashboard stats error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -107,7 +148,8 @@ const getAnalytics = async (req, res) => {
     const topProducts = await Rental.aggregate([
       { $match: dateFilter },
       { $group: { _id: '$product', count: { $sum: 1 }, totalRevenue: { $sum: '$totalAmount' } } },
-      { $sort: { count: -1 } }, { $limit: 10 },
+      { $sort: { count: -1 } }, 
+      { $limit: 10 },
       { $lookup: { from: 'products', localField: '_id', foreignField: '_id', as: 'product' } },
       { $unwind: '$product' }
     ]);
@@ -126,7 +168,7 @@ const getAnalytics = async (req, res) => {
   }
 };
 
-// EXPORT FUNCTION - FIXED
+// EXPORT FUNCTION - FIXED with user email and complete rental details
 const exportAnalyticsData = async (req, res) => {
   try {
     const { type, startDate, endDate } = req.query;
@@ -135,55 +177,104 @@ const exportAnalyticsData = async (req, res) => {
     
     const dateFilter = {};
     if (startDate && endDate) {
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-  
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
-  
-    dateFilter.createdAt = { $gte: start, $lte: end };
-  
-    console.log(`📅 Exporting from ${start.toISOString()} to ${end.toISOString()}`);
-}
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      dateFilter.createdAt = { $gte: start, $lte: end };
+      console.log(`📅 Exporting from ${start.toISOString()} to ${end.toISOString()}`);
+    }
     
     switch (type) {
       case 'products':
         data = await Product.find(dateFilter).lean();
         filename = `products_export_${Date.now()}.csv`;
         break;
+        
       case 'rentals':
-        data = await Rental.find(dateFilter).populate('user', 'name email').populate('product', 'name').lean();
+        // Get rentals with populated user and product data
+        const rentalsData = await Rental.find(dateFilter)
+          .populate('user', 'name email phone')
+          .populate('product', 'name category monthlyRent')
+          .sort({ createdAt: -1 })
+          .lean();
+        
+        // Transform to flat structure for CSV with user email included
+        data = rentalsData.map(rental => ({
+          'User Name': rental.user?.name || 'N/A',
+          'User Email': rental.user?.email || 'N/A',
+          'User Phone': rental.user?.phone || 'N/A',
+          'Product Name': rental.product?.name || 'N/A',
+          'Product Category': rental.product?.category || 'N/A',
+          'Monthly Rent (₹)': rental.monthlyRent,
+          'Total Amount (₹)': rental.totalAmount,
+          'Security Deposit (₹)': rental.securityDeposit,
+          'Tenure (Months)': rental.tenureMonths,
+          'Rental Status': rental.status,
+          'Payment Status': rental.paymentStatus,
+          'Payment Method': rental.paymentMethod?.toUpperCase() || 'N/A',
+          'Start Date': rental.rentalStartDate ? new Date(rental.rentalStartDate).toLocaleDateString() : 'N/A',
+          'End Date': rental.rentalEndDate ? new Date(rental.rentalEndDate).toLocaleDateString() : 'N/A',
+          'Delivery Date': rental.deliveryDate ? new Date(rental.deliveryDate).toLocaleDateString() : 'N/A',
+          'Delivery Slot': rental.deliverySlot || 'N/A',
+          'Delivery Address': rental.deliveryAddress ? 
+            `${rental.deliveryAddress.street || ''}, ${rental.deliveryAddress.city || ''}, ${rental.deliveryAddress.state || ''} - ${rental.deliveryAddress.pincode || ''}` : 'N/A',
+          'Created Date': rental.createdAt ? new Date(rental.createdAt).toLocaleDateString() : 'N/A'
+        }));
+        
         filename = `rentals_export_${Date.now()}.csv`;
         break;
+        
       case 'users':
         data = await User.find(dateFilter).select('-password').lean();
         filename = `users_export_${Date.now()}.csv`;
         break;
+        
       case 'categories':
         data = await Category.find({}).lean();
         filename = `categories_export_${Date.now()}.csv`;
         break;
+        
       default:
         return res.status(400).json({ success: false, message: 'Invalid export type' });
     }
     
     if (!data || data.length === 0) {
-      return res.status(404).json({ success: false, message: `No ${type} data found` });
+      return res.status(404).json({ success: false, message: `No ${type} data found for selected date range` });
     }
     
-    // Convert to CSV
-    const headers = Object.keys(data[0]).filter(k => !k.startsWith('_') && k !== '__v');
-    const csvRows = [headers.join(',')];
+    console.log(`📊 Found ${data.length} ${type} to export`);
     
-    for (const item of data) {
-      const values = headers.map(header => {
-        let value = item[header];
-        if (value && typeof value === 'object') value = value.name || JSON.stringify(value);
-        if (header === 'createdAt' && value) value = new Date(value).toLocaleDateString();
-        if (header === 'monthlyRent' || header === 'securityDeposit' || header === 'totalAmount') value = `₹${value}`;
-        return `"${String(value || '').replace(/"/g, '""')}"`;
-      });
-      csvRows.push(values.join(','));
+    // Generate CSV
+    let headers, csvRows;
+    
+    if (type === 'rentals') {
+      // Use predefined headers for rentals (already in correct order)
+      headers = Object.keys(data[0]);
+      csvRows = [headers.join(',')];
+      
+      for (const item of data) {
+        const values = headers.map(header => {
+          let value = item[header];
+          return `"${String(value || '').replace(/"/g, '""')}"`;
+        });
+        csvRows.push(values.join(','));
+      }
+    } else {
+      // Dynamic headers for other types
+      headers = Object.keys(data[0]).filter(k => !k.startsWith('_') && k !== '__v');
+      csvRows = [headers.join(',')];
+      
+      for (const item of data) {
+        const values = headers.map(header => {
+          let value = item[header];
+          if (value && typeof value === 'object') value = value.name || JSON.stringify(value);
+          if (header === 'createdAt' && value) value = new Date(value).toLocaleDateString();
+          if (header === 'monthlyRent' || header === 'securityDeposit' || header === 'totalAmount') value = `₹${value}`;
+          return `"${String(value || '').replace(/"/g, '""')}"`;
+        });
+        csvRows.push(values.join(','));
+      }
     }
     
     res.setHeader('Content-Type', 'text/csv');
@@ -209,4 +300,13 @@ const getRealtimeUpdates = async (req, res) => {
   }
 };
 
-module.exports = { getDashboardStats, getAllUsers, getUserById, updateUser, deleteUser, getAnalytics, exportAnalyticsData, getRealtimeUpdates };
+module.exports = { 
+  getDashboardStats, 
+  getAllUsers, 
+  getUserById, 
+  updateUser, 
+  deleteUser, 
+  getAnalytics, 
+  exportAnalyticsData, 
+  getRealtimeUpdates 
+};
