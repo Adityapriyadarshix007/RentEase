@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaTrash, FaPlus, FaEdit, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaTrash, FaPlus, FaEdit } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const AdminCategories = () => {
@@ -22,12 +22,21 @@ const AdminCategories = () => {
 
   const fetchCategories = async () => {
     try {
+      setLoading(true);
+      console.log('Fetching categories from:', `${API_BASE_URL}/api/categories`);
+      
       const response = await fetch(`${API_BASE_URL}/api/categories`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
       const data = await response.json();
+      console.log('Categories received:', data.categories?.length);
       setCategories(data.categories || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
-      toast.error('Failed to fetch categories');
+      toast.error('Failed to fetch categories. Please check your connection.');
     } finally {
       setLoading(false);
     }
@@ -41,13 +50,24 @@ const AdminCategories = () => {
       return;
     }
     
+    const loadingToast = toast.loading(editingCategory ? 'Updating category...' : 'Creating category...');
+    
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        toast.dismiss(loadingToast);
+        toast.error('Please login again');
+        return;
+      }
+      
       const url = editingCategory 
         ? `${API_BASE_URL}/api/categories/${editingCategory._id}`
         : `${API_BASE_URL}/api/categories`;
       
       const method = editingCategory ? 'PUT' : 'POST';
+      
+      console.log('Saving category to:', url);
+      console.log('Data:', formData);
       
       const response = await fetch(url, {
         method,
@@ -60,6 +80,8 @@ const AdminCategories = () => {
       
       const data = await response.json();
       
+      toast.dismiss(loadingToast);
+      
       if (response.ok) {
         toast.success(editingCategory ? 'Category updated successfully' : 'Category created successfully');
         setShowModal(false);
@@ -69,30 +91,43 @@ const AdminCategories = () => {
         toast.error(data.message || 'Operation failed');
       }
     } catch (error) {
+      toast.dismiss(loadingToast);
       console.error('Error saving category:', error);
-      toast.error('Network error. Please try again.');
+      toast.error('Network error. Please check your connection.');
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this category?')) {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${API_BASE_URL}/api/categories/${id}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        if (response.ok) {
-          toast.success('Category deleted successfully');
-          fetchCategories();
-        } else {
-          toast.error('Failed to delete category');
-        }
-      } catch (error) {
-        console.error('Error deleting category:', error);
-        toast.error('Network error');
+    if (!window.confirm('Are you sure you want to delete this category?')) return;
+    
+    const loadingToast = toast.loading('Deleting category...');
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.dismiss(loadingToast);
+        toast.error('Please login again');
+        return;
       }
+      
+      const response = await fetch(`${API_BASE_URL}/api/categories/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      toast.dismiss(loadingToast);
+      
+      if (response.ok) {
+        toast.success('Category deleted successfully');
+        fetchCategories();
+      } else {
+        const data = await response.json();
+        toast.error(data.message || 'Failed to delete category');
+      }
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      console.error('Error deleting category:', error);
+      toast.error('Network error. Please try again.');
     }
   };
 
@@ -125,7 +160,12 @@ const AdminCategories = () => {
   };
 
   if (loading) {
-    return <div className="p-8 text-center">Loading categories...</div>;
+    return (
+      <div className="p-8 text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading categories...</p>
+      </div>
+    );
   }
 
   return (
@@ -163,12 +203,12 @@ const AdminCategories = () => {
                 <tr>
                   <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
                     No categories found. Click "Add Category" to create one.
-                  </td>
+                   </td>
                 </tr>
               ) : (
                 categories.map((cat) => (
                   <tr key={cat._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">{cat.name}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">{cat.name}</tr>
                     <td className="px-6 py-4 text-sm text-gray-500">{cat.slug}</td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                       {cat.description || '-'}
@@ -191,12 +231,12 @@ const AdminCategories = () => {
                           <FaTrash />
                         </button>
                       </div>
-                     </td>
-                   </tr>
+                    </td>
+                  </tr>
                 ))
               )}
             </tbody>
-           </table>
+          </table>
         </div>
       </div>
       
@@ -232,6 +272,7 @@ const AdminCategories = () => {
                       });
                     }}
                     className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., Electronics"
                     required
                   />
                 </div>
@@ -243,6 +284,7 @@ const AdminCategories = () => {
                     value={formData.slug}
                     onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                     className="w-full px-4 py-2 border rounded-lg bg-gray-50"
+                    placeholder="e.g., electronics"
                     required
                   />
                   <p className="text-xs text-gray-500 mt-1">URL-friendly version of the name</p>
@@ -271,7 +313,7 @@ const AdminCategories = () => {
                   <p className="text-xs text-gray-500 mt-1">Lower numbers appear first</p>
                 </div>
               </div>
-              
+  
               <div className="flex gap-3 mt-6">
                 <button
                   type="button"
