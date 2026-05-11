@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect, admin } = require('../middleware/auth.middleware');
-const Category = require('../models/Category.Model');
+const Category = require('../models/Category.model');
 
 // GET all categories - PUBLIC
 router.get('/', async (req, res) => {
@@ -9,7 +9,6 @@ router.get('/', async (req, res) => {
     const categories = await Category.find({ isActive: true }).sort({ order: 1, name: 1 });
     res.json({ success: true, categories });
   } catch (error) {
-    console.error('Error fetching categories:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -28,8 +27,6 @@ router.get('/:id', async (req, res) => {
 // POST create category - ADMIN ONLY
 router.post('/', protect, admin, async (req, res) => {
   try {
-    console.log('📝 Creating category with data:', req.body);
-    
     const { name, slug, description, image, order } = req.body;
     
     if (!name || !slug) {
@@ -38,23 +35,13 @@ router.post('/', protect, admin, async (req, res) => {
     
     const existing = await Category.findOne({ $or: [{ name }, { slug }] });
     if (existing) {
-      return res.status(400).json({ success: false, message: 'Category with this name or slug already exists' });
+      return res.status(400).json({ success: false, message: 'Category already exists' });
     }
     
-    const category = new Category({
-      name,
-      slug,
-      description: description || '',
-      image: image || '',
-      order: order || 0,
-      isActive: true
-    });
-    
+    const category = new Category({ name, slug, description: description || '', image: image || '', order: order || 0, isActive: true });
     await category.save();
-    console.log(`✅ Category created: ${name}`);
     res.status(201).json({ success: true, category });
   } catch (error) {
-    console.error('Error creating category:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -64,10 +51,7 @@ router.put('/:id', protect, admin, async (req, res) => {
   try {
     const { name, slug, description, image, order, isActive } = req.body;
     const category = await Category.findById(req.params.id);
-    
-    if (!category) {
-      return res.status(404).json({ success: false, message: 'Category not found' });
-    }
+    if (!category) return res.status(404).json({ success: false, message: 'Category not found' });
     
     category.name = name || category.name;
     category.slug = slug || category.slug;
@@ -79,7 +63,6 @@ router.put('/:id', protect, admin, async (req, res) => {
     await category.save();
     res.json({ success: true, category });
   } catch (error) {
-    console.error('Error updating category:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -88,12 +71,9 @@ router.put('/:id', protect, admin, async (req, res) => {
 router.delete('/:id', protect, admin, async (req, res) => {
   try {
     const category = await Category.findByIdAndDelete(req.params.id);
-    if (!category) {
-      return res.status(404).json({ success: false, message: 'Category not found' });
-    }
+    if (!category) return res.status(404).json({ success: false, message: 'Category not found' });
     res.json({ success: true, message: 'Category deleted successfully' });
   } catch (error) {
-    console.error('Error deleting category:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
