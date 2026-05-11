@@ -23,20 +23,12 @@ const AdminCategories = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      console.log('Fetching categories from:', `${API_BASE_URL}/api/categories`);
-      
       const response = await fetch(`${API_BASE_URL}/api/categories`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      
       const data = await response.json();
-      console.log('Categories received:', data.categories?.length);
       setCategories(data.categories || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
-      toast.error('Failed to fetch categories. Please check your connection.');
+      toast.error('Failed to fetch categories');
     } finally {
       setLoading(false);
     }
@@ -66,9 +58,6 @@ const AdminCategories = () => {
       
       const method = editingCategory ? 'PUT' : 'POST';
       
-      console.log('Saving category to:', url);
-      console.log('Data:', formData);
-      
       const response = await fetch(url, {
         method,
         headers: {
@@ -93,7 +82,7 @@ const AdminCategories = () => {
     } catch (error) {
       toast.dismiss(loadingToast);
       console.error('Error saving category:', error);
-      toast.error('Network error. Please check your connection.');
+      toast.error('Network error. Please try again.');
     }
   };
 
@@ -104,12 +93,6 @@ const AdminCategories = () => {
     
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        toast.dismiss(loadingToast);
-        toast.error('Please login again');
-        return;
-      }
-      
       const response = await fetch(`${API_BASE_URL}/api/categories/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -121,13 +104,12 @@ const AdminCategories = () => {
         toast.success('Category deleted successfully');
         fetchCategories();
       } else {
-        const data = await response.json();
-        toast.error(data.message || 'Failed to delete category');
+        toast.error('Failed to delete category');
       }
     } catch (error) {
       toast.dismiss(loadingToast);
       console.error('Error deleting category:', error);
-      toast.error('Network error. Please try again.');
+      toast.error('Network error');
     }
   };
 
@@ -203,12 +185,12 @@ const AdminCategories = () => {
                 <tr>
                   <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
                     No categories found. Click "Add Category" to create one.
-                   </td>
+                  </td>
                 </tr>
               ) : (
                 categories.map((cat) => (
                   <tr key={cat._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">{cat.name}</tr>
+                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">{cat.name}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">{cat.slug}</td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                       {cat.description || '-'}
@@ -313,7 +295,7 @@ const AdminCategories = () => {
                   <p className="text-xs text-gray-500 mt-1">Lower numbers appear first</p>
                 </div>
               </div>
-  
+              
               <div className="flex gap-3 mt-6">
                 <button
                   type="button"
