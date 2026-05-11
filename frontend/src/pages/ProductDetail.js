@@ -18,6 +18,8 @@ const ProductDetail = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('details');
 
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+
   useEffect(() => {
     fetchProduct();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -26,12 +28,26 @@ const ProductDetail = () => {
   const fetchProduct = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:5001/api/products/${id}`);
+      const response = await fetch(`${API_BASE_URL}/api/products/${id}`);
       const data = await response.json();
-      setProduct(data.product || data);
+      
+      // Handle different response formats
+      if (response.ok) {
+        // Check if product is in data.product or directly in data
+        const productData = data.product || data;
+        if (productData && productData._id) {
+          setProduct(productData);
+        } else {
+          toast.error('Product not found');
+          navigate('/products');
+        }
+      } else {
+        toast.error(data.message || 'Product not found');
+        navigate('/products');
+      }
     } catch (error) {
       console.error('Error fetching product:', error);
-      toast.error('Product not found');
+      toast.error('Failed to load product. Please try again.');
       navigate('/products');
     } finally {
       setLoading(false);
@@ -44,6 +60,8 @@ const ProductDetail = () => {
       navigate('/login');
       return;
     }
+    if (!product) return;
+    
     addToCart(product, selectedTenure, quantity);
     toast.success(`${product.name} added to cart`);
   };
@@ -54,6 +72,8 @@ const ProductDetail = () => {
       navigate('/login');
       return;
     }
+    if (!product) return;
+    
     addToCart(product, selectedTenure, quantity);
     navigate('/cart');
   };
@@ -73,8 +93,8 @@ const ProductDetail = () => {
   // Function to render stars for rating display
   const renderStars = (rating) => {
     const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
+    const fullStars = Math.floor(rating || 0);
+    const hasHalfStar = (rating || 0) % 1 >= 0.5;
     
     for (let i = 1; i <= 5; i++) {
       if (i <= fullStars) {
@@ -90,17 +110,30 @@ const ProductDetail = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex justify-center items-center h-96">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
-  if (!product) return null;
+  if (!product) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-8 text-center">
+        <h2 className="text-2xl font-bold mb-4">Product Not Found</h2>
+        <p className="text-gray-600 mb-6">The product you're looking for doesn't exist or has been removed.</p>
+        <button 
+          onClick={() => navigate('/products')} 
+          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
+        >
+          Browse Products
+        </button>
+      </div>
+    );
+  }
 
-  const totalRent = product.monthlyRent * selectedTenure * quantity;
+  const totalRent = (product.monthlyRent || 0) * selectedTenure * quantity;
   const totalPayable = totalRent + (product.securityDeposit || 0);
-  const isInStock = product.availableQuantity > 0;
+  const isInStock = (product.availableQuantity || 0) > 0;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -123,7 +156,7 @@ const ProductDetail = () => {
                   alt={product.name}
                   className="max-w-full max-h-full object-contain rounded-lg"
                   onError={(e) => {
-                    e.target.src = 'https://via.placeholder.com/400x400?text=Product';
+                    e.target.src = 'https://via.placeholder.com/400x400?text=Product+Image';
                   }}
                 />
               ) : (
@@ -178,7 +211,7 @@ const ProductDetail = () => {
         <div>
           <div className="mb-3">
             <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full">
-              {product.category} / {product.subCategory}
+              {product.category || 'Uncategorized'} {product.subCategory ? `/ ${product.subCategory}` : ''}
             </span>
           </div>
           
@@ -203,7 +236,7 @@ const ProductDetail = () => {
           
           <div className="mb-6">
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-bold text-blue-600">₹{product.monthlyRent}</span>
+              <span className="text-4xl font-bold text-blue-600">₹{product.monthlyRent || 0}</span>
               <span className="text-gray-500">/month</span>
             </div>
             <div className="text-gray-500 text-sm mt-1">
@@ -211,7 +244,7 @@ const ProductDetail = () => {
             </div>
           </div>
           
-          <p className="text-gray-600 leading-relaxed mb-6">{product.description}</p>
+          <p className="text-gray-600 leading-relaxed mb-6">{product.description || 'No description available.'}</p>
           
           <div className="grid grid-cols-2 gap-3 mb-6 p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-2 text-sm"><FaTruck className="text-blue-600" /> Free Delivery</div>
@@ -252,12 +285,12 @@ const ProductDetail = () => {
               </button>
               <span className="text-xl font-semibold w-12 text-center">{quantity}</span>
               <button
-                onClick={() => setQuantity(Math.min(product.availableQuantity, quantity + 1))}
+                onClick={() => setQuantity(Math.min(product.availableQuantity || 99, quantity + 1))}
                 className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:border-blue-600 transition"
               >
                 <FaPlus />
               </button>
-              <span className="text-sm text-gray-500">{product.availableQuantity} available</span>
+              <span className="text-sm text-gray-500">{product.availableQuantity || 99} available</span>
             </div>
           </div>
           
@@ -267,7 +300,7 @@ const ProductDetail = () => {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">Monthly Rent</span>
-                <span>₹{product.monthlyRent} × {selectedTenure} months × {quantity}</span>
+                <span>₹{product.monthlyRent || 0} × {selectedTenure} months × {quantity}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Total Rent</span>
@@ -292,14 +325,14 @@ const ProductDetail = () => {
             <button
               onClick={handleAddToCart}
               disabled={!isInStock}
-              className="flex-1 border-2 border-blue-600 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-600 hover:text-white transition disabled:opacity-50"
+              className="flex-1 border-2 border-blue-600 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-600 hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Add to Cart
             </button>
             <button
               onClick={handleBuyNow}
               disabled={!isInStock}
-              className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50"
+              className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Rent Now
             </button>
@@ -346,25 +379,35 @@ const ProductDetail = () => {
           {activeTab === 'details' && (
             <div>
               <h3 className="text-xl font-semibold mb-4">Product Details</h3>
-              <p className="text-gray-600 leading-relaxed">{product.description}</p>
+              <p className="text-gray-600 leading-relaxed">{product.description || 'No details available.'}</p>
+              {product.brand && (
+                <p className="text-gray-600 mt-2"><span className="font-medium">Brand:</span> {product.brand}</p>
+              )}
+              {product.condition && (
+                <p className="text-gray-600 mt-1"><span className="font-medium">Condition:</span> {product.condition}</p>
+              )}
             </div>
           )}
           
-          {activeTab === 'specifications' && product.specifications && (
+          {activeTab === 'specifications' && (
             <div>
               <h3 className="text-xl font-semibold mb-4">Technical Specifications</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {Object.entries(product.specifications).map(([key, value]) => (
-                  value && (
-                    <div key={key} className="flex py-2 border-b">
-                      <span className="w-1/2 font-medium text-gray-700 capitalize">
-                        {key.replace(/([A-Z])/g, ' $1').trim()}:
-                      </span>
-                      <span className="w-1/2 text-gray-600">{value}</span>
-                    </div>
-                  )
-                ))}
-              </div>
+              {product.specifications && Object.keys(product.specifications).length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Object.entries(product.specifications).map(([key, value]) => (
+                    value && (
+                      <div key={key} className="flex py-2 border-b">
+                        <span className="w-1/2 font-medium text-gray-700 capitalize">
+                          {key.replace(/([A-Z])/g, ' $1').trim()}:
+                        </span>
+                        <span className="w-1/2 text-gray-600">{value}</span>
+                      </div>
+                    )
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500">No specifications available for this product.</p>
+              )}
             </div>
           )}
           
