@@ -44,4 +44,7 @@ const categorySchema = new mongoose.Schema({
   }
 });
 
-module.exports = mongoose.model('Category', categorySchema);
+// Prevent model overwrite error
+const Category = mongoose.models.Category || mongoose.model('Category', categorySchema);
+
+module.exports = Category;
