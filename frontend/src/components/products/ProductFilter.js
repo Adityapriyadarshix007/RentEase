@@ -1,9 +1,18 @@
-import React from 'react';
-import { PRODUCT_CATEGORIES, PRODUCT_SUB_CATEGORIES } from '../../utils/constants';
+import React, { useState, useEffect } from 'react';
 
-const ProductFilter = ({ filters, onFilterChange }) => {
+const ProductFilter = ({ filters, onFilterChange, categories = [] }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Prevent negative values for price
+    if (name === 'minPrice' || name === 'maxPrice') {
+      const numValue = parseInt(value);
+      if (numValue < 0) {
+        onFilterChange({ [name]: 0 });
+        return;
+      }
+    }
+    
     onFilterChange({ [name]: value });
   };
 
@@ -29,7 +38,7 @@ const ProductFilter = ({ filters, onFilterChange }) => {
           value={filters.search}
           onChange={handleChange}
           placeholder="Search products..."
-          className="input"
+          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
       
@@ -39,30 +48,16 @@ const ProductFilter = ({ filters, onFilterChange }) => {
           name="category"
           value={filters.category}
           onChange={handleChange}
-          className="input"
+          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">All Categories</option>
-          <option value={PRODUCT_CATEGORIES.FURNITURE}>Furniture</option>
-          <option value={PRODUCT_CATEGORIES.APPLIANCES}>Appliances</option>
+          {categories.map((category) => (
+            <option key={category._id || category.name} value={category.name}>
+              {category.name}
+            </option>
+          ))}
         </select>
       </div>
-      
-      {filters.category && (
-        <div className="mb-4">
-          <label className="block text-gray-700 mb-2">Sub Category</label>
-          <select
-            name="subCategory"
-            value={filters.subCategory}
-            onChange={handleChange}
-            className="input"
-          >
-            <option value="">All</option>
-            {PRODUCT_SUB_CATEGORIES[filters.category]?.map(sub => (
-              <option key={sub} value={sub}>{sub}</option>
-            ))}
-          </select>
-        </div>
-      )}
       
       <div className="mb-4">
         <label className="block text-gray-700 mb-2">Price Range (₹/month)</label>
@@ -73,7 +68,8 @@ const ProductFilter = ({ filters, onFilterChange }) => {
             value={filters.minPrice}
             onChange={handleChange}
             placeholder="Min"
-            className="input"
+            min="0"
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <input
             type="number"
@@ -81,14 +77,15 @@ const ProductFilter = ({ filters, onFilterChange }) => {
             value={filters.maxPrice}
             onChange={handleChange}
             placeholder="Max"
-            className="input"
+            min="0"
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
       </div>
       
       <button
         onClick={handleClear}
-        className="w-full btn-outline"
+        className="w-full bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition"
       >
         Clear Filters
       </button>
