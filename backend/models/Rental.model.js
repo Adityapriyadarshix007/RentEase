@@ -69,10 +69,11 @@ const rentalSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
-    enum: ['pending', 'paid', 'refunded'],
+    enum: ['pending', 'paid', 'completed', 'refunded'],  // ← ADDED 'completed' here
     default: 'pending'
   },
   paymentId: String,
+  paymentDate: Date,  // ← ADD THIS FIELD
   notes: String,
   createdAt: {
     type: Date,
@@ -82,6 +83,12 @@ const rentalSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+});
+
+// Update the updatedAt field on save
+rentalSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
 });
 
 module.exports = mongoose.model('Rental', rentalSchema);

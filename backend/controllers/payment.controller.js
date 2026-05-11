@@ -76,7 +76,7 @@ const getPaymentHistory = async (req, res) => {
   try {
     const rentals = await Rental.find({ 
       user: req.user._id,
-      paymentStatus: 'paid'
+      paymentStatus: { $in: ['paid', 'completed'] }  // Include both paid and completed
     }).select('paymentId paymentMethod totalAmount createdAt status').sort({ createdAt: -1 });
     
     res.json({ success: true, payments: rentals });
@@ -101,14 +101,45 @@ const updatePaymentStatus = async (req, res) => {
       return res.status(404).json({ message: 'Rental not found' });
     }
     
-    rental.paymentStatus = paymentStatus;
-    if (paymentStatus === 'completed') {
+    // Validate payment status transition
+    if (paymentStatus === 'completed' && rental.paymentMethod === 'cod') {
+      rental.paymentStatus = 'completed';
       rental.paymentDate = new Date();
+      await rental.save();
+      
+      console.log(`✅ COD payment marked as completed for rental ${rentalId}: ₹${rental.totalAmount}`);
+      
+      res.json({ 
+        success: true, 
+        message: 'COD payment marked as completed',
+        rental: {
+          _id: rental._id,
+          paymentStatus: rental.paymentStatus,
+          totalAmount: rental.totalAmount
+        }
+      });
+    } 
+    else if (paymentStatus === 'paid') {
+      rental.paymentStatus = 'paid';
+      rental.paymentDate = new Date();
+      await rental.save();
+      
+      res.json({ 
+        success: true, 
+        message: 'Payment marked as paid',
+        rental: {
+          _id: rental._id,
+          paymentStatus: rental.paymentStatus,
+          totalAmount: rental.totalAmount
+        }
+      });
     }
-    
-    await rental.save();
-    
-    res.json({ success: true, message: `Payment status updated to ${paymentStatus}`, rental });
+    else {
+      res.status(400).json({ 
+        success: false, 
+        message: `Invalid payment status transition: ${paymentStatus} for payment method ${rental.paymentMethod}` 
+      });
+    }
   } catch (error) {
     console.error('Update payment status error:', error);
     res.status(500).json({ message: error.message });
