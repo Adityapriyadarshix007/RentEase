@@ -5,6 +5,9 @@ const AdminRentals = () => {
   const [rentals, setRentals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [updatingPayment, setUpdatingPayment] = useState(null);
+
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
 
   useEffect(() => {
     fetchRentals();
@@ -21,7 +24,7 @@ const AdminRentals = () => {
         return;
       }
       
-      const response = await fetch('https://rentease-backend-njvk.onrender.com/api/rentals', {
+      const response = await fetch(`${API_BASE_URL}/api/rentals`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -53,7 +56,7 @@ const AdminRentals = () => {
   const updateRentalStatus = async (rentalId, newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://rentease-backend-njvk.onrender.com/api/rentals/${rentalId}/status`, {
+      const response = await fetch(`${API_BASE_URL}/api/rentals/${rentalId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -74,6 +77,36 @@ const AdminRentals = () => {
     }
   };
 
+  // NEW FUNCTION: Update payment status for COD orders
+  const updatePaymentStatus = async (rentalId, paymentStatus) => {
+    setUpdatingPayment(rentalId);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/payments/update-status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ rentalId, paymentStatus })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success(`Payment marked as ${paymentStatus}`);
+        fetchRentals(); // Refresh the list
+      } else {
+        toast.error(data.message || 'Failed to update payment status');
+      }
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      toast.error('Failed to update payment status');
+    } finally {
+      setUpdatingPayment(null);
+    }
+  };
+
   const getStatusColor = (status) => {
     const colors = {
       pending: 'bg-yellow-100 text-yellow-800',
@@ -85,6 +118,17 @@ const AdminRentals = () => {
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
+  const getPaymentStatusColor = (paymentStatus) => {
+    const colors = {
+      pending: 'bg-yellow-100 text-yellow-800',
+      paid: 'bg-green-100 text-green-800',
+      completed: 'bg-blue-100 text-blue-800',
+      failed: 'bg-red-100 text-red-800',
+      refunded: 'bg-gray-100 text-gray-800'
+    };
+    return colors[paymentStatus] || 'bg-gray-100 text-gray-800';
+  };
+
   const statusOptions = [
     { value: 'pending', label: 'Pending', color: 'yellow' },
     { value: 'active', label: 'Active', color: 'green' },
@@ -94,7 +138,11 @@ const AdminRentals = () => {
   ];
 
   if (loading) {
-    return <div className="p-8 text-center">Loading rentals...</div>;
+    return (
+      <div className="flex justify-center items-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
 
   if (error) {
@@ -130,7 +178,9 @@ const AdminRentals = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rental Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment Method</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
@@ -140,32 +190,95 @@ const AdminRentals = () => {
                 <tr key={rental._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm text-gray-900">{rental.product?.name || 'N/A'}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{rental.user?.name || 'N/A'}</td>
-                  <td className="px-6 py-4 text-sm">₹{rental.totalAmount}</td>
+                  <td className="px-6 py-4 text-sm font-semibold text-green-600">₹{rental.totalAmount}</td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(rental.status)}`}>
                       {rental.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 text-xs rounded-full ${getPaymentStatusColor(rental.paymentStatus)}`}>
+                      {rental.paymentStatus || 'pending'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      rental.paymentMethod === 'cod' ? 'bg-orange-100 text-orange-800' : 'bg-purple-100 text-purple-800'
+                    }`}>
+                      {rental.paymentMethod?.toUpperCase() || 'N/A'}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {new Date(rental.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4">
-                    <select
-                      value={rental.status}
-                      onChange={(e) => updateRentalStatus(rental._id, e.target.value)}
-                      className="px-2 py-1 border rounded text-sm"
-                    >
-                      {statusOptions.map(option => (
-                        <option key={option.value} value={option.value}>
-                          Set as {option.label}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex gap-2 flex-wrap">
+                      {/* Rental Status Dropdown */}
+                      <select
+                        value={rental.status}
+                        onChange={(e) => updateRentalStatus(rental._id, e.target.value)}
+                        className="px-2 py-1 border rounded text-sm"
+                      >
+                        {statusOptions.map(option => (
+                          <option key={option.value} value={option.value}>
+                            Set as {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      
+                      {/* COD Payment Status Button - Only show for COD orders with pending payment */}
+                      {rental.paymentMethod === 'cod' && rental.paymentStatus === 'pending' && (
+                        <button
+                          onClick={() => updatePaymentStatus(rental._id, 'completed')}
+                          disabled={updatingPayment === rental._id}
+                          className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-green-700 transition disabled:opacity-50 whitespace-nowrap"
+                        >
+                          {updatingPayment === rental._id ? 'Updating...' : '✓ Mark as Paid'}
+                        </button>
+                      )}
+                      
+                      {/* Show completed badge for COD orders already paid */}
+                      {rental.paymentMethod === 'cod' && rental.paymentStatus === 'completed' && (
+                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded-lg text-xs">
+                          Payment Completed
+                        </span>
+                      )}
+                      
+                      {/* Show paid badge for online payments */}
+                      {rental.paymentMethod !== 'cod' && rental.paymentStatus === 'paid' && (
+                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-lg text-xs">
+                          Payment Received
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+      
+      {/* Summary Section */}
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <p className="text-gray-500 text-sm">Total Rentals</p>
+          <p className="text-2xl font-bold">{rentals.length}</p>
+        </div>
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <p className="text-gray-500 text-sm">Pending COD Payments</p>
+          <p className="text-2xl font-bold text-orange-600">
+            {rentals.filter(r => r.paymentMethod === 'cod' && r.paymentStatus === 'pending').length}
+          </p>
+        </div>
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <p className="text-gray-500 text-sm">Total Revenue</p>
+          <p className="text-2xl font-bold text-green-600">
+            ₹{rentals
+              .filter(r => r.paymentStatus === 'paid' || r.paymentStatus === 'completed')
+              .reduce((sum, r) => sum + (r.totalAmount || 0), 0)
+              .toLocaleString()}
+          </p>
         </div>
       </div>
     </div>
