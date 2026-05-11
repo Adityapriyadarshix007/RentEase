@@ -78,6 +78,7 @@ const rentalRoutes = require('./routes/rental.routes');
 const adminRoutes = require('./routes/admin.routes');
 const maintenanceRoutes = require('./routes/maintenance.routes');
 const contactRoutes = require('./routes/contact.routes');
+const categoryRoutes = require('./routes/category.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -85,6 +86,7 @@ app.use('/api/rentals', rentalRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
