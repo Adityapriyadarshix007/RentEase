@@ -17,7 +17,6 @@ const Navbar = () => {
   const buttonRef = useRef(null);
 
   const cartCount = getCartCount();
-  const isLoginPage = location.pathname === '/login';
 
   // Fetch unread messages count using dedicated endpoint
   const fetchUnreadCount = useCallback(async () => {
@@ -120,23 +119,20 @@ const Navbar = () => {
     <nav className="bg-white shadow-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo - Show only Home icon on login page */}
+          {/* Logo - Always show full logo with home icon and RentEase text */}
           <Link to={user ? "/products" : "/login"} className="flex items-center space-x-2 group cursor-pointer">
             <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-2 rounded-lg transform group-hover:scale-105 transition duration-200">
               <FaHome className="text-white text-xl" />
             </div>
-            {/* Only show RentEase text when NOT on login page */}
-            {!isLoginPage && (
-              <div>
-                <span className="text-2xl font-bold text-blue-600">Rent</span>
-                <span className="text-2xl font-bold text-gray-800">Ease</span>
-                <p className="text-xs text-gray-500 hidden sm:block">Rent with Ease</p>
-              </div>
-            )}
+            <div>
+              <span className="text-2xl font-bold text-blue-600">Rent</span>
+              <span className="text-2xl font-bold text-gray-800">Ease</span>
+              <p className="text-xs text-gray-500 hidden sm:block">Rent with Ease</p>
+            </div>
           </Link>
 
           {/* Desktop Navigation - Hide on login page */}
-          {!isLoginPage && (
+          {location.pathname !== '/login' && (
             <div className="hidden md:flex items-center space-x-8">
               {user && (
                 <>
@@ -152,7 +148,7 @@ const Navbar = () => {
           )}
 
           {/* Right Section - Hide on login page */}
-          {!isLoginPage && (
+          {location.pathname !== '/login' && (
             <div className="flex items-center space-x-4">
               {user && (
                 <Link to="/cart" className="relative hover:opacity-80 transition cursor-pointer">
@@ -216,8 +212,8 @@ const Navbar = () => {
             </div>
           )}
 
-          {/* Show Login button on login page when not logged in */}
-          {isLoginPage && !user && (
+          {/* Show login button on login page when not logged in */}
+          {location.pathname === '/login' && !user && (
             <div className="flex items-center">
               <button onClick={() => navigate('/login')} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition cursor-pointer">
                 Login / Sign Up
@@ -227,7 +223,7 @@ const Navbar = () => {
         </div>
 
         {/* Mobile Navigation - Hide on login page */}
-        {!isLoginPage && isMobileMenuOpen && (
+        {location.pathname !== '/login' && isMobileMenuOpen && (
           <div className="md:hidden py-4 border-t">
             <div className="flex flex-col space-y-3">
               {user && (
