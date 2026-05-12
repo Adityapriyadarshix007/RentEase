@@ -59,7 +59,7 @@ const createRental = async (req, res) => {
       deliveryAddress,
       deliveryDate: new Date(deliveryDate),
       deliverySlot,
-      paymentMethod: paymentMethod,  // 'razorpay' or 'cod'
+      paymentMethod: paymentMethod,
       createdAt: new Date()
     });
     
@@ -93,9 +93,13 @@ const validatePincode = async (req, res) => {
 
 const getUserRentals = async (req, res) => {
   try {
-    const rentals = await Rental.find({ user: req.user._id }).sort({ createdAt: -1 });
+    const rentals = await Rental.find({ user: req.user._id })
+      .populate('product', 'name monthlyRent images category subCategory brand')
+      .sort({ createdAt: -1 });
+    
     res.json({ success: true, rentals });
   } catch (error) {
+    console.error('Error fetching user rentals:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -132,7 +136,10 @@ const getAllRentals = async (req, res) => {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Admin access required' });
     }
-    const rentals = await Rental.find().sort({ createdAt: -1 });
+    const rentals = await Rental.find()
+      .populate('user', 'name email')
+      .populate('product', 'name images category')
+      .sort({ createdAt: -1 });
     res.json({ success: true, rentals });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
