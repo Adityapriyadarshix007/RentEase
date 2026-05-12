@@ -234,6 +234,34 @@ const exportAnalyticsData = async (req, res) => {
         data = await Category.find({}).lean();
         filename = `categories_export_${Date.now()}.csv`;
         break;
+
+      case 'returns':
+        const Return = require('../models/Return.model');
+        const returnsData = await Return.find(dateFilter)
+        .populate('user', 'name email phone')
+        .populate('product', 'name category monthlyRent')
+        .sort({ createdAt: -1 })
+        .lean();
+  
+        data = returnsData.map(returnItem => ({
+       'Return ID': returnItem._id,
+       'User Name': returnItem.user?.name || 'N/A',
+       'User Email': returnItem.user?.email || 'N/A',
+       'User Phone': returnItem.user?.phone || 'N/A',
+       'Product Name': returnItem.product?.name || 'N/A',
+       'Product Category': returnItem.product?.category || 'N/A',
+       'Reason': returnItem.reason,
+       'Description': returnItem.description || 'N/A',
+       'Status': returnItem.status,
+       'Damage Amount (₹)': returnItem.damageAmount || 0,
+       'Refund Amount (₹)': returnItem.refundAmount || 0,
+       'Request Date': returnItem.createdAt ? new Date(returnItem.createdAt).toLocaleDateString() : 'N/A',
+       'Pickup Date': returnItem.pickupDate ? new Date(returnItem.pickupDate).toLocaleDateString() : 'N/A',
+       'Pickup Slot': returnItem.pickupSlot || 'N/A',
+       'Inspection Notes': returnItem.inspectionNotes || 'N/A'
+       }));
+       filename = `returns_export_${Date.now()}.csv`;
+      break;
         
       default:
         return res.status(400).json({ success: false, message: 'Invalid export type' });
@@ -248,7 +276,7 @@ const exportAnalyticsData = async (req, res) => {
     // Generate CSV
     let headers, csvRows;
     
-    if (type === 'rentals') {
+    if (type === 'rentals' || type === 'returns') {
       // Use predefined headers for rentals (already in correct order)
       headers = Object.keys(data[0]);
       csvRows = [headers.join(',')];

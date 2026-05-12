@@ -392,6 +392,7 @@ const AdminAnalytics = () => {
               <option value="rentals">🛒 Rentals</option>
               <option value="users">👥 Users</option>
               <option value="categories">📁 Categories</option>
+              <option value="returns">🔄 Returns</option> 
             </select>
           </div>
           <button
