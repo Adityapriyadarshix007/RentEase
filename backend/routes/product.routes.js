@@ -1,20 +1,31 @@
 const express = require('express');
 const router = express.Router();
-const { 
-  getProducts, 
-  getProductById, 
-  createProduct, 
-  updateProduct, 
+const { protect } = require('../middleware/auth.middleware');
+const {
+  getProducts,
+  getProductById,
+  createProduct,
+  updateProduct,
   deleteProduct,
-  getFeaturedProducts 
+  getFeaturedProducts,
+  addProductReview,
+  markReviewHelpful,
+  getProductReviews
 } = require('../controllers/product.controller');
-const { protect, admin, vendor } = require('../middleware/auth.middleware');
 
+// Public routes
 router.get('/', getProducts);
 router.get('/featured', getFeaturedProducts);
 router.get('/:id', getProductById);
-router.post('/', protect, vendor, createProduct);
-router.put('/:id', protect, vendor, updateProduct);
-router.delete('/:id', protect, admin, deleteProduct);
+router.get('/:id/reviews', getProductReviews);
+
+// Admin only routes
+router.post('/', protect, createProduct);
+router.put('/:id', protect, updateProduct);
+router.delete('/:id', protect, deleteProduct);
+
+// Review routes (authenticated users)
+router.post('/:id/reviews', protect, addProductReview);
+router.post('/:productId/reviews/:reviewId/helpful', protect, markReviewHelpful);
 
 module.exports = router;
