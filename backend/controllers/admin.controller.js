@@ -13,11 +13,13 @@ const getDashboardStats = async (req, res) => {
     const totalVendors = await User.countDocuments({ role: 'vendor' });
     const totalCategories = await Category.countDocuments();
     
+
     const totalRevenue = await Rental.aggregate([
       { $match: { paymentStatus: { $in: ['paid', 'completed'] } } },
       { $group: { _id: null, total: { $sum: '$totalAmount' } } }
     ]);
     
+  
     const currentDate = new Date();
     const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
@@ -27,10 +29,16 @@ const getDashboardStats = async (req, res) => {
       { $group: { _id: null, total: { $sum: '$totalAmount' } } }
     ]);
     
+
     const last30Days = new Date();
     last30Days.setDate(last30Days.getDate() - 30);
     const last30DaysRevenue = await Rental.aggregate([
-      { $match: { paymentStatus: { $in: ['paid', 'completed'] }, createdAt: { $gte: last30Days } } },
+      { 
+        $match: { 
+          paymentStatus: { $in: ['paid', 'completed'] },
+          createdAt: { $gte: last30Days }
+        } 
+      },
       { $group: { _id: null, total: { $sum: '$totalAmount' } } }
     ]);
     
@@ -160,6 +168,7 @@ const getAnalytics = async (req, res) => {
   }
 };
 
+
 const exportAnalyticsData = async (req, res) => {
   try {
     const { type, startDate, endDate } = req.query;
@@ -173,6 +182,7 @@ const exportAnalyticsData = async (req, res) => {
       const end = new Date(endDate);
       end.setHours(23, 59, 59, 999);
       dateFilter.createdAt = { $gte: start, $lte: end };
+      console.log(`📅 Exporting from ${start.toISOString()} to ${end.toISOString()}`);
     }
     
     switch (type) {
@@ -180,12 +190,16 @@ const exportAnalyticsData = async (req, res) => {
         data = await Product.find(dateFilter).lean();
         filename = `products_export_${Date.now()}.csv`;
         break;
+        
       case 'rentals':
+       
         const rentalsData = await Rental.find(dateFilter)
           .populate('user', 'name email phone')
           .populate('product', 'name category monthlyRent')
           .sort({ createdAt: -1 })
           .lean();
+        
+     
         data = rentalsData.map(rental => ({
           'User Name': rental.user?.name || 'N/A',
           'User Email': rental.user?.email || 'N/A',
@@ -207,29 +221,60 @@ const exportAnalyticsData = async (req, res) => {
             `${rental.deliveryAddress.street || ''}, ${rental.deliveryAddress.city || ''}, ${rental.deliveryAddress.state || ''} - ${rental.deliveryAddress.pincode || ''}` : 'N/A',
           'Created Date': rental.createdAt ? new Date(rental.createdAt).toLocaleDateString() : 'N/A'
         }));
+        
         filename = `rentals_export_${Date.now()}.csv`;
         break;
+        
       case 'users':
         data = await User.find(dateFilter).select('-password').lean();
         filename = `users_export_${Date.now()}.csv`;
         break;
+        
       case 'categories':
         data = await Category.find({}).lean();
         filename = `categories_export_${Date.now()}.csv`;
         break;
+        
       default:
         return res.status(400).json({ success: false, message: 'Invalid export type' });
     }
     
     if (!data || data.length === 0) {
-      return res.status(404).json({ success: false, message: `No ${type} data found` });
+      return res.status(404).json({ success: false, message: `No ${type} data found for selected date range` });
     }
     
-    const headers = Object.keys(data[0]);
-    const csvRows = [headers.join(',')];
-    for (const item of data) {
-      const values = headers.map(header => `"${String(item[header] || '').replace(/"/g, '""')}"`);
-      csvRows.push(values.join(','));
+    console.log(`📊 Found ${data.length} ${type} to export`);
+    
+    // Generate CSV
+    let headers, csvRows;
+    
+    if (type === 'rentals') {
+      // Use predefined headers for rentals (already in correct order)
+      headers = Object.keys(data[0]);
+      csvRows = [headers.join(',')];
+      
+      for (const item of data) {
+        const values = headers.map(header => {
+          let value = item[header];
+          return `"${String(value || '').replace(/"/g, '""')}"`;
+        });
+        csvRows.push(values.join(','));
+      }
+    } else {
+      // Dynamic headers for other types
+      headers = Object.keys(data[0]).filter(k => !k.startsWith('_') && k !== '__v');
+      csvRows = [headers.join(',')];
+      
+      for (const item of data) {
+        const values = headers.map(header => {
+          let value = item[header];
+          if (value && typeof value === 'object') value = value.name || JSON.stringify(value);
+          if (header === 'createdAt' && value) value = new Date(value).toLocaleDateString();
+          if (header === 'monthlyRent' || header === 'securityDeposit' || header === 'totalAmount') value = `₹${value}`;
+          return `"${String(value || '').replace(/"/g, '""')}"`;
+        });
+        csvRows.push(values.join(','));
+      }
     }
     
     res.setHeader('Content-Type', 'text/csv');
@@ -299,10 +344,10 @@ const getReturnsAnalytics = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Returns analytics error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 module.exports = { 
   getDashboardStats, 
@@ -313,5 +358,6 @@ module.exports = {
   getAnalytics,
   exportAnalyticsData,
   getRealtimeUpdates,
-  getReturnsAnalytics
+  getReturnsAnalytics 
 };
+
