@@ -80,6 +80,7 @@ const contactRoutes = require('./routes/contact.routes');
 const categoryRoutes = require('./routes/category.routes');
 const rentalRoutes = require('./routes/rental.routes');
 const paymentRoutes = require('./routes/payment.routes');
+const returnsRoutes = require('./routes/returns.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -89,6 +90,7 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/rentals', rentalRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/returns', returnsRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

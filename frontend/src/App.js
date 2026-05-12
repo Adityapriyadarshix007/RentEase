@@ -30,6 +30,7 @@ import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
 import Cancellation from './pages/Cancellation';
 import MyMessages from './pages/MyMessages';
+import MyReturns from './pages/MyReturns';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -73,6 +74,7 @@ function App() {
                 <Route path="/maintenance/:id" element={<ProtectedRoute><MaintenanceDetail /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/my-messages" element={<ProtectedRoute><MyMessages /></ProtectedRoute>} />
+                <Route path="/my-returns" element={<ProtectedRoute><MyReturns /></ProtectedRoute>} />
                 
                 {/* Admin Routes */}
                 <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />

@@ -4,14 +4,16 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const paymentRoutes = require('./routes/payment.routes');
+const rentalRoutes = require('./routes/rental.routes');
 
 dotenv.config();
 
 const app = express();
 
-// CORS configuration - Allow all origins for testing
+// CORS configuration
 const corsOptions = {
-  origin: '*',
+  origin: ['http://localhost:3000', 'https://rentease-frontend-ul7h.onrender.com', 'https://rentease-app-fawn.vercel.app', 'https://rentease-app-2026.vercel.app'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
@@ -19,26 +21,47 @@ const corsOptions = {
   optionsSuccessStatus: 204
 };
 
-// Session configuration for Passport (ONLY ONCE)
-const session = require('express-session');
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'rentease-session-secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production', maxAge: 24 * 60 * 60 * 1000 }
-}));
-
-// Initialize Passport
-const passport = require('./config/passport');
-app.use(passport.initialize());
-app.use(passport.session());
-
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 app.use(morgan('dev'));
+app.use('/api/payments', paymentRoutes);
+app.use('/api/rentals', rentalRoutes);
+
+// Session configuration
+const session = require('express-session');
+const MongoDBStore = require('connect-mongodb-session')(session);
+
+// Store sessions in MongoDB for persistence
+const store = new MongoDBStore({
+  uri: process.env.MONGODB_URI,
+  collection: 'sessions',
+  expires: 1000 * 60 * 60 * 24 * 7 // 7 days
+});
+
+store.on('error', function(error) {
+  console.error('Session store error:', error);
+});
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'rentease-session-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  store: store,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    sameSite: 'lax'
+  }
+}));
+
+// Initialize Passport
+const passport = require('./config/passport');
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Database connection
 const connectDB = async () => {
@@ -59,6 +82,7 @@ const rentalRoutes = require('./routes/rental.routes');
 const adminRoutes = require('./routes/admin.routes');
 const maintenanceRoutes = require('./routes/maintenance.routes');
 const contactRoutes = require('./routes/contact.routes');
+const categoryRoutes = require('./routes/category.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -66,6 +90,7 @@ app.use('/api/rentals', rentalRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -74,38 +99,34 @@ app.get('/health', (req, res) => {
 
 // Google Auth Routes
 app.get('/api/auth/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
+  passport.authenticate('google', { 
+    scope: ['profile', 'email'],
+    accessType: 'offline'
+  })
 );
 
 app.get('/api/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/login' }),
+  passport.authenticate('google', { 
+    failureRedirect: '/login',
+    failureMessage: true
+  }),
   (req, res) => {
-    try {
-      // Generate JWT token for frontend
-      const jwt = require('jsonwebtoken');
-      const token = jwt.sign(
-        { id: req.user._id },
-        process.env.JWT_SECRET,
-        { expiresIn: process.env.JWT_EXPIRE || '365d' }
-      );
-      
-      // Get the frontend URL from the request's referer or use environment variable
-      let frontendUrl = process.env.FRONTEND_URL || 'https://rentease-frontend-ul7h.onrender.com';
-      
-      // Check if request came from Vercel or Render
-      const referer = req.headers.referer || '';
-      if (referer.includes('vercel.app')) {
-        frontendUrl = 'https://rentease-app-2026.vercel.app';
-      } else if (referer.includes('onrender.com')) {
-        frontendUrl = 'https://rentease-frontend-ul7h.onrender.com';
-      }
-      
-      console.log(`Redirecting to: ${frontendUrl}/google-auth?token=${token.substring(0, 20)}...`);
-      res.redirect(`${frontendUrl}/google-auth?token=${token}`);
-    } catch (error) {
-      console.error('Google callback error:', error);
-      res.redirect('https://rentease-frontend-ul7h.onrender.com/login?error=google_auth_failed');
-    }
+    console.log('✅ Google auth successful for user:', req.user?.email);
+    
+    // Generate JWT token
+    const jwt = require('jsonwebtoken');
+    const token = jwt.sign(
+      { id: req.user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRE || '365d' }
+    );
+    
+    // IMPORTANT: Use the Vercel frontend URL
+    const frontendUrl = 'https://rentease-app-fawn.vercel.app';
+    console.log(`🔄 Redirecting to: ${frontendUrl}/google-auth?token=${token.substring(0, 30)}...`);
+    
+    // Redirect to frontend with token
+    res.redirect(`${frontendUrl}/google-auth?token=${token}`);
   }
 );
 
@@ -124,6 +145,7 @@ app.get('/api/auth/google/user', (req, res) => {
 app.get('/api/auth/google/logout', (req, res) => {
   req.logout((err) => {
     if (err) return res.status(500).json({ message: err.message });
+    req.session.destroy();
     res.json({ success: true, message: 'Logged out successfully' });
   });
 });
@@ -141,5 +163,8 @@ const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+const paymentRoutes = require('./routes/payment.routes');
+app.use('/api/payments', paymentRoutes);
 
 module.exports = app;

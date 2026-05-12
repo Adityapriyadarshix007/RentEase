@@ -137,6 +137,7 @@ const Navbar = () => {
               <>
                 <Link to="/products" className={`text-gray-700 hover:text-blue-600 transition font-medium ${isActive('/products') ? 'text-blue-600' : ''}`}>Products</Link>
                 <Link to="/my-rentals" className={`text-gray-700 hover:text-blue-600 transition font-medium ${isActive('/my-rentals') ? 'text-blue-600' : ''}`}>My Rentals</Link>
+                <Link to="/my-returns" className={`text-gray-700 hover:text-blue-600 transition font-medium ${isActive('/my-returns') ? 'text-blue-600' : ''}`}>My Returns</Link>
                 <Link to="/maintenance" className={`text-gray-700 hover:text-blue-600 transition font-medium ${isActive('/maintenance') ? 'text-blue-600' : ''}`}>Support</Link>
               </>
             )}
@@ -216,6 +217,7 @@ const Navbar = () => {
                 <>
                   <button onClick={() => handleNavigation('/products')} className="text-gray-700 hover:text-blue-600 transition py-2 text-left cursor-pointer">Products</button>
                   <button onClick={() => handleNavigation('/my-rentals')} className="text-gray-700 hover:text-blue-600 transition py-2 text-left cursor-pointer">My Rentals</button>
+                <Link to="/my-returns" className={`text-gray-700 hover:text-blue-600 transition font-medium ${isActive('/my-returns') ? 'text-blue-600' : ''}`}>My Returns</Link>
                   <button onClick={() => handleNavigation('/maintenance')} className="text-gray-700 hover:text-blue-600 transition py-2 text-left cursor-pointer">Support</button>
                 </>
               )}
