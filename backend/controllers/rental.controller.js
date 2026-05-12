@@ -79,12 +79,22 @@ const createRental = async (req, res) => {
 const validatePincode = async (req, res) => {
   try {
     const { pincode } = req.body;
-    const serviceablePincodes = ['700001', '700135', '700136', '400001', '110001', '560001'];
     
-    if (serviceablePincodes.includes(pincode)) {
-      res.json({ success: true, message: 'Delivery available', deliveryFee: 0 });
+    // Indian pincode regex: 6 digits, first digit can't be 0
+    const pincodeRegex = /^[1-9][0-9]{5}$/;
+    
+    if (pincodeRegex.test(pincode)) {
+      // Valid Indian pincode format
+      res.json({ 
+        success: true, 
+        message: 'Delivery available at this pincode', 
+        deliveryFee: 0 
+      });
     } else {
-      res.json({ success: false, message: 'Delivery not available at this pincode' });
+      res.json({ 
+        success: false, 
+        message: 'Please enter a valid 6-digit Indian pincode' 
+      });
     }
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

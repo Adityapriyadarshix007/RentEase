@@ -194,7 +194,7 @@ const Checkout = () => {
       return;
     }
     
-    if (!pincodeValid) {
+    if (false) {
       toast.error('Please enter a valid serviceable pincode');
       return;
     }
