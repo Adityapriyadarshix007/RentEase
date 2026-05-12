@@ -28,7 +28,7 @@ const AdminProducts = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
 
   // Image validation constants
-  const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
+  const MAX_IMAGE_SIZE = 20 * 1024 * 1024; // 20MB in bytes
   const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
@@ -137,7 +137,7 @@ const AdminProducts = () => {
     
     // Show errors for invalid files
     if (invalidFiles.length > 0) {
-      toast.error(`Invalid files: ${invalidFiles.join(', ')}. Max size 2MB, allowed: JPEG, PNG, WEBP`);
+      toast.error(`Invalid files: ${invalidFiles.join(', ')}. Max size 20MB total per product, allowed: JPEG, PNG, WEBP`);
     }
     
     if (validFiles.length === 0) {
@@ -648,7 +648,7 @@ const AdminProducts = () => {
                   >
                     <FaUpload /> Upload Images
                   </label>
-                  <p className="text-xs text-gray-500 mt-2">Max 2MB per image | Formats: JPEG, PNG, WEBP</p>
+                  <p className="text-xs text-gray-500 mt-2">Max 20MB total for all images | Formats: JPEG, PNG, WEBP</p>
                   {uploadingImage && <p className="text-sm text-gray-500 mt-2">Processing images...</p>}
                 </div>
                 {imagePreview.length > 0 && (
