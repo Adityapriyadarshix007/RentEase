@@ -6,7 +6,8 @@ const {
   getRentalById, 
   cancelRental, 
   getAllRentals,
-  updateRentalStatus 
+  updateRentalStatus,
+  validatePincode
 } = require('../controllers/rental.controller');
 const { protect, admin } = require('../middleware/auth.middleware');
 
@@ -15,6 +16,7 @@ router.use(protect);
 
 // User routes
 router.post('/', createRental);
+router.post('/validate-pincode', validatePincode);
 router.get('/my-rentals', getUserRentals);
 router.get('/:id', getRentalById);
 router.put('/:id/cancel', cancelRental);

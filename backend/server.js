@@ -4,6 +4,8 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const paymentRoutes = require('./routes/payment.routes');
+const rentalRoutes = require('./routes/rental.routes');
 
 dotenv.config();
 
@@ -25,6 +27,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 app.use(morgan('dev'));
+app.use('/api/payments', paymentRoutes);
+app.use('/api/rentals', rentalRoutes);
 
 // Session configuration
 const session = require('express-session');

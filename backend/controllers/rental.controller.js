@@ -13,19 +13,21 @@ try {
     monthlyRent: Number,
     totalAmount: Number,
     securityDeposit: Number,
-    status: String,
-    paymentStatus: { type: String, default: 'pending' },  // ← ADD THIS
-    paymentId: String,  // ← ADD THIS
-    paymentDate: Date,  // ← ADD THIS
+    status: { type: String, default: 'pending' },
+    paymentStatus: { type: String, default: 'pending' },
+    paymentId: String,
+    paymentDate: Date,
+    razorpayOrderId: String,
     deliveryAddress: Object,
     deliveryDate: Date,
     deliverySlot: String,
     paymentMethod: String,
-    createdAt: Date
+    createdAt: { type: Date, default: Date.now }
   });
   Rental = mongoose.model('Rental', rentalSchema);
 }
 
+// Create Rental Order
 const createRental = async (req, res) => {
   try {
     const { productId, tenureMonths, quantity, deliveryAddress, deliveryDate, deliverySlot, paymentMethod } = req.body;
@@ -35,7 +37,7 @@ const createRental = async (req, res) => {
     });
     
     if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
+      return res.status(404).json({ success: false, message: 'Product not found' });
     }
     
     const rentalStartDate = new Date();
@@ -43,9 +45,6 @@ const createRental = async (req, res) => {
     rentalEndDate.setMonth(rentalEndDate.getMonth() + tenureMonths);
     
     const totalAmount = product.monthlyRent * tenureMonths * (quantity || 1);
-    
-    // Set paymentStatus based on payment method
-    const paymentStatus = paymentMethod === 'cod' ? 'pending' : 'paid';
     
     const rental = new Rental({
       user: new mongoose.Types.ObjectId(req.user._id),
@@ -56,19 +55,17 @@ const createRental = async (req, res) => {
       monthlyRent: product.monthlyRent,
       totalAmount,
       securityDeposit: product.securityDeposit || 0,
-      status: paymentMethod === 'cod' ? 'pending' : 'active',
-      paymentStatus: paymentStatus,  // ← SET PAYMENT STATUS
+      status: 'pending',
+      paymentStatus: 'pending',
       deliveryAddress,
       deliveryDate: new Date(deliveryDate),
       deliverySlot,
       paymentMethod,
-      paymentDate: paymentMethod === 'cod' ? null : new Date(),
       createdAt: new Date()
     });
     
     await rental.save();
     
-    // Return rental with payment info
     res.status(201).json({ 
       success: true, 
       rental,
@@ -76,107 +73,113 @@ const createRental = async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating rental:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
+// Get user's own rentals
 const getUserRentals = async (req, res) => {
   try {
-    const rentals = await Rental.find({ user: new mongoose.Types.ObjectId(req.user._id) }).sort({ createdAt: -1 });
-    
-    const populatedRentals = await Promise.all(rentals.map(async (rental) => {
-      const product = await mongoose.connection.db.collection('products').findOne({ _id: rental.product });
-      return { ...rental._doc, product };
-    }));
-    
-    res.json({ success: true, rentals: populatedRentals });
+    const rentals = await Rental.find({ user: req.user._id }).sort({ createdAt: -1 });
+    res.json({ success: true, rentals });
   } catch (error) {
-    console.error('Error fetching user rentals:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-const getAllRentals = async (req, res) => {
-  try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Access denied. Admin only.' });
-    }
-    
-    const rentals = await Rental.find({}).sort({ createdAt: -1 });
-    
-    const populatedRentals = await Promise.all(rentals.map(async (rental) => {
-      const product = await mongoose.connection.db.collection('products').findOne({ _id: rental.product });
-      const user = await mongoose.connection.db.collection('users').findOne({ _id: rental.user });
-      return {
-        ...rental._doc,
-        product: product || null,
-        user: user ? { name: user.name, email: user.email, _id: user._id } : null
-      };
-    }));
-    
-    res.json({ success: true, rentals: populatedRentals });
-  } catch (error) {
-    console.error('Error fetching all rentals:', error);
-    res.status(500).json({ message: error.message });
-  }
-};
-
+// Get rental by ID
 const getRentalById = async (req, res) => {
   try {
     const rental = await Rental.findById(req.params.id);
-    if (!rental) return res.status(404).json({ message: 'Rental not found' });
-    
-    if (rental.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Not authorized' });
+    if (!rental) {
+      return res.status(404).json({ success: false, message: 'Rental not found' });
     }
     
-    const product = await mongoose.connection.db.collection('products').findOne({ _id: rental.product });
-    res.json({ success: true, rental: { ...rental._doc, product } });
+    // Check authorization
+    if (rental.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+    
+    res.json({ success: true, rental });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
+// Cancel rental
 const cancelRental = async (req, res) => {
   try {
     const rental = await Rental.findById(req.params.id);
-    if (!rental) return res.status(404).json({ message: 'Rental not found' });
+    if (!rental) {
+      return res.status(404).json({ success: false, message: 'Rental not found' });
+    }
     
     if (rental.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Not authorized' });
+      return res.status(403).json({ success: false, message: 'Not authorized' });
     }
     
     rental.status = 'cancelled';
     await rental.save();
     res.json({ success: true, message: 'Rental cancelled successfully' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
+// Get all rentals (Admin only)
+const getAllRentals = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Admin access required' });
+    }
+    const rentals = await Rental.find().sort({ createdAt: -1 });
+    res.json({ success: true, rentals });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Update rental status (Admin only)
 const updateRentalStatus = async (req, res) => {
   try {
     const { status } = req.body;
     const rental = await Rental.findById(req.params.id);
-    
     if (!rental) {
-      return res.status(404).json({ message: 'Rental not found' });
+      return res.status(404).json({ success: false, message: 'Rental not found' });
     }
     
     rental.status = status;
     await rental.save();
-    res.json({ success: true, message: 'Rental status updated successfully' });
+    res.json({ success: true, message: 'Rental status updated', rental });
   } catch (error) {
-    console.error('Error updating rental status:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Validate Pincode for delivery
+const validatePincode = async (req, res) => {
+  try {
+    const { pincode } = req.body;
+    
+    // Serviceable pincodes (you can expand this)
+    const serviceablePincodes = ['700001', '700135', '700136', '400001', '110001', '560001'];
+    
+    if (serviceablePincodes.includes(pincode)) {
+      res.json({ success: true, message: 'Delivery available', deliveryFee: 0 });
+    } else {
+      res.json({ success: false, message: 'Delivery not available at this pincode' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
 module.exports = { 
-  createRental, 
-  getUserRentals, 
-  getAllRentals, 
-  getRentalById, 
-  cancelRental, 
-  updateRentalStatus 
+  createRental,
+  getUserRentals,
+  getRentalById,
+  cancelRental,
+  getAllRentals,
+  updateRentalStatus,
+  validatePincode
 };
