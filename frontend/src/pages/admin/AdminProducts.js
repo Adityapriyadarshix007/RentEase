@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { productService } from '../../services/index';
-import { FaEdit, FaTrash, FaPlus, FaSearch, FaFilter, FaTimes, FaEye, FaSave, FaTimesCircle, FaUpload } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaPlus, FaSearch, FaFilter, FaTimes, FaEye, FaSave, FaTimesCircle, FaUpload, FaBox } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const AdminProducts = () => {
@@ -27,7 +27,11 @@ const AdminProducts = () => {
   const [imagePreview, setImagePreview] = useState([]);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+  // Image validation constants
+  const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
+  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
   const staticCategories = ['Furniture', 'Appliances'];
 
   useEffect(() => {
@@ -68,22 +72,102 @@ const AdminProducts = () => {
     setSearchTerm(e.target.value);
   };
 
+  // Compress image before upload
+  const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          let width = img.width;
+          let height = img.height;
+          const maxWidth = 1200;
+          const maxHeight = 1200;
+          
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          canvas.toBlob((blob) => {
+            resolve(blob);
+          }, 'image/jpeg', 0.7);
+        };
+        img.onerror = reject;
+      };
+      reader.onerror = reject;
+    });
+  };
+
+  // Updated handleImageUpload with validation
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
+    const validFiles = [];
+    const invalidFiles = [];
+    
+    // Validate each file
+    for (const file of files) {
+      // Check file size
+      if (file.size > MAX_IMAGE_SIZE) {
+        invalidFiles.push(`${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+        continue;
+      }
+      
+      // Check file type
+      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        invalidFiles.push(`${file.name} (${file.type.split('/')[1]})`);
+        continue;
+      }
+      
+      validFiles.push(file);
+    }
+    
+    // Show errors for invalid files
+    if (invalidFiles.length > 0) {
+      toast.error(`Invalid files: ${invalidFiles.join(', ')}. Max size 2MB, allowed: JPEG, PNG, WEBP`);
+    }
+    
+    if (validFiles.length === 0) {
+      return;
+    }
+    
     setUploadingImage(true);
     
-    for (const file of files) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(prev => [...prev, reader.result]);
-        setFormData(prev => ({
-          ...prev,
-          images: [...prev.images, reader.result]
-        }));
-      };
-      reader.readAsDataURL(file);
+    for (const file of validFiles) {
+      try {
+        const compressedBlob = await compressImage(file);
+        const reader = new FileReader();
+        
+        reader.onloadend = () => {
+          setImagePreview(prev => [...prev, reader.result]);
+          setFormData(prev => ({
+            ...prev,
+            images: [...prev.images, reader.result]
+          }));
+        };
+        reader.readAsDataURL(compressedBlob);
+      } catch (error) {
+        console.error('Image compression error:', error);
+        toast.error(`Failed to process ${file.name}`);
+      }
     }
+    
     setUploadingImage(false);
+    // Clear input value
+    e.target.value = '';
   };
 
   const removeImage = (index) => {
@@ -97,10 +181,22 @@ const AdminProducts = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validate required fields
+    if (!formData.name || !formData.category || !formData.monthlyRent) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    
     const loadingToast = toast.loading(editingProduct ? 'Updating product...' : 'Creating product...');
     
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        toast.dismiss(loadingToast);
+        toast.error('Please login again');
+        return;
+      }
+      
       const url = editingProduct 
         ? `${API_BASE_URL}/api/products/${editingProduct._id}`
         : `${API_BASE_URL}/api/products`;
@@ -108,10 +204,17 @@ const AdminProducts = () => {
       const method = editingProduct ? 'PUT' : 'POST';
       
       const productData = {
-        ...formData,
+        name: formData.name,
+        category: formData.category,
+        subCategory: formData.subCategory,
+        description: formData.description,
         monthlyRent: parseFloat(formData.monthlyRent),
-        securityDeposit: parseFloat(formData.securityDeposit),
-        availableQuantity: parseInt(formData.availableQuantity)
+        securityDeposit: parseFloat(formData.securityDeposit) || 0,
+        availableQuantity: parseInt(formData.availableQuantity) || 0,
+        brand: formData.brand,
+        condition: formData.condition,
+        images: formData.images,
+        specifications: formData.specifications || {}
       };
       
       const response = await fetch(url, {
@@ -138,32 +241,34 @@ const AdminProducts = () => {
     } catch (error) {
       toast.dismiss(loadingToast);
       console.error('Error saving product:', error);
-      toast.error('Network error');
+      toast.error('Network error. Please try again.');
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      const loadingToast = toast.loading('Deleting product...');
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${API_BASE_URL}/api/products/${id}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        toast.dismiss(loadingToast);
-        
-        if (response.ok) {
-          toast.success('Product deleted successfully');
-          fetchProducts();
-        } else {
-          toast.error('Failed to delete product');
-        }
-      } catch (error) {
-        toast.dismiss(loadingToast);
-        toast.error('Network error');
+    if (!window.confirm('Are you sure you want to delete this product?')) return;
+    
+    const loadingToast = toast.loading('Deleting product...');
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/products/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      toast.dismiss(loadingToast);
+      
+      if (response.ok) {
+        toast.success('Product deleted successfully');
+        fetchProducts();
+      } else {
+        const data = await response.json();
+        toast.error(data.message || 'Failed to delete product');
       }
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      console.error('Error deleting product:', error);
+      toast.error('Network error');
     }
   };
 
@@ -281,91 +386,114 @@ const AdminProducts = () => {
       </div>
 
       {/* Products Table */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredProducts.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
-                    No products found. Click "Add New Product" to create one.
-                  </td>
-                </tr>
-              ) : (
-                filteredProducts.map((product) => (
-                  <tr key={product._id} className="hover:bg-gray-50 transition">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        {product.images && product.images[0] ? (
-                          <img src={product.images[0]} alt={product.name} className="w-10 h-10 rounded-lg object-cover" />
-                        ) : (
-                          <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-                            <FaBox className="text-gray-400" />
-                          </div>
-                        )}
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{product.name}</p>
-                          {product.brand && <p className="text-xs text-gray-500">{product.brand}</p>}
-                        </div>
+<div className="bg-white rounded-lg shadow-md overflow-hidden">
+  <div className="overflow-x-auto">
+    <table className="min-w-full divide-y divide-gray-200">
+      <thead className="bg-gray-50">
+        <tr>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-gray-200">
+        {filteredProducts.length === 0 ? (
+          <tr>
+            <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+              No products found. Click "Add New Product" to create one.
+            </td>
+          </tr>
+        ) : (
+          filteredProducts.map((product) => (
+            <tr key={product._id} className="hover:bg-gray-50 transition">
+              <td className="px-6 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                    {product.images && product.images[0] ? (
+                      <img 
+                        src={product.images[0]} 
+                        alt={product.name} 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="%239ca3af" stroke-width="2"%3E%3Crect x="2" y="2" width="20" height="20" rx="2" ry="2"%3E%3C/rect%3E%3Ccircle cx="8.5" cy="8.5" r="2.5"%3E%3C/circle%3E%3Cpolyline points="21 15 16 10 5 21"%3E%3C/polyline%3E%3C/svg%3E';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                        <FaBox className="text-gray-400 text-lg" />
                       </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      <span className="px-2 py-1 bg-blue-100 text-blue-600 rounded-full text-xs">
-                        {product.category || 'Uncategorized'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm font-semibold text-green-600">
-                      ₹{product.monthlyRent}/month
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      <span className={`font-semibold ${product.availableQuantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {product.availableQuantity || 0}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                        product.availableQuantity > 0 
-                          ? 'bg-green-100 text-green-600' 
-                          : 'bg-red-100 text-red-600'
-                      }`}>
-                        {product.availableQuantity > 0 ? 'In Stock' : 'Out of Stock'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      <div className="flex gap-3">
-                        <button
-                          onClick={() => handleEdit(product)}
-                          className="text-blue-600 hover:text-blue-800 transition"
-                          title="Edit Product"
-                        >
-                          <FaEdit size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product._id)}
-                          className="text-red-600 hover:text-red-800 transition"
-                          title="Delete Product"
-                        >
-                          <FaTrash size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 line-clamp-1">{product.name}</p>
+                    {product.brand && <p className="text-xs text-gray-500">{product.brand}</p>}
+                  </div>
+                </div>
+              </td>
+              <td className="px-6 py-4">
+                <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                  {product.category || 'Uncategorized'}
+                </span>
+                {product.subCategory && (
+                  <span className="inline-flex ml-1 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
+                    {product.subCategory}
+                  </span>
+                )}
+              </td>
+              <td className="px-6 py-4">
+                <div>
+                  <p className="text-sm font-semibold text-green-600">₹{product.monthlyRent}/month</p>
+                  {product.securityDeposit > 0 && (
+                    <p className="text-xs text-gray-500">Deposit: ₹{product.securityDeposit}</p>
+                  )}
+                </div>
+              </td>
+              <td className="px-6 py-4">
+                <p className={`text-sm font-semibold ${product.availableQuantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {product.availableQuantity || 0} units
+                </p>
+                {product.availableQuantity <= 5 && product.availableQuantity > 0 && (
+                  <p className="text-xs text-orange-500">Low stock!</p>
+                )}
+              </td>
+              <td className="px-6 py-4">
+                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                  product.availableQuantity > 0 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-red-100 text-red-700'
+                }`}>
+                  {product.availableQuantity > 0 ? '● In Stock' : '○ Out of Stock'}
+                </span>
+              </td>
+              <td className="px-6 py-4">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEdit(product)}
+                    className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition"
+                    title="Edit Product"
+                  >
+                    <FaEdit size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(product._id)}
+                    className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition"
+                    title="Delete Product"
+                  >
+                    <FaTrash size={16} />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>
 
       {/* Product Count */}
       <div className="mt-4 text-sm text-gray-500">
@@ -508,7 +636,7 @@ const AdminProducts = () => {
                 <div className="border-2 border-dashed rounded-lg p-4 text-center">
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/jpg,image/webp"
                     multiple
                     onChange={handleImageUpload}
                     className="hidden"
@@ -520,7 +648,8 @@ const AdminProducts = () => {
                   >
                     <FaUpload /> Upload Images
                   </label>
-                  {uploadingImage && <p className="text-sm text-gray-500 mt-2">Uploading...</p>}
+                  <p className="text-xs text-gray-500 mt-2">Max 2MB per image | Formats: JPEG, PNG, WEBP</p>
+                  {uploadingImage && <p className="text-sm text-gray-500 mt-2">Processing images...</p>}
                 </div>
                 {imagePreview.length > 0 && (
                   <div className="flex gap-2 mt-3 flex-wrap">
