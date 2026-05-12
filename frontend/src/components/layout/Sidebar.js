@@ -16,7 +16,6 @@ const Sidebar = () => {
     { path: '/admin/maintenance', name: 'Maintenance', icon: <FaWrench /> },
     { path: '/admin/categories', name: 'Categories', icon: <FaTags /> },
     { path: '/admin/analytics', name: 'Analytics', icon: <FaChartLine /> },
-    { path: '/admin/images', name: 'Images', icon: <FaImage /> },
     { path: '/admin/contacts', name: 'Contacts', icon: <FaEnvelope /> },
   ];
 
