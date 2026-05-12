@@ -84,7 +84,6 @@ const validatePincode = async (req, res) => {
     const pincodeRegex = /^[1-9][0-9]{5}$/;
     
     if (pincodeRegex.test(pincode)) {
-      // Valid Indian pincode format
       res.json({ 
         success: true, 
         message: 'Delivery available at this pincode', 
