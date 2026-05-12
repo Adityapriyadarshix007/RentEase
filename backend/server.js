@@ -21,8 +21,8 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 app.use(helmet());
 app.use(morgan('dev'));
 
@@ -167,4 +167,4 @@ app.listen(PORT, () => {
 });
 
 
-module.exports = app;// Force fresh deploy - Tue May 12 13:33:00 IST 2026
+module.exports = app;

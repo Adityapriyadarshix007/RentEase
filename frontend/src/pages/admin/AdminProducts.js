@@ -104,7 +104,7 @@ const AdminProducts = () => {
           
           canvas.toBlob((blob) => {
             resolve(blob);
-          }, 'image/jpeg', 0.7);
+          }, 'image/jpeg', 0.4);
         };
         img.onerror = reject;
       };
