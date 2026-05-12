@@ -14,7 +14,7 @@ import {
   ArcElement
 } from 'chart.js';
 import { Bar, Line, Doughnut } from 'react-chartjs-2';
-import { FaDownload, FaCalendarAlt, FaBox, FaShoppingCart, FaUsers, FaChartLine } from 'react-icons/fa';
+import { FaDownload, FaCalendarAlt, FaBox, FaShoppingCart, FaUsers, FaChartLine, FaUndo } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 // Register Chart.js components
@@ -32,6 +32,7 @@ ChartJS.register(
 
 const AdminAnalytics = () => {
   const [analytics, setAnalytics] = useState(null);
+  const [returnsAnalytics, setReturnsAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [exportType, setExportType] = useState('products');
@@ -40,10 +41,11 @@ const AdminAnalytics = () => {
     endDate: new Date().toISOString().split('T')[0]
   });
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
 
   useEffect(() => {
     fetchAnalytics();
+    fetchReturnsAnalytics();
   }, [dateRange]);
 
   const fetchAnalytics = async () => {
@@ -65,6 +67,21 @@ const AdminAnalytics = () => {
       toast.error('Network error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchReturnsAnalytics = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/admin/returns-analytics`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setReturnsAnalytics(data.analytics);
+      }
+    } catch (error) {
+      console.error('Error fetching returns analytics:', error);
     }
   };
 
@@ -390,8 +407,8 @@ const AdminAnalytics = () => {
         </p>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {/* Key Metrics - 5 cards including Returns */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-md p-4 text-white">
           <div className="flex items-center justify-between">
             <div>
@@ -426,6 +443,20 @@ const AdminAnalytics = () => {
               <p className="text-2xl font-bold">{analytics.categoryDistribution?.length || 0}</p>
             </div>
             <FaBox size={32} className="text-purple-200" />
+          </div>
+        </div>
+        <div className="bg-gradient-to-r from-rose-500 to-rose-600 rounded-lg shadow-md p-4 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-rose-100 text-sm">Returns & Refunds</p>
+              <p className="text-2xl font-bold">{returnsAnalytics?.totalReturns || 0}</p>
+              <p className="text-xs text-rose-100">Refunded: ₹{returnsAnalytics?.totalRefundAmount?.toLocaleString() || 0}</p>
+            </div>
+            <FaUndo size={32} className="text-rose-200" />
+          </div>
+          <div className="mt-2 flex gap-2 text-xs text-rose-100">
+            <span>Pending: {returnsAnalytics?.pendingReturns || 0}</span>
+            <span>Completed: {returnsAnalytics?.completedReturns || 0}</span>
           </div>
         </div>
       </div>
@@ -476,6 +507,35 @@ const AdminAnalytics = () => {
           </div>
         </div>
       </div>
+
+      {/* Returns Analytics Section */}
+      {returnsAnalytics && returnsAnalytics.totalReturns > 0 && (
+        <div className="bg-white rounded-lg shadow-md p-4 mb-8">
+          <h2 className="text-xl font-semibold mb-4">Returns Analytics</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h3 className="font-medium mb-2">Returns by Status</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between border-b pb-1"><span className="text-yellow-600">Pending:</span><span className="font-semibold">{returnsAnalytics.pendingReturns}</span></div>
+                <div className="flex justify-between border-b pb-1"><span className="text-blue-600">Approved:</span><span className="font-semibold">{returnsAnalytics.approvedReturns}</span></div>
+                <div className="flex justify-between border-b pb-1"><span className="text-green-600">Completed:</span><span className="font-semibold">{returnsAnalytics.completedReturns}</span></div>
+                <div className="flex justify-between border-b pb-1"><span className="text-red-600">Rejected:</span><span className="font-semibold">{returnsAnalytics.rejectedReturns}</span></div>
+              </div>
+            </div>
+            <div>
+              <h3 className="font-medium mb-2">Returns by Reason</h3>
+              <div className="space-y-2">
+                {returnsAnalytics.returnsByReason?.map((item, idx) => (
+                  <div key={idx} className="flex justify-between border-b pb-1">
+                    <span className="capitalize">{item._id}:</span>
+                    <span className="font-semibold">{item.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Top Products Table */}
       <div className="bg-white rounded-lg shadow-md p-4">

@@ -41,7 +41,6 @@ import AdminMaintenance from './pages/admin/AdminMaintenance';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
 import AdminReturns from './pages/admin/AdminReturns';
-import AdminReturns from './pages/admin/AdminReturns';
 import AdminContacts from './pages/admin/AdminContacts';
 
 function App() {
@@ -87,13 +86,13 @@ function App() {
                 <Route path="/admin/categories" element={<ProtectedRoute adminOnly><AdminLayout><AdminCategories /></AdminLayout></ProtectedRoute>} />
                 <Route path="/admin/analytics" element={<ProtectedRoute adminOnly><AdminLayout><AdminAnalytics /></AdminLayout></ProtectedRoute>} />
                 <Route path="/admin/returns" element={<ProtectedRoute adminOnly><AdminLayout><AdminReturns /></AdminLayout></ProtectedRoute>} />
-                <Route path="/admin/returns" element={<ProtectedRoute adminOnly><AdminLayout><AdminReturns /></AdminLayout></ProtectedRoute>} />
+                {/* REMOVED DUPLICATE LINE BELOW */}
                 <Route path="/admin/contacts" element={<ProtectedRoute adminOnly><AdminLayout><AdminContacts /></AdminLayout></ProtectedRoute>} />
                 
                 {/* 404 */}
                 <Route path="*" element={<Navigate to="/products" replace />} />
 
-                {/* Google Authenitication */}
+                {/* Google Authentication */}
                 <Route path="/google-auth" element={<GoogleAuthHandler />} />
                 <Route path="/complete-profile" element={<ProtectedRoute><CompleteProfile /></ProtectedRoute>} />
               </Routes>

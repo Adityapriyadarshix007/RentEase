@@ -33,6 +33,7 @@ router.get('/', protect, admin, async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error fetching returns:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -51,11 +52,12 @@ router.get('/:id', protect, admin, async (req, res) => {
     
     res.json({ success: true, return: returnReq });
   } catch (error) {
+    console.error('Error fetching return by ID:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// Update return status (Admin only)
+// Update return status (Admin only) - FIXED with non-negative refund
 router.put('/:id/status', protect, admin, async (req, res) => {
   try {
     const { status, refundAmount, damageAmount, inspectionNotes, pickupDate, pickupSlot } = req.body;
@@ -65,9 +67,26 @@ router.put('/:id/status', protect, admin, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Return request not found' });
     }
     
+    // Get the original rental amount
+    const rental = await Rental.findById(returnReq.rental);
+    
+    // Calculate refund amount - ensure it's never negative
+    let finalRefundAmount = returnReq.refundAmount;
+    let finalDamageAmount = Math.max(0, parseFloat(damageAmount) || 0);
+    
+    if (status === 'completed') {
+      const originalAmount = rental?.totalAmount || 0;
+      finalRefundAmount = Math.max(0, originalAmount - finalDamageAmount);
+      returnReq.refundAmount = finalRefundAmount;
+      returnReq.damageAmount = finalDamageAmount;
+    }
+    
+    if (refundAmount !== undefined && parseFloat(refundAmount) >= 0) {
+      finalRefundAmount = Math.max(0, parseFloat(refundAmount));
+      returnReq.refundAmount = finalRefundAmount;
+    }
+    
     returnReq.status = status || returnReq.status;
-    if (refundAmount !== undefined) returnReq.refundAmount = refundAmount;
-    if (damageAmount !== undefined) returnReq.damageAmount = damageAmount;
     if (inspectionNotes) returnReq.inspectionNotes = inspectionNotes;
     if (pickupDate) returnReq.pickupDate = new Date(pickupDate);
     if (pickupSlot) returnReq.pickupSlot = pickupSlot;
@@ -77,15 +96,21 @@ router.put('/:id/status', protect, admin, async (req, res) => {
       await Rental.findByIdAndUpdate(returnReq.rental, { status: 'return_requested' });
     }
     
-    // If completed, update rental to completed and process refund
+    // If completed, update rental status
     if (status === 'completed') {
       await Rental.findByIdAndUpdate(returnReq.rental, { status: 'returned' });
     }
     
     await returnReq.save();
     
-    res.json({ success: true, message: `Return request ${status}`, return: returnReq });
+    res.json({ 
+      success: true, 
+      message: `Return request ${status}`,
+      return: returnReq,
+      refundAmount: finalRefundAmount
+    });
   } catch (error) {
+    console.error('Update return status error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -133,6 +158,7 @@ router.get('/analytics/summary', protect, admin, async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Returns analytics error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });

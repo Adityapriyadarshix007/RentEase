@@ -13,13 +13,13 @@ const getDashboardStats = async (req, res) => {
     const totalVendors = await User.countDocuments({ role: 'vendor' });
     const totalCategories = await Category.countDocuments();
     
-    // Calculate TOTAL REVENUE (all time) - This updates with every purchase
+
     const totalRevenue = await Rental.aggregate([
       { $match: { paymentStatus: { $in: ['paid', 'completed'] } } },
       { $group: { _id: null, total: { $sum: '$totalAmount' } } }
     ]);
     
-    // Calculate CURRENT MONTH REVENUE (for reference)
+  
     const currentDate = new Date();
     const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
@@ -29,7 +29,7 @@ const getDashboardStats = async (req, res) => {
       { $group: { _id: null, total: { $sum: '$totalAmount' } } }
     ]);
     
-    // Calculate LAST 30 DAYS REVENUE
+
     const last30Days = new Date();
     last30Days.setDate(last30Days.getDate() - 30);
     const last30DaysRevenue = await Rental.aggregate([
@@ -168,7 +168,7 @@ const getAnalytics = async (req, res) => {
   }
 };
 
-// EXPORT FUNCTION - FIXED with user email and complete rental details
+
 const exportAnalyticsData = async (req, res) => {
   try {
     const { type, startDate, endDate } = req.query;
@@ -192,14 +192,14 @@ const exportAnalyticsData = async (req, res) => {
         break;
         
       case 'rentals':
-        // Get rentals with populated user and product data
+       
         const rentalsData = await Rental.find(dateFilter)
           .populate('user', 'name email phone')
           .populate('product', 'name category monthlyRent')
           .sort({ createdAt: -1 })
           .lean();
         
-        // Transform to flat structure for CSV with user email included
+     
         data = rentalsData.map(rental => ({
           'User Name': rental.user?.name || 'N/A',
           'User Email': rental.user?.email || 'N/A',
@@ -300,13 +300,64 @@ const getRealtimeUpdates = async (req, res) => {
   }
 };
 
+const getReturnsAnalytics = async (req, res) => {
+  try {
+    const Return = require('../models/Return.model');
+    
+    const totalReturns = await Return.countDocuments();
+    const pendingReturns = await Return.countDocuments({ status: 'pending' });
+    const approvedReturns = await Return.countDocuments({ status: 'approved' });
+    const completedReturns = await Return.countDocuments({ status: 'completed' });
+    const rejectedReturns = await Return.countDocuments({ status: 'rejected' });
+    
+    const totalRefundAmount = await Return.aggregate([
+      { $match: { status: 'completed' } },
+      { $group: { _id: null, total: { $sum: '$refundAmount' } } }
+    ]);
+    
+    const returnsByReason = await Return.aggregate([
+      { $group: { _id: '$reason', count: { $sum: 1 } } }
+    ]);
+    
+    const monthlyReturns = await Return.aggregate([
+      {
+        $group: {
+          _id: { $month: '$createdAt' },
+          count: { $sum: 1 },
+          totalRefund: { $sum: '$refundAmount' }
+        }
+      },
+      { $sort: { '_id': 1 } }
+    ]);
+    
+    res.json({
+      success: true,
+      analytics: {
+        totalReturns,
+        pendingReturns,
+        approvedReturns,
+        completedReturns,
+        rejectedReturns,
+        totalRefundAmount: totalRefundAmount[0]?.total || 0,
+        returnsByReason,
+        monthlyReturns
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
 module.exports = { 
   getDashboardStats, 
   getAllUsers, 
   getUserById, 
   updateUser, 
   deleteUser, 
-  getAnalytics, 
-  exportAnalyticsData, 
-  getRealtimeUpdates 
+  getAnalytics,
+  exportAnalyticsData,
+  getRealtimeUpdates,
+  getReturnsAnalytics 
 };
+

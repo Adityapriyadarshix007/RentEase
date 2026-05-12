@@ -175,7 +175,7 @@ const AdminReturns = () => {
                 <tr>
                   <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
                     No return requests found
-                   </td>
+                  </td>
                 </tr>
               ) : (
                 returns.map((returnReq) => (
@@ -212,7 +212,7 @@ const AdminReturns = () => {
                 ))
               )}
             </tbody>
-           </>
+          </table>
         </div>
       </div>
       
@@ -278,10 +278,16 @@ const AdminReturns = () => {
                     <div className="space-y-2">
                       <input
                         type="number"
+                        min="0"
                         placeholder="Refund Amount"
                         className="w-full px-3 py-2 border rounded-lg"
                         id="refundAmount"
-                      />
+                        onChange={(e) => {
+                        if (parseFloat(e.target.value) < 0) {
+                        e.target.value = 0;
+                        }
+                        }}
+                        />
                       <button
                         onClick={() => {
                           const amount = document.getElementById('refundAmount').value;
