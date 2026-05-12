@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaTrash, FaPlus, FaEdit } from 'react-icons/fa';
+import { FaTrash, FaPlus, FaEdit, FaSync } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const AdminCategories = () => {
@@ -7,6 +7,7 @@ const AdminCategories = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -14,7 +15,7 @@ const AdminCategories = () => {
     order: 0
   });
 
-  const API_BASE_URL = 'https://rentease-backend-njvk.onrender.com';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
 
   useEffect(() => {
     fetchCategories();
@@ -25,17 +26,33 @@ const AdminCategories = () => {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}/api/categories`);
       const data = await response.json();
+      
+      console.log('API Response:', data);
+      
       if (data.success) {
         setCategories(data.categories || []);
+        if (data.categories?.length === 0) {
+          toast('No categories found. Click "Add Category" to create one.', { icon: 'ℹ️' });
+        }
       } else {
+        console.error('API error:', data);
         setCategories([]);
+        toast.error(data.message || 'Failed to load categories');
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
       setCategories([]);
+      toast.error('Network error. Please check your connection.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchCategories();
+    toast.success('Refreshing categories...');
   };
 
   const handleSubmit = async (e) => {
@@ -61,9 +78,6 @@ const AdminCategories = () => {
         : `${API_BASE_URL}/api/categories`;
       
       const method = editingCategory ? 'PUT' : 'POST';
-      
-      console.log('Sending request to:', url);
-      console.log('With data:', formData);
       
       const response = await fetch(url, {
         method,
@@ -164,16 +178,26 @@ const AdminCategories = () => {
         <div>
           <h1 className="text-3xl font-bold">Manage Categories</h1>
           <p className="text-gray-500 mt-1">Create and manage product categories</p>
+          <p className="text-xs text-gray-400 mt-1">Total categories: {categories.length}</p>
         </div>
-        <button
-          onClick={() => {
-            resetForm();
-            setShowModal(true);
-          }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition"
-        >
-          <FaPlus /> Add Category
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="bg-gray-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-600 transition"
+          >
+            <FaSync className={refreshing ? 'animate-spin' : ''} /> Refresh
+          </button>
+          <button
+            onClick={() => {
+              resetForm();
+              setShowModal(true);
+            }}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition"
+          >
+            <FaPlus /> Add Category
+          </button>
+        </div>
       </div>
       
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -185,16 +209,28 @@ const AdminCategories = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Slug</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {categories.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
-                    No categories found. Click "Add Category" to create one.
-                  </td>
-                </tr>
+                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                    <div className="flex flex-col items-center gap-2">
+                      <p>No categories found.</p>
+                      <button
+                        onClick={() => {
+                          resetForm();
+                          setShowModal(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        Click here to add your first category
+                      </button>
+                    </div>
+                   </td>
+                 </tr>
               ) : (
                 categories.map((cat) => (
                   <tr key={cat._id} className="hover:bg-gray-50">
@@ -202,8 +238,13 @@ const AdminCategories = () => {
                     <td className="px-6 py-4 text-sm text-gray-500">{cat.slug}</td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                       {cat.description || '-'}
+                     </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{cat.order || 0} </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 text-xs rounded-full ${cat.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {cat.isActive ? 'Active' : 'Inactive'}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{cat.order || 0}</td>
                     <td className="px-6 py-4 text-sm">
                       <div className="flex gap-3">
                         <button
