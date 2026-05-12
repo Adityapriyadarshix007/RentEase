@@ -1,84 +1,105 @@
 const mongoose = require('mongoose');
 
+const reviewSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  userName: {
+    type: String,
+    required: true
+  },
+  rating: {
+    type: Number,
+    required: true,
+    min: 1,
+    max: 5
+  },
+  comment: {
+    type: String,
+    required: true
+  },
+  verifiedPurchase: {
+    type: Boolean,
+    default: false
+  },
+  helpful: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const productSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'Please add a product name'],
-    trim: true,
-    maxlength: [100, 'Name cannot be more than 100 characters']
+    required: true,
+    trim: true
   },
   category: {
     type: String,
-    required: true,
-    enum: ['Furniture', 'Appliances']
+    required: true
   },
   subCategory: {
     type: String,
-    required: true,
-    enum: ['Bed', 'Sofa', 'Table', 'Chair', 'Wardrobe', 'Dining Table', 'Bookshelf', 
-           'Fridge', 'Washing Machine', 'TV', 'AC', 'Microwave', 'Water Purifier', 'Air Cooler']
+    default: ''
   },
   description: {
     type: String,
-    required: [true, 'Please add a description'],
-    maxlength: [500, 'Description cannot be more than 500 characters']
+    required: true
   },
   monthlyRent: {
     type: Number,
     required: true,
-    min: [0, 'Monthly rent cannot be negative']
+    min: 0
   },
   securityDeposit: {
     type: Number,
-    required: true,
-    min: [0, 'Security deposit cannot be negative']
-  },
-  rentalTenureOptions: [{
-    type: Number,
-    enum: [1, 3, 6, 12]
-  }],
-  images: [{
-    type: String,
-    default: []
-  }],
-  quantity: {
-    type: Number,
-    required: true,
-    min: 0,
     default: 0
+  },
+  images: [{
+    type: String
+  }],
+  brand: {
+    type: String,
+    default: ''
+  },
+  condition: {
+    type: String,
+    enum: ['new', 'like-new', 'good', 'fair'],
+    default: 'good'
   },
   availableQuantity: {
     type: Number,
-    required: true,
-    min: 0,
     default: 0
   },
   specifications: {
-    brand: String,
-    model: String,
-    color: String,
-    dimensions: String,
-    weight: String,
-    material: String,
-    warranty: String
+    type: Object,
+    default: {}
   },
+  reviews: [reviewSchema],
   rating: {
     type: Number,
-    min: 0,
-    max: 5,
     default: 0
   },
   numReviews: {
     type: Number,
     default: 0
   },
+  ratingDistribution: {
+    one: { type: Number, default: 0 },
+    two: { type: Number, default: 0 },
+    three: { type: Number, default: 0 },
+    four: { type: Number, default: 0 },
+    five: { type: Number, default: 0 }
+  },
   isAvailable: {
     type: Boolean,
     default: true
-  },
-  vendor: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
   },
   createdAt: {
     type: Date,
@@ -90,11 +111,30 @@ const productSchema = new mongoose.Schema({
   }
 });
 
-productSchema.index({ name: 'text', description: 'text' });
-
-productSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
-});
+// Method to update rating when new review is added
+productSchema.methods.updateRating = async function() {
+  const totalReviews = this.reviews.length;
+  if (totalReviews === 0) {
+    this.rating = 0;
+    this.numReviews = 0;
+    return;
+  }
+  
+  let sum = 0;
+  const distribution = { one: 0, two: 0, three: 0, four: 0, five: 0 };
+  
+  for (const review of this.reviews) {
+    sum += review.rating;
+    if (review.rating === 1) distribution.one++;
+    else if (review.rating === 2) distribution.two++;
+    else if (review.rating === 3) distribution.three++;
+    else if (review.rating === 4) distribution.four++;
+    else if (review.rating === 5) distribution.five++;
+  }
+  
+  this.rating = sum / totalReviews;
+  this.numReviews = totalReviews;
+  this.ratingDistribution = distribution;
+};
 
 module.exports = mongoose.model('Product', productSchema);
