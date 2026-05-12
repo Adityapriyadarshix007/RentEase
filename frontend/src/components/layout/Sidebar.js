@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   FaTachometerAlt, FaUsers, FaBox, FaCalendarCheck, 
-  FaWrench, FaTags, FaChartLine, FaImage, FaEnvelope 
+  FaWrench, FaTags, FaChartLine, FaImage, FaEnvelope, FaUndo 
 } from 'react-icons/fa';
 
 const Sidebar = () => {
@@ -13,6 +13,7 @@ const Sidebar = () => {
     { path: '/admin/users', name: 'Users', icon: <FaUsers /> },
     { path: '/admin/products', name: 'Products', icon: <FaBox /> },
     { path: '/admin/rentals', name: 'Rentals', icon: <FaCalendarCheck /> },
+    { path: '/admin/returns', name: 'Returns', icon: <FaUndo /> },  // ← ADD THIS LINE
     { path: '/admin/maintenance', name: 'Maintenance', icon: <FaWrench /> },
     { path: '/admin/categories', name: 'Categories', icon: <FaTags /> },
     { path: '/admin/analytics', name: 'Analytics', icon: <FaChartLine /> },
