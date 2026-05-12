@@ -4,8 +4,6 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const paymentRoutes = require('./routes/payment.routes');
-const rentalRoutes = require('./routes/rental.routes');
 
 dotenv.config();
 
@@ -27,8 +25,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 app.use(morgan('dev'));
-app.use('/api/payments', paymentRoutes);
-app.use('/api/rentals', rentalRoutes);
 
 // Session configuration
 const session = require('express-session');
@@ -78,19 +74,21 @@ connectDB();
 // Routes
 const authRoutes = require('./routes/auth.routes');
 const productRoutes = require('./routes/product.routes');
-const rentalRoutes = require('./routes/rental.routes');
 const adminRoutes = require('./routes/admin.routes');
 const maintenanceRoutes = require('./routes/maintenance.routes');
 const contactRoutes = require('./routes/contact.routes');
 const categoryRoutes = require('./routes/category.routes');
+const rentalRoutes = require('./routes/rental.routes');
+const paymentRoutes = require('./routes/payment.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
-app.use('/api/rentals', rentalRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/rentals', rentalRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -164,7 +162,5 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-const paymentRoutes = require('./routes/payment.routes');
-app.use('/api/payments', paymentRoutes);
 
 module.exports = app;
