@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaEnvelope, FaLock, FaGoogle } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaGoogle, FaHome } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const Login = () => {
@@ -95,10 +95,10 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="max-w-md w-full space-y-8">
-        {/* Header */}
+        {/* Header - Changed 'R' to Home icon */}
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 bg-gradient-to-r from-blue-600 to-blue-800 rounded-full flex items-center justify-center">
-            <span className="text-white text-xl font-bold">R</span>
+          <div className="mx-auto h-14 w-14 bg-gradient-to-r from-blue-600 to-blue-800 rounded-full flex items-center justify-center shadow-lg">
+            <FaHome className="text-white text-2xl" />
           </div>
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
             Welcome Back
