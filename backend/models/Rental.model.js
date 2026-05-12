@@ -64,16 +64,17 @@ const rentalSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['cod', 'card', 'upi', 'netbanking', 'wallet'],
+    enum: ['cod', 'razorpay', 'card', 'upi', 'netbanking', 'wallet'],  // ← ADDED 'razorpay'
     default: 'cod'
   },
   paymentStatus: {
     type: String,
-    enum: ['pending', 'paid', 'completed', 'refunded'],  // ← ADDED 'completed' here
+    enum: ['pending', 'paid', 'completed', 'refunded'],
     default: 'pending'
   },
   paymentId: String,
-  paymentDate: Date,  // ← ADD THIS FIELD
+  paymentDate: Date,
+  razorpayOrderId: String,
   notes: String,
   createdAt: {
     type: Date,
@@ -85,7 +86,6 @@ const rentalSchema = new mongoose.Schema({
   }
 });
 
-// Update the updatedAt field on save
 rentalSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();

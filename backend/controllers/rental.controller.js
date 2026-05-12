@@ -21,13 +21,12 @@ try {
     deliveryAddress: Object,
     deliveryDate: Date,
     deliverySlot: String,
-    paymentMethod: String,
+    paymentMethod: { type: String, enum: ['cod', 'razorpay'], default: 'cod' },
     createdAt: { type: Date, default: Date.now }
   });
   Rental = mongoose.model('Rental', rentalSchema);
 }
 
-// Create Rental Order
 const createRental = async (req, res) => {
   try {
     const { productId, tenureMonths, quantity, deliveryAddress, deliveryDate, deliverySlot, paymentMethod } = req.body;
@@ -60,7 +59,7 @@ const createRental = async (req, res) => {
       deliveryAddress,
       deliveryDate: new Date(deliveryDate),
       deliverySlot,
-      paymentMethod,
+      paymentMethod: paymentMethod,  // 'razorpay' or 'cod'
       createdAt: new Date()
     });
     
@@ -77,7 +76,21 @@ const createRental = async (req, res) => {
   }
 };
 
-// Get user's own rentals
+const validatePincode = async (req, res) => {
+  try {
+    const { pincode } = req.body;
+    const serviceablePincodes = ['700001', '700135', '700136', '400001', '110001', '560001'];
+    
+    if (serviceablePincodes.includes(pincode)) {
+      res.json({ success: true, message: 'Delivery available', deliveryFee: 0 });
+    } else {
+      res.json({ success: false, message: 'Delivery not available at this pincode' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 const getUserRentals = async (req, res) => {
   try {
     const rentals = await Rental.find({ user: req.user._id }).sort({ createdAt: -1 });
@@ -87,32 +100,20 @@ const getUserRentals = async (req, res) => {
   }
 };
 
-// Get rental by ID
 const getRentalById = async (req, res) => {
   try {
     const rental = await Rental.findById(req.params.id);
-    if (!rental) {
-      return res.status(404).json({ success: false, message: 'Rental not found' });
-    }
-    
-    // Check authorization
-    if (rental.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, message: 'Not authorized' });
-    }
-    
+    if (!rental) return res.status(404).json({ success: false, message: 'Rental not found' });
     res.json({ success: true, rental });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Cancel rental
 const cancelRental = async (req, res) => {
   try {
     const rental = await Rental.findById(req.params.id);
-    if (!rental) {
-      return res.status(404).json({ success: false, message: 'Rental not found' });
-    }
+    if (!rental) return res.status(404).json({ success: false, message: 'Rental not found' });
     
     if (rental.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Not authorized' });
@@ -126,7 +127,6 @@ const cancelRental = async (req, res) => {
   }
 };
 
-// Get all rentals (Admin only)
 const getAllRentals = async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -139,36 +139,15 @@ const getAllRentals = async (req, res) => {
   }
 };
 
-// Update rental status (Admin only)
 const updateRentalStatus = async (req, res) => {
   try {
     const { status } = req.body;
     const rental = await Rental.findById(req.params.id);
-    if (!rental) {
-      return res.status(404).json({ success: false, message: 'Rental not found' });
-    }
+    if (!rental) return res.status(404).json({ success: false, message: 'Rental not found' });
     
     rental.status = status;
     await rental.save();
-    res.json({ success: true, message: 'Rental status updated', rental });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// Validate Pincode for delivery
-const validatePincode = async (req, res) => {
-  try {
-    const { pincode } = req.body;
-    
-    // Serviceable pincodes (you can expand this)
-    const serviceablePincodes = ['700001', '700135', '700136', '400001', '110001', '560001'];
-    
-    if (serviceablePincodes.includes(pincode)) {
-      res.json({ success: true, message: 'Delivery available', deliveryFee: 0 });
-    } else {
-      res.json({ success: false, message: 'Delivery not available at this pincode' });
-    }
+    res.json({ success: true, message: 'Rental status updated' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -176,10 +155,10 @@ const validatePincode = async (req, res) => {
 
 module.exports = { 
   createRental,
+  validatePincode,
   getUserRentals,
   getRentalById,
   cancelRental,
   getAllRentals,
-  updateRentalStatus,
-  validatePincode
+  updateRentalStatus
 };
