@@ -10,10 +10,7 @@ const Products = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [dynamicCategories, setDynamicCategories] = useState([]);
   
-  // Static categories (pre-existing)
   const staticCategories = ['Furniture', 'Appliances'];
-  
-  // Combine static + dynamic categories
   const allCategories = [...staticCategories, ...dynamicCategories.filter(cat => !staticCategories.includes(cat.name))];
   
   const [pagination, setPagination] = useState({
@@ -23,7 +20,6 @@ const Products = () => {
     limit: 12
   });
 
-  // Filter state
   const [filters, setFilters] = useState({
     category: searchParams.get('category') || '',
     subCategory: searchParams.get('subCategory') || '',
@@ -35,31 +31,43 @@ const Products = () => {
     page: parseInt(searchParams.get('page')) || 1
   });
 
-  // Input states (for instant UI updates)
   const [searchInput, setSearchInput] = useState(filters.search);
   const [minPriceInput, setMinPriceInput] = useState(filters.minPrice);
   const [maxPriceInput, setMaxPriceInput] = useState(filters.maxPrice);
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
 
-  // Fetch categories from backend
+  // Fetch categories from backend with caching
   useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/categories`);
-      const data = await response.json();
-      if (data.success) {
-        setDynamicCategories(data.categories || []);
+    const fetchCategories = async () => {
+      // Check cache first
+      const cached = localStorage.getItem('rentease_categories');
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < 3600000) { // 1 hour
+          setDynamicCategories(data);
+          return;
+        }
       }
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/categories`);
+        const data = await response.json();
+        if (data.success) {
+          setDynamicCategories(data.categories || []);
+          localStorage.setItem('rentease_categories', JSON.stringify({
+            data: data.categories,
+            timestamp: Date.now()
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+    
+    fetchCategories();
+  }, [API_BASE_URL]);
 
-  // Debounce function
   const debounce = (func, delay) => {
     let timeoutId;
     return (...args) => {
@@ -70,7 +78,6 @@ const Products = () => {
     };
   };
 
-  // Fetch products when filters change
   useEffect(() => {
     fetchProducts();
   }, [filters]);
@@ -105,7 +112,6 @@ const Products = () => {
     }
   };
 
-  // Debounced filter updates
   const debouncedSearch = useCallback(
     debounce((value) => {
       setFilters(prev => ({ ...prev, search: value, page: 1 }));
@@ -129,13 +135,11 @@ const Products = () => {
     []
   );
 
-  // Immediate filter changes (for selects and buttons)
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
     setShowFilters(false);
   };
 
-  // Input handlers with debounce and validation
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchInput(value);
@@ -213,14 +217,12 @@ const Products = () => {
     return pages;
   };
 
-  // Memoize product cards to prevent unnecessary re-renders
   const memoizedProductCards = useMemo(() => {
     return products.map(product => (
       <ProductCard key={product._id} product={product} />
     ));
   }, [products]);
 
-  // Loading skeleton
   const LoadingSkeleton = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       {[...Array(12)].map((_, i) => (
