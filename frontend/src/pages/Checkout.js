@@ -228,43 +228,114 @@ const Checkout = () => {
         return;
       }
       
-      // Handle Razorpay: Process payment
-      if (paymentMethod === 'razorpay') {
-        // Load Razorpay script if not loaded
-        const isScriptLoaded = await loadRazorpayScript();
-        if (!isScriptLoaded) {
-          toast.error('Failed to load payment gateway');
-          setLoading(false);
-          return;
-        }
-        
-        // Calculate total amount
-        const totalAmount = cartItems.reduce((sum, item) => {
-          return sum + (item.monthlyRent * item.tenureMonths * item.quantity);
-        }, 0) + cartItems.reduce((sum, item) => sum + (item.securityDeposit || 0), 0);
-        
-        // Create Razorpay order for the first rental
-        const orderResponse = await fetch(`${API_URL}/api/payments/create-order`, {
+      // Handle Razorpay - Multiple Rentals Fix
+if (paymentMethod === 'razorpay') {
+  // Create all rentals first
+  const rentals = [];
+  for (const item of cartItems) {
+    const rentalData = {
+      productId: item.productId,
+      tenureMonths: item.tenureMonths,
+      quantity: item.quantity,
+      deliveryAddress: address,
+      deliveryDate: deliveryDate,
+      deliverySlot: deliverySlot,
+      paymentMethod: paymentMethod
+    };
+    
+    const response = await fetch(`${API_URL}/api/rentals`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(rentalData)
+    });
+    
+    const data = await response.json();
+    if (data.success) {
+      rentals.push(data.rental);
+    }
+  }
+  
+  if (rentals.length === 0) {
+    toast.error('Failed to create rentals');
+    setLoading(false);
+    return;
+  }
+  
+  // Calculate total amount
+  const totalAmount = cartItems.reduce((sum, item) => {
+    return sum + (item.monthlyRent * item.tenureMonths * item.quantity);
+  }, 0) + cartItems.reduce((sum, item) => sum + (item.securityDeposit || 0), 0);
+  
+  // Create a GROUP payment intent (for all rentals)
+  const groupOrderResponse = await fetch(`${API_URL}/api/payments/create-group-order`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ 
+      rentalIds: rentals.map(r => r._id),
+      totalAmount: totalAmount
+    })
+  });
+  
+  const groupOrderData = await groupOrderResponse.json();
+  
+  if (groupOrderData.success) {
+    const isScriptLoaded = await loadRazorpayScript();
+    if (!isScriptLoaded) {
+      toast.error('Failed to load payment gateway');
+      setLoading(false);
+      return;
+    }
+    
+    const options = {
+      key: RAZORPAY_KEY,
+      amount: groupOrderData.order.amount,
+      currency: 'INR',
+      name: 'RentEase',
+      description: `Payment for ${rentals.length} items`,
+      order_id: groupOrderData.order.id,
+      handler: async (response) => {
+        // Verify payment for ALL rentals
+        const verifyResponse = await fetch(`${API_URL}/api/payments/verify-group-payment`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ rentalId: rentals[0]._id })
+          body: JSON.stringify({
+            rentalIds: rentals.map(r => r._id),
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+            paymentMethod: 'razorpay'
+          })
         });
         
-        const orderData = await orderResponse.json();
-        
-        if (orderData.success && orderData.order) {
-          await handleRazorpayPayment(
-            orderData.order.id,
-            totalAmount * 100,
-            rentals[0]._id
-          );
+        const verifyData = await verifyResponse.json();
+        if (verifyData.success) {
+          toast.success(`Payment successful! ${rentals.length} items rented`);
+          clearCart();
+          navigate('/my-rentals');
         } else {
-          toast.error('Failed to initialize payment');
+          toast.error('Payment verification failed');
         }
-      }
+      },
+      prefill: { name: user?.name, email: user?.email },
+      theme: { color: '#3B82F6' },
+      modal: { ondismiss: () => { toast.error('Payment cancelled'); setLoading(false); } }
+    };
+    
+    const razorpay = new window.Razorpay(options);
+    razorpay.open();
+  } else {
+    toast.error('Failed to initialize payment');
+  }
+}
     } catch (error) {
       console.error('Checkout error:', error);
       toast.error('Network error. Please try again.');
