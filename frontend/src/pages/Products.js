@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/products/ProductCard';
 import { FaFilter, FaTimes } from 'react-icons/fa';
@@ -40,7 +40,7 @@ const Products = () => {
   const [minPriceInput, setMinPriceInput] = useState(filters.minPrice);
   const [maxPriceInput, setMaxPriceInput] = useState(filters.maxPrice);
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
 
   // Fetch categories from backend
   useEffect(() => {
@@ -87,7 +87,7 @@ const Products = () => {
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
       if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
       params.append('page', filters.page);
-      params.append('limit', 12);
+      params.append('limit', 8);
 
       const response = await fetch(`${API_BASE_URL}/api/products?${params}`);
       const data = await response.json();
@@ -213,12 +213,33 @@ const Products = () => {
     return pages;
   };
 
+  // Memoize product cards to prevent unnecessary re-renders
+  const memoizedProductCards = useMemo(() => {
+    return products.map(product => (
+      <ProductCard key={product._id} product={product} />
+    ));
+  }, [products]);
+
+  // Loading skeleton
+  const LoadingSkeleton = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      {[...Array(8)].map((_, i) => (
+        <div key={i} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
+          <div className="h-48 bg-gray-200"></div>
+          <div className="p-4">
+            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+            <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
+            <div className="h-5 bg-gray-200 rounded w-1/3"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   if (loading && products.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <LoadingSkeleton />
       </div>
     );
   }
@@ -249,11 +270,9 @@ const Products = () => {
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Categories</option>
-              {/* Show static categories first (Furniture, Appliances) */}
               {staticCategories.map((cat) => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
-              {/* Show dynamic categories that are not already in static list */}
               {dynamicCategories
                 .filter(cat => !staticCategories.includes(cat.name))
                 .map((cat) => (
@@ -340,11 +359,9 @@ const Products = () => {
                   className="w-full px-3 py-2 border rounded-lg"
                 >
                   <option value="">All Categories</option>
-                  {/* Show static categories first (Furniture, Appliances) */}
                   {staticCategories.map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
-                  {/* Show dynamic categories that are not already in static list */}
                   {dynamicCategories
                     .filter(cat => !staticCategories.includes(cat.name))
                     .map((cat) => (
@@ -390,7 +407,7 @@ const Products = () => {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {products.map(product => <ProductCard key={product._id} product={product} />)}
+            {memoizedProductCards}
           </div>
 
           {/* Pagination */}
