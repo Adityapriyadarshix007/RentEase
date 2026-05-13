@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fix white screen on scroll - ADD THIS */
+html {
+  background-color: #f3f4f6;
+  height: 100%;
+}
+
+body {
+  background-color: #f3f4f6;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  background-color: #f3f4f6;
+  min-height: 100vh;
+}
+
+/* Rest of your existing CSS... */
+
 @layer base {
   body {
     @apply bg-gray-50 text-dark font-sans;
