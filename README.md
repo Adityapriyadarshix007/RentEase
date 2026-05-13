@@ -221,10 +221,12 @@ Role	Email	Password
 
 📸 Screenshots
 Page	Screenshot
-Home Page	<img width="800" alt="Home" src="https://github.com/user-attachments/assets/8edf2cb8-8a4a-4b44-aff2-3f13d6a1c275" />
-Products Page	<img width="800" alt="Products" src="https://github.com/user-attachments/assets/8e317d17-ae88-4b99-abe6-585581607474" />
-Cart Page	<img width="800" alt="Cart" src="https://github.com/user-attachments/assets/814bdd17-8990-43c9-b103-9d8c1a24f128" />
-Admin Dashboard	<img width="800" alt="Admin" src="https://github.com/user-attachments/assets/b6bc3e89-e332-4c28-992c-e067f953670e" />
+
+Home Page	<img width="1512" height="827" alt="Screenshot 2026-05-13 at 1 00 52 PM" src="https://github.com/user-attachments/assets/b4a0ee26-2bb0-4572-9997-fd7a1e5b5b92" />
+Products Page	<img width="1512" height="827" alt="Screenshot" src="https://github.com/user-attachments/assets/d62698b3-ff97-4019-9eb7-424e7b43f8c0" />
+Cart Page	<img width="1512" height="827" alt="Screenshot 2026-05-13 at 12 59 51 PM" src="https://github.com/user-attachments/assets/ca6e371b-baea-443a-b323-0ebbf7d0306e" />
+Admin Dashboard	<img width="1512" height="827" alt="Screenshot 2026-05-13 at 1 06 07 PM" src="https://github.com/user-attachments/assets/fdf7b34a-1699-46b2-b268-f86f188dfb87" />
+
 
 
 📄 License
