@@ -20,7 +20,7 @@ const Products = () => {
     total: 0,
     currentPage: 1,
     totalPages: 1,
-    limit: 12
+    limit: 8
   });
 
   // Filter state
@@ -96,7 +96,7 @@ const Products = () => {
         total: data.pagination?.total || 0,
         currentPage: data.pagination?.page || 1,
         totalPages: data.pagination?.pages || 1,
-        limit: 12
+        limit: 8
       });
     } catch (error) {
       console.error('Error fetching products:', error);

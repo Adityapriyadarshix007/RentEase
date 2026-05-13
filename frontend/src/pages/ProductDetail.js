@@ -280,65 +280,68 @@ const ProductDetail = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Product Images Section */}
-        <div>
-          <div className="bg-gray-100 rounded-lg p-4 mb-4 relative group">
-            <div className="h-96 flex items-center justify-center">
-              {product.images && product.images.length > 0 ? (
-                <img
-                  src={product.images[selectedImageIndex]}
-                  alt={product.name}
-                  className="max-w-full max-h-full object-contain rounded-lg"
-                  onError={(e) => {
-                    e.target.src = 'https://via.placeholder.com/400x400?text=Product+Image';
-                  }}
-                />
-              ) : (
-                <div className="text-center">
-                  <div className="text-6xl mb-4">{getCategoryIcon()}</div>
-                  <p className="text-gray-400">No image available</p>
-                </div>
-              )}
-            </div>
-            
-            {product.images && product.images.length > 1 && (
-              <>
-                <button
-                  onClick={prevImage}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition"
-                >
-                  <FaChevronLeft size={20} />
-                </button>
-                <button
-                  onClick={nextImage}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition"
-                >
-                  <FaChevronRight size={20} />
-                </button>
-              </>
-            )}
-          </div>
-          
-          {/* Thumbnail Gallery */}
-          {product.images && product.images.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto pb-2 justify-center">
-              {product.images.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedImageIndex(idx)}
-                  className={`w-20 h-20 rounded-lg border-2 overflow-hidden flex-shrink-0 transition ${
-                    selectedImageIndex === idx ? 'border-blue-600 ring-2 ring-blue-600/50' : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <img 
-                    src={img} 
-                    alt={`${product.name} ${idx + 1}`} 
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
-            </div>
-          )}
+<div>
+  <div className="bg-gray-100 rounded-lg p-4 mb-4 relative group">
+    <div className="h-96 flex items-center justify-center">
+      {product.images && product.images.length > 0 ? (
+        <img
+          src={product.images[selectedImageIndex]}
+          alt={product.name}
+          className="max-w-full max-h-full object-contain rounded-lg"
+          onError={(e) => {
+            e.target.src = 'https://via.placeholder.com/400x400?text=Product+Image';
+          }}
+        />
+      ) : (
+        <div className="text-center">
+          <div className="text-6xl mb-4">{getCategoryIcon()}</div>
+          <p className="text-gray-400">No image available</p>
         </div>
+      )}
+    </div>
+    
+    {/* Arrow Buttons - Fixed with higher z-index */}
+    {product.images && product.images.length > 1 && (
+      <>
+        <button
+          onClick={prevImage}
+          className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full shadow-lg transition z-30 w-10 h-10 flex items-center justify-center"
+          aria-label="Previous image"
+        >
+          <FaChevronLeft size={20} />
+        </button>
+        <button
+          onClick={nextImage}
+          className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full shadow-lg transition z-30 w-10 h-10 flex items-center justify-center"
+          aria-label="Next image"
+        >
+          <FaChevronRight size={20} />
+        </button>
+      </>
+    )}
+  </div>
+  
+  {/* Thumbnail Gallery */}
+  {product.images && product.images.length > 1 && (
+    <div className="flex gap-3 overflow-x-auto pb-2 justify-center">
+      {product.images.map((img, idx) => (
+        <button
+          key={idx}
+          onClick={() => setSelectedImageIndex(idx)}
+          className={`w-20 h-20 rounded-lg border-2 overflow-hidden flex-shrink-0 transition ${
+            selectedImageIndex === idx ? 'border-blue-600 ring-2 ring-blue-600/50' : 'border-gray-200 hover:border-gray-300'
+          }`}
+        >
+          <img 
+            src={img} 
+            alt={`${product.name} ${idx + 1}`} 
+            className="w-full h-full object-cover"
+          />
+        </button>
+      ))}
+    </div>
+  )}
+</div>
         
         {/* Product Info Section */}
         <div>
