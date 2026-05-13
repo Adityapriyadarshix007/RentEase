@@ -70,6 +70,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('rentease_cart_backup');
     delete axios.defaults.headers.common['Authorization'];
     setToken(null);
     setUser(null);

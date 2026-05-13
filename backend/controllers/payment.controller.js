@@ -210,7 +210,7 @@ const razorpayWebhook = async (req, res) => {
       const rental = await Rental.findOneAndUpdate(
         { razorpayOrderId: orderId },
         { 
-          paymentStatus: 'completed',
+          paymentStatus: 'paid',
           paymentId: paymentId,
           paymentDate: new Date(),
           status: 'active'
@@ -229,10 +229,103 @@ const razorpayWebhook = async (req, res) => {
   }
 };
 
+// ========== GROUP PAYMENT FOR MULTIPLE RENTALS ==========
+
+// Create group order for multiple rentals
+const createGroupOrder = async (req, res) => {
+  try {
+    const { rentalIds, totalAmount } = req.body;
+    
+    const amount = totalAmount * 100;
+    
+    const options = {
+      amount: amount,
+      currency: 'INR',
+      receipt: `receipt_group_${Date.now()}`,
+      payment_capture: 1,
+      notes: {
+        rentalIds: JSON.stringify(rentalIds),
+        totalAmount: totalAmount,
+        isGroupPayment: 'true'
+      }
+    };
+    
+    const order = await razorpay.orders.create(options);
+    
+    // Store group order ID in all rentals
+    for (const rentalId of rentalIds) {
+      await Rental.findByIdAndUpdate(rentalId, { 
+        razorpayOrderId: order.id,
+        groupPayment: true
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      order: order,
+      rentalIds: rentalIds
+    });
+  } catch (error) {
+    console.error('Create group order error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Verify group payment for multiple rentals
+const verifyGroupPayment = async (req, res) => {
+  try {
+    const { rentalIds, razorpay_order_id, razorpay_payment_id, razorpay_signature, paymentMethod } = req.body;
+    
+    // Verify signature
+    const body = razorpay_order_id + '|' + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(body.toString())
+      .digest('hex');
+    
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json({ success: false, message: 'Invalid signature' });
+    }
+    
+    // Update ALL rentals with payment status
+    let updatedCount = 0;
+    for (const rentalId of rentalIds) {
+      const rental = await Rental.findById(rentalId);
+      if (rental) {
+        rental.paymentStatus = 'paid';
+        rental.paymentId = razorpay_payment_id;
+        rental.paymentMethod = paymentMethod || 'razorpay';
+        rental.paymentDate = new Date();
+        rental.status = 'active';
+        rental.razorpayOrderId = razorpay_order_id;
+        rental.razorpaySignature = razorpay_signature;
+        await rental.save();
+        updatedCount++;
+      }
+    }
+    
+    console.log(`✅ Group payment verified: ${updatedCount} rentals updated`);
+    console.log(`✅ Payment ID: ${razorpay_payment_id}`);
+    
+    res.json({ 
+      success: true, 
+      message: `Payment verified for ${updatedCount} rentals`,
+      updatedCount: updatedCount
+    });
+  } catch (error) {
+    console.error('Verify group payment error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = { 
+  createGroupOrder,
+  verifyGroupPayment, 
   createPaymentIntent, 
   confirmPayment, 
   getPaymentHistory,
   updatePaymentStatus,
-  razorpayWebhook
+  razorpayWebhook,
+  createGroupOrder,
+  verifyGroupPayment
 };
