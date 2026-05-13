@@ -1,249 +1,241 @@
-🏠 RentEase – Furniture & Appliance Rental
-Platform
-A full-stack MERN application for renting furniture and home appliances with secure
-payments, admin management, maintenance tracking, and flexible rental workflows.
-🚀 Project Highlights
-Full-stack MERN application
-Secure authentication with JWT & Google OAuth
-Razorpay payment integration
-Complete admin dashboard
-Real-world rental workflow implementation
-Cloud deployment with Vercel, Render, and MongoDB Atlas
-Database-powered cart persistence
-Responsive modern UI using Tailwind CSS
-🌐 Live Deployment
-Service Link
-🚀 Frontend https://rentease-app-fawn.vercel.app
-⚙️ Backend API https://rentease-backend-njvk.onrender.com
-📦 GitHub Repository https://github.com/Adityapriyadarshix007/RentEase
-📋 Project Overview
-RentEase is a modern furniture and appliance rental platform designed for students, interns, and working
-professionals who frequently relocate to different cities.
-Instead of purchasing expensive furniture for temporary stays, users can rent products on flexible monthly
-plans ranging from 1 to 12 months.
-The platform provides a complete rental ecosystem including:
-Product browsing and filtering
-Cart and checkout system
-•
-•
-•
-•
-•
-•
-•
-•
-•
-•
-1
-Online payments with Razorpay
-Rental tracking and management
-Maintenance support tickets
-Return request handling
-Product reviews and ratings
-Admin analytics dashboard
-This project was developed as a solo full-stack MERN project to simulate a real-world rental business
-workflow.
-🎯 Problem Statement
-People who move frequently often face difficulties purchasing and managing furniture for short-term stays.
-Common Problems
-Problem Impact
-High upfront furniture costs Expensive for students and interns
-Transportation difficulties Difficult to move furniture between cities
-Lack of flexible rental services Ownership becomes impractical
-Poor maintenance support No repair or replacement assistance
-RentEase Solution
-RentEase solves these challenges by providing:
-Flexible monthly rentals
-Affordable pricing model
-Maintenance and support system
-Easy return workflow
-Online order and payment management
-✅ Features Implemented
-👤 User Features
-Feature Description
-User Authentication Email/password login and Google OAuth
-•
-•
-•
-•
-•
-•
-•
-•
-•
-•
-•
-2
-Feature Description
-Product Browsing Search, filter, sorting, and pagination
-Product Details Product specifications, pricing, and descriptions
-Cart System Add products with flexible rental tenure
-Checkout Workflow Delivery scheduling and order placement
-Payments Razorpay integration and Cash on Delivery
-Rental Tracking View active, completed, pending, and cancelled rentals
-Maintenance Requests Raise and track support tickets
-Return Requests Request returns and track refunds
-Reviews & Ratings Verified product reviews and ratings
-Contact System Send queries and receive admin replies
-Database Cart Persistence Cart data stored securely in MongoDB
-👑 Admin Features
-Feature Description
-Admin Dashboard Real-time statistics and analytics
-Product Management Add, update, delete products with images
-Category Management Manage product categories and display order
-Rental Management Monitor and update rental status
-Maintenance Management Assign and resolve support tickets
-Returns Management Approve returns and process refunds
-User Contact Management Respond to customer inquiries
-Analytics & Reports Revenue charts and CSV exports
-Returns Analytics Refund tracking and return trend analysis
-🔄 Database Cart – What's New
-The cart system has been upgraded from browser localStorage to a MongoDB database-powered solution.
-3
-Benefits of Database Cart Storage
-✅ Cross-device synchronization
-✅ Persistent cart after browser cache clearing
-✅ Account-based cart management
-✅ Secure cloud backup and recovery
-✅ Improved scalability for production environments
-Users can now add products on one device and continue shopping seamlessly from another device after
-logging in.
-🛠️ Tech Stack
-Frontend
-Technology Purpose
-React 18 Frontend UI framework
-Tailwind CSS Responsive styling
-React Router v6 Client-side routing
-Axios API communication
-Chart.js Analytics visualizations
-React Hot Toast Notifications
-React Icons UI icons
-Backend
-Technology Purpose
-Node.js JavaScript runtime
-Express.js REST API server
-MongoDB Database
-Mongoose ODM for MongoDB
-JWT Authentication and authorization
-bcryptjs Password hashing
-Razorpay Payment gateway integration
-•
-•
-•
-•
-•
-4
-Deployment
-Service Usage
-Vercel Frontend hosting
-Render Backend hosting
-MongoDB Atlas Cloud database
-🏗️ Database Collections
-Collection Description
-Users User accounts and authentication data
-Products Product information and inventory
-Rentals Rental orders and payment details
-Categories Product categories and organization
-Maintenance Support tickets and repair requests
-Returns Return requests and refund tracking
-Contacts User inquiries and admin responses
-Reviews Product ratings and comments
-Cart Persistent cart storage for users
+# 🏠 RentEase – Furniture & Appliance Rental Platform
+
+## Key Highlights
+- MERN Stack Project
+- Razorpay Integration
+- Admin Dashboard
+- Live Deployment
+- Real-world Rental Workflow
+
+[![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=flat&logo=vercel)](https://rentease-app-fawn.vercel.app)
+[![Render](https://img.shields.io/badge/Deployed%20on-Render-46E3B7?style=flat&logo=render)](https://rentease-backend-njvk.onrender.com)
+[![GitHub](https://img.shields.io/badge/GitHub-Repo-181717?style=flat&logo=github)](https://github.com/Adityapriyadarshix007/RentEase)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+## Live Demo
+
+| Environment | URL |
+|-------------|-----|
+| 🚀 **Frontend** | [rentease-app-fawn.vercel.app](https://rentease-app-fawn.vercel.app) |
+| ⚙️ **Backend API** | [rentease-backend-njvk.onrender.com](https://rentease-backend-njvk.onrender.com) |
+| 📦 **GitHub** | [Adityapriyadarshix007/RentEase](https://github.com/Adityapriyadarshix007/RentEase) |
+
+---
+
+## 📋 Project Overview
+
+**RentEase** is a full-stack web application that lets people rent furniture and home appliances online. I built this because I've seen friends and colleagues struggle with buying expensive furniture when they move to a new city for a few months.
+
+Instead of spending thousands on items they'll need to sell or leave behind, RentEase gives them the flexibility to rent month-by-month.
+
+The platform handles:
+- Browsing products
+- Placing rental orders
+- Tracking active rentals
+- Requesting maintenance
+- Managing returns
+
+There's also a complete admin dashboard for managing products, users, orders, and analytics.
+
+**Built as a solo project** using the MERN stack.
+
+---
+
+## 🎯 The Problem I'm Solving
+
+Students, interns, and working professionals relocate frequently. Buying furniture for short-term stays doesn't make sense:
+
+| Problem | Impact |
+|---------|--------|
+| 💰 High upfront costs | Students can't afford ₹50k+ for furniture |
+| 🚚 Difficulty transporting | Moving items to new cities is expensive |
+| 📅 No flexible rentals | Locked into ownership for short stays |
+| 🔧 Poor maintenance | No support when things break |
+
+RentEase solves these by offering **monthly rentals with flexible terms from 1 to 12 months**.
+
+---
+
+## ✅ What's Actually Working Right Now
+
+### 👤 For Users
+
+| Feature | What it does |
+|---------|---------------|
+| **Registration & Login** | Email/password + Google OAuth |
+| **Browse Products** | Search, filter by category, sort by price, pagination |
+| **Product Details** | View specs, monthly rent, security deposit, technical specifications table |
+| **Cart & Checkout** | Add items, choose rental tenure (1-12 months), schedule delivery |
+| **Payments** | Razorpay (cards, UPI, netbanking) + Cash on Delivery |
+| **My Rentals** | Track active, pending, completed, and cancelled orders |
+| **Maintenance** | Raise support tickets, track resolution status (pending → assigned → resolved) |
+| **Returns** | Request return with reason, track refund status |
+| **My Messages** | View admin replies to contact form submissions |
+| **Reviews** | Rate and review products you've rented (with verified purchase badge) |
+| **Cart Persistence** | Cart saved to database, accessible across devices |
+
+### 👑 For Admins
+
+| Feature | What it does |
+|---------|---------------|
+| **Dashboard** | Real-time stats: users, products, rentals, revenue (auto-refresh) |
+| **Product Management** | Add, edit, delete products with images (JPEG, PNG, WEBP up to 20MB) |
+| **Category Management** | Create and organize product categories with display order |
+| **Rental Management** | Update order status, track all rentals with filters |
+| **Returns Management** | Approve/reject return requests, process refunds with damage assessment |
+| **Maintenance** | Assign and resolve support tickets (pending → assigned → in_progress → resolved) |
+| **Contact Messages** | Reply to user inquiries from admin panel |
+| **Analytics** | Charts (revenue trends, category distribution), CSV exports (products, rentals, users, returns) |
+| **Returns Analytics** | Track refund amounts, returns by reason, monthly return trends |
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+| Technology | Purpose |
+|------------|---------|
+| React 18 | UI framework with hooks and context API |
+| Tailwind CSS | Styling (utility-first, responsive) |
+| React Router v6 | Client-side routing |
+| Axios | API calls with interceptors |
+| Chart.js | Analytics charts (Line, Bar, Doughnut) |
+| React Hot Toast | Toast notifications |
+| React Icons | Icon library |
+
+### Backend
+| Technology | Purpose |
+|------------|---------|
+| Node.js + Express.js | REST API server |
+| MongoDB + Mongoose | Database with ODM |
+| JWT | Authentication (stateless tokens) |
+| bcryptjs | Password hashing |
+| Razorpay | Payment gateway (test mode) |
+
+### Deployment
+| Service | What it hosts |
+|---------|---------------|
+| Vercel | Frontend React app |
+| Render | Backend Node.js API |
+| MongoDB Atlas | Cloud database |
+
+---
+
+## 🏗️ Database Schema
+
+| Collection | Stores |
+|------------|--------|
+| **Users** | User profiles, hashed passwords, addresses, Google OAuth IDs |
+| **Products** | Product details, pricing, images, inventory, ratings |
+| **Rentals** | Order details, rental dates, payment status, delivery info |
+| **Categories** | Product categories with display order and slugs |
+| **Maintenance** | Support tickets with status tracking |
+| **Returns** | Return requests, refund amounts, inspection notes |
+| **Contacts** | User inquiries and admin responses |
+| **Reviews** | Product ratings, comments, verified purchase flag, helpful votes |
+
+---
 📸 Screenshots
-Home Page
-<img width="1512" height="827" alt="Home Page" src="https://github.com/user-attachments/assets/
-b4a0ee26-2bb0-4572-9997-fd7a1e5b5b92" />
-Products Page
-<img width="1512" height="827" alt="Products Page" src="https://github.com/user-attachments/assets/
-d62698b3-ff97-4019-9eb7-424e7b43f8c0" />
-5
-Cart Page
-<img width="1512" height="827" alt="Cart Page" src="https://github.com/user-attachments/assets/
-ca6e371b-baea-443a-b323-0ebbf7d0306e" />
-Admin Dashboard
-<img width="1512" height="827" alt="Admin Dashboard" src="https://github.com/user-attachments/assets/
-fdf7b34a-1699-46b2-b268-f86f188dfb87" />
-📦 Installation & Setup
-Prerequisites
-Node.js (v16 or higher)
-MongoDB Atlas account or local MongoDB installation
-npm or yarn
-Clone Repository
+Page	Screenshot
+
+Home Page	<img width="1512" height="827" alt="Screenshot" src="https://github.com/user-attachments/assets/b4a0ee26-2bb0-4572-9997-fd7a1e5b5b92" />
+Products Page	<img width="1512" height="827" alt="Screenshot" src="https://github.com/user-attachments/assets/d62698b3-ff97-4019-9eb7-424e7b43f8c0" />
+Cart Page	<img width="1512" height="827" alt="Screenshot" src="https://github.com/user-attachments/assets/ca6e371b-baea-443a-b323-0ebbf7d0306e" />
+Admin Dashboard	<img width="1512" height="827" alt="Screenshot" src="https://github.com/user-attachments/assets/fdf7b34a-1699-46b2-b268-f86f188dfb87" />
+
+## 📦 Setup Instructions
+
+### Prerequisites
+- Node.js (v16 or higher)
+- MongoDB Atlas account (or local MongoDB)
+- npm or yarn
+
+### Clone & Install
+
+```bash
 git clone https://github.com/Adityapriyadarshix007/RentEase.git
 cd RentEase
-Backend Setup
+
+### Backend Setup
+
+```bash
 cd backend
 npm install
 npm run dev
-Frontend Setup
+
+
+### Frontend Setup
+
+```bash
 cd frontend
 npm install
 cp .env.example .env
+# Add REACT_APP_API_URL=http://localhost:5001
 npm start
-•
-•
-•
-6
-🔐 Environment Variables
+
+
+Environment Variables
 Backend (.env)
+
+env
 PORT=5001
 MONGODB_URI=your_mongodb_uri
-JWT_SECRET=your_secret_key
+JWT_SECRET=your_super_secret_key_change_this
 JWT_EXPIRE=365d
 RAZORPAY_KEY_ID=rzp_test_xxx
-RAZORPAY_KEY_SECRET=your_secret
+RAZORPAY_KEY_SECRET=xxx
+
+
 Frontend (.env)
+
+env
 REACT_APP_API_URL=http://localhost:5001
 REACT_APP_RAZORPAY_KEY_ID=rzp_test_xxx
-🧠 Learning Outcomes
-While building RentEase, I improved my understanding of:
-Full-stack MERN development
-REST API architecture
-JWT authentication workflows
-MongoDB schema design and aggregation
-Payment gateway integration
-Cloud deployment and environment management
-State management and reusable React components
-Production-ready cart persistence using databases
-Key Takeaway
-One of the biggest lessons learned during development was the importance of proper database schemaplanning before implementation.
-•
-•
-•
-•
-•
-•
-•
-•
-7
-🔮 Future Enhancements
-Feature Priority
-📱 Mobile Application (React Native) High
-🔔 Email & SMS Notifications High
-📍 Live Order Tracking Medium
-💬 Real-time Chat Support Medium
-🔄 Subscription Auto-renewals Medium
-📊 Bulk Product Upload Low
-🤖 AI-based Recommendations Low
+
+
+🧠 What I Learned
+While building this project, I improved my understanding of API design, authentication, deployment, and database planning.
+
+React component architecture - Breaking UI into reusable pieces
+
+REST API design - Proper error handling, status codes, validation
+
+MongoDB schema relationships - Populating references, aggregation pipelines
+
+JWT authentication - Token generation, verification, protected routes
+
+Payment gateway integration - Razorpay webhooks, signature verification
+
+Full-stack deployment - Vercel, Render, environment variables
+
+Biggest lesson: Plan your database schema before writing code. I redesigned the rentals collection twice because I didn't think through payment status flows properly.
+
+🔮 Future Plans (When I Have More Time)
+
+Feature	Priority
+
+📱 Mobile App (React Native)	High
+🔔 Email/SMS notifications	High
+📍 Live order tracking with map	Medium
+📊 Bulk product upload via CSV	Low
+🤖 AI-based product recommendations	Low
+💬 Live chat support	Medium
+🔄 Auto-renewing subscriptions	Medium
+
+
+Role	Email	Password
+👤 Regular User	- register yourself
+
+
+📄 License
+Developed for academic learning and portfolio purposes.
+
 👨‍💻 Author
 Aditya Priyadarshi
-GitHub: https://github.com/Adityapriyadarshix007
-Project Repository: https://github.com/Adityapriyadarshix007/RentEase
-📄 License
-This project was developed for educational, portfolio, and learning purposes.
-⭐ Built With
-React.js
-Node.js
-Express.js
-MongoDB
-Tailwind CSS
-Razorpay
-Built with dedication to create a practical and scalable rental management platform. 🚀
-•
-•
-•
-•
-•
-•
-•
-•
+
+GitHub: @Adityapriyadarshix007
+
+Project Link: https://github.com/Adityapriyadarshix007/RentEase
+
+Built with React, Node.js, MongoDB, and Tailwind CSS 🚀
+
