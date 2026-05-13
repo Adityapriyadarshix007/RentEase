@@ -1,4 +1,5 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import toast from 'react-hot-toast';
 
 const CartContext = createContext();
@@ -13,119 +14,201 @@ export const useCart = () => {
 
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isSynced, setIsSynced] = useState(false);
 
-  useEffect(() => {
-    const savedCart = localStorage.getItem('rentease_cart');
-    if (savedCart) {
-      try {
-        const parsedCart = JSON.parse(savedCart);
-        setCartItems(parsedCart);
-      } catch (error) {
-        console.error('Error loading cart:', error);
+  const API_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
+  const token = localStorage.getItem('token');
+
+  // Fetch cart from backend
+  const fetchCart = useCallback(async () => {
+    const currentToken = localStorage.getItem('token');
+    if (!currentToken) {
+      setCartItems([]);
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      const response = await axios.get(`${API_URL}/api/cart`, {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
+      if (response.data.success) {
+        setCartItems(response.data.cart || []);
       }
+    } catch (error) {
+      console.error('Error fetching cart:', error);
+      // Fallback to localStorage if API fails
+      const savedCart = localStorage.getItem('rentease_cart_backup');
+      if (savedCart) {
+        setCartItems(JSON.parse(savedCart));
+      }
+    } finally {
+      setLoading(false);
+      setIsSynced(true);
     }
-    setIsLoaded(true);
-  }, []);
+  }, [API_URL]);
 
+  // Sync cart to backend
+  const syncCartToBackend = useCallback(async (items) => {
+    const currentToken = localStorage.getItem('token');
+    if (!currentToken) return;
+    
+    try {
+      // For each item, ensure it's synced
+      for (const item of items) {
+        await axios.post(`${API_URL}/api/cart/add`, {
+          productId: item.productId,
+          quantity: item.quantity,
+          tenureMonths: item.tenureMonths
+        }, {
+          headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+      }
+    } catch (error) {
+      console.error('Error syncing cart:', error);
+    }
+  }, [API_URL]);
+
+  // Initial load
   useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem('rentease_cart', JSON.stringify(cartItems));
-    }
-  }, [cartItems, isLoaded]);
+    fetchCart();
+  }, [fetchCart]);
 
-  const addToCart = (product, tenureMonths = 3, quantity = 1) => {
+  // Save to localStorage as backup (when offline)
+  useEffect(() => {
+    if (isSynced) {
+      localStorage.setItem('rentease_cart_backup', JSON.stringify(cartItems));
+    }
+  }, [cartItems, isSynced]);
+
+  const addToCart = async (product, tenureMonths = 3, quantity = 1) => {
     if (!product || !product._id) {
       console.error('Invalid product:', product);
       return false;
     }
 
-    setCartItems(prevItems => {
-      const existingItemIndex = prevItems.findIndex(item => item.productId === product._id);
+    const currentToken = localStorage.getItem('token');
+    if (!currentToken) {
+      toast.error('Please login to add items to cart');
+      return false;
+    }
+
+    try {
+      const response = await axios.post(`${API_URL}/api/cart/add`, {
+        productId: product._id,
+        tenureMonths,
+        quantity
+      }, {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
       
-      if (existingItemIndex !== -1) {
-        const updatedItems = [...prevItems];
-        updatedItems[existingItemIndex] = {
-          ...updatedItems[existingItemIndex],
-          quantity: updatedItems[existingItemIndex].quantity + quantity,
-          tenureMonths: tenureMonths
-        };
-        // Only ONE toast notification
-        toast.success(`Updated ${product.name} quantity to ${updatedItems[existingItemIndex].quantity}`);
-        return updatedItems;
-      } else {
-        const newItem = {
-          productId: product._id,
-          productName: product.name,
-          productImage: product.images && product.images[0] ? product.images[0] : null,
-          monthlyRent: product.monthlyRent,
-          securityDeposit: product.securityDeposit || 0,
-          quantity: quantity,
-          tenureMonths: tenureMonths,
-          category: product.category,
-          subCategory: product.subCategory
-        };
-        // Only ONE toast notification
+      if (response.data.success) {
+        setCartItems(response.data.cart);
         toast.success(`${product.name} added to cart!`);
-        return [...prevItems, newItem];
+        return true;
       }
-    });
-    return true;
+    } catch (error) {
+      console.error('Add to cart error:', error);
+      toast.error('Failed to add to cart');
+      return false;
+    }
   };
 
-  const removeFromCart = (productId) => {
-    setCartItems(prevItems => {
-      const itemToRemove = prevItems.find(item => item.productId === productId);
-      if (itemToRemove) {
-        toast.success(`Removed ${itemToRemove.productName} from cart`);
+  const removeFromCart = async (productId) => {
+    const currentToken = localStorage.getItem('token');
+    if (!currentToken) return;
+    
+    try {
+      const response = await axios.delete(`${API_URL}/api/cart/remove/${productId}`, {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
+      
+      if (response.data.success) {
+        setCartItems(response.data.cart);
+        toast.success('Item removed from cart');
       }
-      return prevItems.filter(item => item.productId !== productId);
-    });
+    } catch (error) {
+      console.error('Remove from cart error:', error);
+      toast.error('Failed to remove item');
+    }
   };
 
-  const updateQuantity = (productId, newQuantity) => {
+  const updateQuantity = async (productId, newQuantity) => {
     if (newQuantity <= 0) {
       removeFromCart(productId);
       return;
     }
     
-    setCartItems(prevItems =>
-      prevItems.map(item =>
-        item.productId === productId
-          ? { ...item, quantity: newQuantity }
-          : item
-      )
-    );
+    const currentToken = localStorage.getItem('token');
+    if (!currentToken) return;
+    
+    try {
+      const response = await axios.put(`${API_URL}/api/cart/update/${productId}`, {
+        quantity: newQuantity
+      }, {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
+      
+      if (response.data.success) {
+        setCartItems(response.data.cart);
+      }
+    } catch (error) {
+      console.error('Update quantity error:', error);
+    }
   };
 
-  const updateTenure = (productId, newTenure) => {
-    setCartItems(prevItems =>
-      prevItems.map(item =>
-        item.productId === productId
-          ? { ...item, tenureMonths: newTenure }
-          : item
-      )
-    );
+  const updateTenure = async (productId, newTenure) => {
+    const currentToken = localStorage.getItem('token');
+    if (!currentToken) return;
+    
+    try {
+      const response = await axios.put(`${API_URL}/api/cart/update/${productId}`, {
+        tenureMonths: newTenure
+      }, {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
+      
+      if (response.data.success) {
+        setCartItems(response.data.cart);
+      }
+    } catch (error) {
+      console.error('Update tenure error:', error);
+    }
   };
 
-  const clearCart = () => {
-    setCartItems([]);
-    toast.success('Cart cleared');
+  const clearCart = async () => {
+    const currentToken = localStorage.getItem('token');
+    if (!currentToken) return;
+    
+    try {
+      const response = await axios.delete(`${API_URL}/api/cart/clear`, {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
+      
+      if (response.data.success) {
+        setCartItems([]);
+        toast.success('Cart cleared');
+      }
+    } catch (error) {
+      console.error('Clear cart error:', error);
+    }
   };
 
   const getCartTotal = () => {
     return cartItems.reduce((total, item) => {
-      return total + (item.monthlyRent * item.tenureMonths * item.quantity);
+      return total + ((item.monthlyRent || 0) * (item.tenureMonths || 3) * (item.quantity || 1));
     }, 0);
   };
 
   const getCartCount = () => {
-    return cartItems.reduce((count, item) => count + item.quantity, 0);
+    return cartItems.reduce((count, item) => count + (item.quantity || 1), 0);
   };
 
   return (
     <CartContext.Provider value={{
       cartItems,
+      loading,
       addToCart,
       removeFromCart,
       updateQuantity,

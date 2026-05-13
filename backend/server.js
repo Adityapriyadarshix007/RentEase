@@ -82,6 +82,7 @@ const categoryRoutes = require('./routes/category.routes');
 const rentalRoutes = require('./routes/rental.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const returnsRoutes = require('./routes/returns.routes');
+const cartRoutes = require('./routes/cart.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -93,6 +94,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/rentals', rentalRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/returns', returnsRoutes);
+app.use('/api/cart', cartRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
