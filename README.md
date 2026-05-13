@@ -134,6 +134,13 @@ RentEase solves these by offering **monthly rentals with flexible terms from 1 t
 | **Reviews** | Product ratings, comments, verified purchase flag, helpful votes |
 
 ---
+📸 Screenshots
+Page	Screenshot
+
+Home Page	<img width="1512" height="827" alt="Screenshot" src="https://github.com/user-attachments/assets/b4a0ee26-2bb0-4572-9997-fd7a1e5b5b92" />
+Products Page	<img width="1512" height="827" alt="Screenshot" src="https://github.com/user-attachments/assets/d62698b3-ff97-4019-9eb7-424e7b43f8c0" />
+Cart Page	<img width="1512" height="827" alt="Screenshot" src="https://github.com/user-attachments/assets/ca6e371b-baea-443a-b323-0ebbf7d0306e" />
+Admin Dashboard	<img width="1512" height="827" alt="Screenshot" src="https://github.com/user-attachments/assets/fdf7b34a-1699-46b2-b268-f86f188dfb87" />
 
 ## 📦 Setup Instructions
 
@@ -217,16 +224,6 @@ Feature	Priority
 
 Role	Email	Password
 👤 Regular User	- register yourself
-
-
-📸 Screenshots
-Page	Screenshot
-
-Home Page	<img width="1512" height="827" alt="Screenshot 2026-05-13 at 1 00 52 PM" src="https://github.com/user-attachments/assets/b4a0ee26-2bb0-4572-9997-fd7a1e5b5b92" />
-Products Page	<img width="1512" height="827" alt="Screenshot" src="https://github.com/user-attachments/assets/d62698b3-ff97-4019-9eb7-424e7b43f8c0" />
-Cart Page	<img width="1512" height="827" alt="Screenshot 2026-05-13 at 12 59 51 PM" src="https://github.com/user-attachments/assets/ca6e371b-baea-443a-b323-0ebbf7d0306e" />
-Admin Dashboard	<img width="1512" height="827" alt="Screenshot 2026-05-13 at 1 06 07 PM" src="https://github.com/user-attachments/assets/fdf7b34a-1699-46b2-b268-f86f188dfb87" />
-
 
 
 📄 License
