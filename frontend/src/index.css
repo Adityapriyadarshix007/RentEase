@@ -177,3 +177,21 @@ footer a {
 footer button:focus:not(:focus-visible) {
   outline: none;
 }
+
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+#root {
+  display: flex;
+  flex-direction: column;
+}
+main {
+  flex: 1 0 auto;
+}
+footer {
+  flex-shrink: 0;
+}
+
