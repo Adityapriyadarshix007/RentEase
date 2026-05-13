@@ -2,27 +2,26 @@ const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const Rental = require('../models/Rental.model');
 
-// Initialize Razorpay
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
-// Create Razorpay Order for Online Payment
-const createRazorpayOrder = async (req, res) => {
+// Create Razorpay Order
+const createPaymentIntent = async (req, res) => {
   try {
     const { rentalId } = req.body;
     const rental = await Rental.findById(rentalId);
     
     if (!rental) {
-      return res.status(404).json({ success: false, message: 'Rental not found' });
+      return res.status(404).json({ message: 'Rental not found' });
     }
     
     if (rental.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ success: false, message: 'Not authorized' });
+      return res.status(403).json({ message: 'Not authorized' });
     }
     
-    const amount = (rental.totalAmount + rental.securityDeposit) * 100; // Convert to paise
+    const amount = (rental.totalAmount + rental.securityDeposit) * 100;
     
     const options = {
       amount: amount,
@@ -47,13 +46,13 @@ const createRazorpayOrder = async (req, res) => {
       rentalId: rental._id
     });
   } catch (error) {
-    console.error('Create order error:', error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Create payment intent error:', error);
+    res.status(500).json({ message: error.message });
   }
 };
 
 // Verify Payment after successful payment
-const verifyPayment = async (req, res) => {
+const confirmPayment = async (req, res) => {
   try {
     const { 
       rentalId, 
@@ -69,6 +68,10 @@ const verifyPayment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Rental not found' });
     }
     
+    if (rental.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+    
     // Verify signature
     const body = razorpay_order_id + '|' + razorpay_payment_id;
     const expectedSignature = crypto
@@ -80,61 +83,156 @@ const verifyPayment = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid signature' });
     }
     
-    // Update rental
+    // UPDATE PAYMENT STATUS - FIX HERE
     rental.paymentStatus = 'paid';
     rental.paymentId = razorpay_payment_id;
-    rental.paymentMethod = paymentMethod;
+    rental.paymentMethod = paymentMethod || 'razorpay';
     rental.paymentDate = new Date();
     rental.status = 'active';
     rental.razorpayOrderId = razorpay_order_id;
+    rental.razorpaySignature = razorpay_signature;
     
     await rental.save();
     
+    console.log(`✅ Payment confirmed for rental ${rentalId}: ₹${rental.totalAmount}`);
+    console.log(`✅ Payment Status: ${rental.paymentStatus}`);
+    
     res.json({ 
       success: true, 
-      message: 'Payment verified successfully',
+      message: 'Payment confirmed successfully',
       rental: {
         _id: rental._id,
         paymentStatus: rental.paymentStatus,
-        status: rental.status
+        status: rental.status,
+        totalAmount: rental.totalAmount
       }
     });
   } catch (error) {
-    console.error('Verify payment error:', error);
+    console.error('Confirm payment error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Update COD payment status (Admin only)
-const updateCODPaymentStatus = async (req, res) => {
+const getPaymentHistory = async (req, res) => {
+  try {
+    const rentals = await Rental.find({ 
+      user: req.user._id,
+      paymentStatus: { $in: ['paid', 'completed'] }
+    }).select('paymentId paymentMethod totalAmount createdAt status').sort({ createdAt: -1 });
+    
+    res.json({ success: true, payments: rentals });
+  } catch (error) {
+    console.error('Get payment history error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Admin: Manually update payment status for COD orders after delivery
+const updatePaymentStatus = async (req, res) => {
   try {
     const { rentalId, paymentStatus } = req.body;
     
     if (req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, message: 'Admin access required' });
+      return res.status(403).json({ message: 'Admin access required' });
     }
     
     const rental = await Rental.findById(rentalId);
+    
     if (!rental) {
-      return res.status(404).json({ success: false, message: 'Rental not found' });
+      return res.status(404).json({ message: 'Rental not found' });
     }
     
-    if (rental.paymentMethod === 'cod') {
-      rental.paymentStatus = paymentStatus;
-      if (paymentStatus === 'completed') {
-        rental.paymentDate = new Date();
-      }
+    if (paymentStatus === 'completed' && rental.paymentMethod === 'cod') {
+      rental.paymentStatus = 'paid';
+      rental.paymentDate = new Date();
       await rental.save();
+      
+      console.log(`✅ COD payment marked as completed for rental ${rentalId}: ₹${rental.totalAmount}`);
+      
+      res.json({ 
+        success: true, 
+        message: 'COD payment marked as completed',
+        rental: {
+          _id: rental._id,
+          paymentStatus: rental.paymentStatus,
+          totalAmount: rental.totalAmount
+        }
+      });
+    } 
+    else if (paymentStatus === 'paid') {
+      rental.paymentStatus = 'paid';
+      rental.paymentDate = new Date();
+      await rental.save();
+      
+      res.json({ 
+        success: true, 
+        message: 'Payment marked as paid',
+        rental: {
+          _id: rental._id,
+          paymentStatus: rental.paymentStatus,
+          totalAmount: rental.totalAmount
+        }
+      });
+    }
+    else {
+      res.status(400).json({ 
+        success: false, 
+        message: `Invalid payment status transition: ${paymentStatus} for payment method ${rental.paymentMethod}` 
+      });
+    }
+  } catch (error) {
+    console.error('Update payment status error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Webhook to handle payment events from Razorpay
+const razorpayWebhook = async (req, res) => {
+  try {
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const signature = req.headers['x-razorpay-signature'];
+    
+    const shasum = crypto.createHmac('sha256', secret);
+    shasum.update(JSON.stringify(req.body));
+    const digest = shasum.digest('hex');
+    
+    if (digest !== signature) {
+      return res.status(400).json({ message: 'Invalid signature' });
     }
     
-    res.json({ success: true, message: `Payment status updated to ${paymentStatus}` });
+    const { event, payload } = req.body;
+    
+    if (event === 'payment.captured') {
+      const paymentId = payload.payment.entity.id;
+      const orderId = payload.payment.entity.order_id;
+      
+      // Update rental payment status
+      const rental = await Rental.findOneAndUpdate(
+        { razorpayOrderId: orderId },
+        { 
+          paymentStatus: 'completed',
+          paymentId: paymentId,
+          paymentDate: new Date(),
+          status: 'active'
+        },
+        { new: true }
+      );
+      
+      console.log(`✅ Webhook: Payment captured for order ${orderId}`);
+      console.log(`✅ Updated rental ${rental?._id} payment status to: ${rental?.paymentStatus}`);
+    }
+    
+    res.json({ received: true });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Webhook error:', error);
+    res.status(500).json({ message: error.message });
   }
 };
 
 module.exports = { 
-  createRazorpayOrder, 
-  verifyPayment, 
-  updateCODPaymentStatus 
+  createPaymentIntent, 
+  confirmPayment, 
+  getPaymentHistory,
+  updatePaymentStatus,
+  razorpayWebhook
 };

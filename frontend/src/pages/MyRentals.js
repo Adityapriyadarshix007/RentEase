@@ -102,15 +102,15 @@ const MyRentals = () => {
                 </p>
                 
                 <div className="space-y-1 text-sm mb-4">
-                  <p><span className="text-gray-500">Monthly Rent:</span> <span className="font-semibold">₹{rental.monthlyRent}</span></p>
-                  <p><span className="text-gray-500">Total Amount:</span> <span className="font-semibold text-green-600">₹{rental.totalAmount}</span></p>
-                  <p><span className="text-gray-500">Tenure:</span> {rental.tenureMonths} months</p>
-                  <p><span className="text-gray-500">Rental Period:</span> {new Date(rental.rentalStartDate).toLocaleDateString()} - {new Date(rental.rentalEndDate).toLocaleDateString()}</p>
-                  <p><span className="text-gray-500">Payment:</span> 
-                    <span className={`ml-1 ${rental.paymentStatus === 'paid' ? 'text-green-600' : 'text-yellow-600'}`}>
-                      {rental.paymentStatus || 'pending'}
-                    </span>
-                  </p>
+                <p><span className="text-gray-500">Monthly Rent:</span> <span className="font-semibold">₹{rental.monthlyRent}</span></p>
+                <p><span className="text-gray-500">Total Amount:</span> <span className="font-semibold text-green-600">₹{rental.totalAmount}</span></p>
+                <p><span className="text-gray-500">Tenure:</span> {rental.tenureMonths} months</p>
+                <p><span className="text-gray-500">Rental Period:</span> {new Date(rental.rentalStartDate).toLocaleDateString()} - {new Date(rental.rentalEndDate).toLocaleDateString()}</p>
+                <p><span className="text-gray-500">Payment:</span> 
+                <span className={`ml-1 ${(rental.paymentStatus === 'paid' || rental.paymentStatus === 'completed') ? 'text-green-600' : 'text-yellow-600'}`}>
+                {(rental.paymentStatus === 'paid' || rental.paymentStatus === 'completed') ? 'Paid' : (rental.paymentStatus || 'Pending')}
+                </span>
+                </p>
                 </div>
                 
                 <div className="flex gap-2">
