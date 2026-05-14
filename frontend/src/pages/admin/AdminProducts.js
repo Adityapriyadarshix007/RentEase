@@ -112,39 +112,43 @@ const AdminProducts = () => {
     });
   };
 
-  // Updated handleImageUpload with validation
-  const handleImageUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    const validFiles = [];
-    const invalidFiles = [];
+  // handleImageUpload function with this Cloudinary version
+const handleImageUpload = async (e) => {
+  const files = Array.from(e.target.files);
+  setUploadingImage(true);
+  
+  for (const file of files) {
+    const formData = new FormData();
+    formData.append('image', file);
     
-    // Validate each file
-    for (const file of files) {
-      // Check file size
-      if (file.size > MAX_IMAGE_SIZE) {
-        invalidFiles.push(`${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
-        continue;
-      }
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/upload/single`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
       
-      // Check file type
-      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-        invalidFiles.push(`${file.name} (${file.type.split('/')[1]})`);
-        continue;
+      const data = await response.json();
+      if (data.success) {
+        setImagePreview(prev => [...prev, data.url]);
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, data.url]
+        }));
+        toast.success('Image uploaded successfully');
+      } else {
+        toast.error(data.message || 'Upload failed');
       }
-      
-      validFiles.push(file);
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload image');
     }
-    
-    // Show errors for invalid files
-    if (invalidFiles.length > 0) {
-      toast.error(`Invalid files: ${invalidFiles.join(', ')}. Max size 20MB total per product, allowed: JPEG, PNG, WEBP`);
-    }
-    
-    if (validFiles.length === 0) {
-      return;
-    }
-    
-    setUploadingImage(true);
+  }
+  setUploadingImage(false);
+
     
     for (const file of validFiles) {
       try {

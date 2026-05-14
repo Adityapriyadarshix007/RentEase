@@ -1,112 +1,108 @@
 const express = require('express');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const router = express.Router();
+const multer = require('multer');
+const cloudinary = require('../config/cloudinary');
+const { protect, admin } = require('../middleware/auth.middleware');
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    let uploadPath = 'uploads/';
-    if (req.query.type === 'about') uploadPath += 'about/';
-    else if (req.query.type === 'team') uploadPath += 'team/';
-    else if (req.query.type === 'products') uploadPath += 'products/';
-    else uploadPath += 'general/';
-    
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|gif|webp/;
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
-  
-  if (mimetype && extname) {
-    return cb(null, true);
-  } else {
-    cb(new Error('Only image files are allowed'));
-  }
-};
-
+// Configure multer for memory storage (Cloudinary will handle the actual storage)
+const storage = multer.memoryStorage();
 const upload = multer({ 
-  storage: storage, 
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: fileFilter
+  storage: storage,
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only images are allowed'), false);
+    }
+  }
 });
 
-// Upload single image
-router.post('/image', upload.single('image'), (req, res) => {
+// Upload single image to Cloudinary
+router.post('/single', protect, admin, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
+
+    // Upload to Cloudinary
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'rentease/products',
+          transformation: [
+            { width: 800, height: 800, crop: 'limit', quality: 'auto' }
+          ]
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      uploadStream.end(req.file.buffer);
+    });
+
     res.json({
       success: true,
-      filename: req.file.filename,
-      path: `/uploads/${req.query.type || 'general'}/${req.file.filename}`,
-      message: 'Image uploaded successfully'
+      url: result.secure_url,
+      publicId: result.public_id
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Upload error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// Upload multiple images
-router.post('/images', upload.array('images', 10), (req, res) => {
+// Upload multiple images to Cloudinary
+router.post('/multiple', protect, admin, upload.array('images', 10), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: 'No files uploaded' });
+      return res.status(400).json({ success: false, message: 'No files uploaded' });
     }
-    const files = req.files.map(file => ({
-      filename: file.filename,
-      path: `/uploads/${req.query.type || 'general'}/${file.filename}`
-    }));
+
+    const uploadPromises = req.files.map(file => {
+      return new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'rentease/products',
+            transformation: [
+              { width: 800, height: 800, crop: 'limit', quality: 'auto' }
+            ]
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        uploadStream.end(file.buffer);
+      });
+    });
+
+    const results = await Promise.all(uploadPromises);
+    const urls = results.map(r => r.secure_url);
+    const publicIds = results.map(r => r.public_id);
+
     res.json({
       success: true,
-      files: files,
-      message: `${files.length} images uploaded successfully`
+      urls: urls,
+      publicIds: publicIds
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Upload error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// Get all images from a directory
-router.get('/images/:type', (req, res) => {
-  const type = req.params.type;
-  const uploadPath = `uploads/${type}/`;
-  
-  fs.readdir(uploadPath, (err, files) => {
-    if (err) {
-      return res.json({ success: true, images: [] });
-    }
-    const images = files.filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file));
-    res.json({
-      success: true,
-      images: images.map(img => ({ filename: img, path: `/uploads/${type}/${img}` }))
-    });
-  });
-});
-
-// Delete image
-router.delete('/image', (req, res) => {
-  const { path: imagePath } = req.query;
-  const fullPath = imagePath.replace('/uploads/', 'uploads/');
-  
-  fs.unlink(fullPath, (err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Failed to delete image' });
-    }
-    res.json({ success: true, message: 'Image deleted successfully' });
-  });
+// Delete image from Cloudinary
+router.delete('/:publicId', protect, admin, async (req, res) => {
+  try {
+    const { publicId } = req.params;
+    await cloudinary.uploader.destroy(publicId);
+    res.json({ success: true, message: 'Image deleted' });
+  } catch (error) {
+    console.error('Delete error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
 });
 
 module.exports = router;

@@ -30,12 +30,18 @@ const ProductCard = React.memo(({ product }) => {
   }, []);
 
   // Get optimized thumbnail - add loading="lazy" for performance
-  const getThumbnail = (imageUrl) => {
-    if (!imageUrl) return null;
-    return imageUrl;
-  };
+  // Add this function inside ProductCard component
+const getOptimizedImageUrl = (url) => {
+  if (!url) return null;
+  // If it's a Cloudinary URL, add optimization parameters
+  if (url.includes('cloudinary.com')) {
+    return url.replace('/upload/', '/upload/w_300,h_200,c_fill,q_auto,f_auto/');
+  }
+  return url;
+};
 
-  const thumbnailUrl = getThumbnail(product.images?.[0]);
+// Then use it in the img src:
+const optimizedUrl = getOptimizedImageUrl(thumbnailUrl);
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 group">
