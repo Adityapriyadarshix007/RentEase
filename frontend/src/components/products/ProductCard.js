@@ -29,16 +29,15 @@ const ProductCard = React.memo(({ product }) => {
     return stars;
   }, []);
 
-  // Get image URL - prefer Cloudinary URLs
+  // Get the first image URL
   const getImageUrl = () => {
-    if (!product.images) return null;
-    if (Array.isArray(product.images) && product.images.length > 0) {
-      let img = product.images[0];
-      // If it's a Cloudinary URL, add optimization parameters
-      if (img && img.includes('cloudinary.com')) {
-        img = img.replace('/upload/', '/upload/w_300,h_200,c_fill,q_auto,f_auto/');
+    if (product.images && product.images.length > 0) {
+      let imageUrl = product.images[0];
+      // If it's a Cloudinary URL, add optimization for faster loading
+      if (imageUrl && imageUrl.includes('cloudinary.com')) {
+        imageUrl = imageUrl.replace('/upload/', '/upload/w_300,h_200,c_fill,q_auto,f_auto/');
       }
-      return img;
+      return imageUrl;
     }
     return null;
   };
@@ -60,7 +59,7 @@ const ProductCard = React.memo(({ product }) => {
               height="200"
               onError={(e) => { 
                 e.target.onerror = null;
-                e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="%23999"%3E%3Crect x="2" y="2" width="20" height="20" rx="2" ry="2"%3E%3C/rect%3E%3Ccircle cx="8.5" cy="8.5" r="2.5"%3E%3C/circle%3E%3Cpolyline points="21 15 16 10 5 21"%3E%3C/polyline%3E%3C/svg%3E';
+                e.target.src = 'https://via.placeholder.com/300x200?text=Product+Image';
               }}
             />
           ) : (
