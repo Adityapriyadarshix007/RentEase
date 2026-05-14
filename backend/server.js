@@ -174,3 +174,5 @@ app.listen(PORT, () => {
 
 
 module.exports = app;
+const uploadRoutes = require('./routes/upload.routes');
+app.use('/api/upload', uploadRoutes);
