@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { FaEdit, FaTrash, FaPlus, FaSearch, FaTimes, FaUpload, FaBox, FaSync } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaEdit, FaTrash, FaPlus, FaSearch, FaTimes, FaUpload, FaBox, FaSync, FaTimesCircle } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const AdminProducts = () => {
@@ -185,9 +185,7 @@ const AdminProducts = () => {
         toast.success(editingProduct ? 'Product updated successfully' : 'Product created successfully');
         setShowModal(false);
         resetForm();
-        // Force refresh the product list
         await fetchProducts();
-        // Also dispatch event for products page
         window.dispatchEvent(new CustomEvent('productsUpdated'));
       } else {
         toast.error(data.message || 'Operation failed');
@@ -465,7 +463,7 @@ const AdminProducts = () => {
         Showing {filteredProducts.length} of {products.length} products
       </div>
 
-      {/* Add/Edit Product Modal - Same as before */}
+      {/* Add/Edit Product Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
