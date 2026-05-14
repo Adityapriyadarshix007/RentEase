@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/products/ProductCard';
 import { FaFilter, FaTimes } from 'react-icons/fa';
@@ -10,6 +10,9 @@ const Products = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [dynamicCategories, setDynamicCategories] = useState([]);
   
+  // Prevent multiple API calls
+  const abortControllerRef = useRef(null);
+  
   const staticCategories = ['Furniture', 'Appliances'];
   const allCategories = [...staticCategories, ...dynamicCategories.filter(cat => !staticCategories.includes(cat.name))];
   
@@ -17,7 +20,7 @@ const Products = () => {
     total: 0,
     currentPage: 1,
     totalPages: 1,
-    limit: 8  // Changed from 12 to 8 for faster loading
+    limit: 12
   });
 
   const [filters, setFilters] = useState({
@@ -40,11 +43,10 @@ const Products = () => {
   // Fetch categories from backend with caching
   useEffect(() => {
     const fetchCategories = async () => {
-      // Check cache first
       const cached = localStorage.getItem('rentease_categories');
       if (cached) {
         const { data, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < 3600000) { // 1 hour
+        if (Date.now() - timestamp < 3600000) {
           setDynamicCategories(data);
           return;
         }
@@ -78,11 +80,28 @@ const Products = () => {
     };
   };
 
+  // Cancel previous request when new request starts
   useEffect(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     fetchProducts();
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [filters]);
 
   const fetchProducts = async () => {
+    // Cancel previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+    
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -94,28 +113,33 @@ const Products = () => {
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
       if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
       params.append('page', filters.page);
-      params.append('limit', 8); // Changed to 8
+      params.append('limit', 12);
 
-      const response = await fetch(`${API_BASE_URL}/api/products?${params}`);
+      const response = await fetch(`${API_BASE_URL}/api/products?${params}`, {
+        signal: abortController.signal
+      });
       const data = await response.json();
       setProducts(data.products || []);
       setPagination({
         total: data.pagination?.total || 0,
         currentPage: data.pagination?.page || 1,
         totalPages: data.pagination?.pages || 1,
-        limit: 8
+        limit: 12
       });
     } catch (error) {
-      console.error('Error fetching products:', error);
+      if (error.name !== 'AbortError') {
+        console.error('Error fetching products:', error);
+      }
     } finally {
       setLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
   const debouncedSearch = useCallback(
     debounce((value) => {
       setFilters(prev => ({ ...prev, search: value, page: 1 }));
-    }, 800),
+    }, 600),
     []
   );
 
@@ -123,7 +147,7 @@ const Products = () => {
     debounce((value) => {
       const validValue = value < 0 ? 0 : value;
       setFilters(prev => ({ ...prev, minPrice: validValue, page: 1 }));
-    }, 800),
+    }, 600),
     []
   );
 
@@ -131,7 +155,7 @@ const Products = () => {
     debounce((value) => {
       const validValue = value < 0 ? 0 : value;
       setFilters(prev => ({ ...prev, maxPrice: validValue, page: 1 }));
-    }, 800),
+    }, 600),
     []
   );
 
@@ -225,7 +249,7 @@ const Products = () => {
 
   const LoadingSkeleton = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      {[...Array(8)].map((_, i) => (  // Changed from 12 to 8
+      {[...Array(12)].map((_, i) => (
         <div key={i} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
           <div className="h-48 bg-gray-200"></div>
           <div className="p-4">

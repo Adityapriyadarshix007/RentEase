@@ -1,4 +1,5 @@
 const express = require('express');
+const compression = require('compression');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -22,6 +23,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '100mb' }));
+app.use(compression());
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 app.use(helmet());
 app.use(morgan('dev'));
