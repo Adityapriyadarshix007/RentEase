@@ -7,7 +7,7 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
-// Create Razorpay Order
+// Create Razorpay Order - SINGLE
 const createPaymentIntent = async (req, res) => {
   try {
     const { rentalId } = req.body;
@@ -51,7 +51,7 @@ const createPaymentIntent = async (req, res) => {
   }
 };
 
-// Verify Payment after successful payment
+// Verify Payment - SINGLE
 const confirmPayment = async (req, res) => {
   try {
     const { 
@@ -61,6 +61,10 @@ const confirmPayment = async (req, res) => {
       razorpay_signature,
       paymentMethod 
     } = req.body;
+    
+    console.log('=== VERIFYING SINGLE PAYMENT ===');
+    console.log('Rental ID:', rentalId);
+    console.log('Payment ID:', razorpay_payment_id);
     
     const rental = await Rental.findById(rentalId);
     
@@ -83,7 +87,7 @@ const confirmPayment = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid signature' });
     }
     
-    // UPDATE PAYMENT STATUS - FIX HERE
+    // UPDATE PAYMENT STATUS
     rental.paymentStatus = 'paid';
     rental.paymentId = razorpay_payment_id;
     rental.paymentMethod = paymentMethod || 'razorpay';
@@ -117,7 +121,7 @@ const getPaymentHistory = async (req, res) => {
   try {
     const rentals = await Rental.find({ 
       user: req.user._id,
-      paymentStatus: { $in: ['paid', 'completed'] }
+      paymentStatus: 'paid'
     }).select('paymentId paymentMethod totalAmount createdAt status').sort({ createdAt: -1 });
     
     res.json({ success: true, payments: rentals });
@@ -127,7 +131,7 @@ const getPaymentHistory = async (req, res) => {
   }
 };
 
-// Admin: Manually update payment status for COD orders after delivery
+// Admin: Manually update payment status for COD orders
 const updatePaymentStatus = async (req, res) => {
   try {
     const { rentalId, paymentStatus } = req.body;
@@ -147,11 +151,11 @@ const updatePaymentStatus = async (req, res) => {
       rental.paymentDate = new Date();
       await rental.save();
       
-      console.log(`✅ COD payment marked as completed for rental ${rentalId}: ₹${rental.totalAmount}`);
+      console.log(`✅ COD payment marked as paid for rental ${rentalId}: ₹${rental.totalAmount}`);
       
       res.json({ 
         success: true, 
-        message: 'COD payment marked as completed',
+        message: 'COD payment marked as paid',
         rental: {
           _id: rental._id,
           paymentStatus: rental.paymentStatus,
@@ -177,7 +181,7 @@ const updatePaymentStatus = async (req, res) => {
     else {
       res.status(400).json({ 
         success: false, 
-        message: `Invalid payment status transition: ${paymentStatus} for payment method ${rental.paymentMethod}` 
+        message: `Invalid payment status transition` 
       });
     }
   } catch (error) {
@@ -186,7 +190,7 @@ const updatePaymentStatus = async (req, res) => {
   }
 };
 
-// Webhook to handle payment events from Razorpay
+// Webhook for Razorpay
 const razorpayWebhook = async (req, res) => {
   try {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
@@ -206,7 +210,6 @@ const razorpayWebhook = async (req, res) => {
       const paymentId = payload.payment.entity.id;
       const orderId = payload.payment.entity.order_id;
       
-      // Update rental payment status
       const rental = await Rental.findOneAndUpdate(
         { razorpayOrderId: orderId },
         { 
@@ -231,10 +234,14 @@ const razorpayWebhook = async (req, res) => {
 
 // ========== GROUP PAYMENT FOR MULTIPLE RENTALS ==========
 
-// Create group order for multiple rentals
+// Create group order
 const createGroupOrder = async (req, res) => {
   try {
     const { rentalIds, totalAmount } = req.body;
+    
+    console.log('=== CREATING GROUP ORDER ===');
+    console.log('Rental IDs:', rentalIds);
+    console.log('Total Amount:', totalAmount);
     
     const amount = totalAmount * 100;
     
@@ -252,12 +259,12 @@ const createGroupOrder = async (req, res) => {
     
     const order = await razorpay.orders.create(options);
     
-    // Store group order ID in all rentals
     for (const rentalId of rentalIds) {
       await Rental.findByIdAndUpdate(rentalId, { 
         razorpayOrderId: order.id,
         groupPayment: true
       });
+      console.log(`✅ Updated rental ${rentalId} with order ID: ${order.id}`);
     }
     
     res.json({ 
@@ -271,10 +278,15 @@ const createGroupOrder = async (req, res) => {
   }
 };
 
-// Verify group payment for multiple rentals
+// Verify group payment - FIXED
 const verifyGroupPayment = async (req, res) => {
   try {
     const { rentalIds, razorpay_order_id, razorpay_payment_id, razorpay_signature, paymentMethod } = req.body;
+    
+    console.log('=== VERIFYING GROUP PAYMENT ===');
+    console.log('Rental IDs:', rentalIds);
+    console.log('Order ID:', razorpay_order_id);
+    console.log('Payment ID:', razorpay_payment_id);
     
     // Verify signature
     const body = razorpay_order_id + '|' + razorpay_payment_id;
@@ -284,11 +296,14 @@ const verifyGroupPayment = async (req, res) => {
       .digest('hex');
     
     if (expectedSignature !== razorpay_signature) {
+      console.error('Signature mismatch!');
       return res.status(400).json({ success: false, message: 'Invalid signature' });
     }
     
     // Update ALL rentals with payment status
     let updatedCount = 0;
+    const updatedRentals = [];
+    
     for (const rentalId of rentalIds) {
       const rental = await Rental.findById(rentalId);
       if (rental) {
@@ -301,6 +316,8 @@ const verifyGroupPayment = async (req, res) => {
         rental.razorpaySignature = razorpay_signature;
         await rental.save();
         updatedCount++;
+        updatedRentals.push(rentalId);
+        console.log(`✅ Updated rental ${rentalId} - Payment Status: ${rental.paymentStatus}`);
       }
     }
     
@@ -310,7 +327,8 @@ const verifyGroupPayment = async (req, res) => {
     res.json({ 
       success: true, 
       message: `Payment verified for ${updatedCount} rentals`,
-      updatedCount: updatedCount
+      updatedCount: updatedCount,
+      rentalIds: updatedRentals
     });
   } catch (error) {
     console.error('Verify group payment error:', error);
@@ -319,8 +337,6 @@ const verifyGroupPayment = async (req, res) => {
 };
 
 module.exports = { 
-  createGroupOrder,
-  verifyGroupPayment, 
   createPaymentIntent, 
   confirmPayment, 
   getPaymentHistory,

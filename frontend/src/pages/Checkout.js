@@ -302,27 +302,29 @@ if (paymentMethod === 'razorpay') {
       handler: async (response) => {
         // Verify payment for ALL rentals
         const verifyResponse = await fetch(`${API_URL}/api/payments/verify-group-payment`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            rentalIds: rentals.map(r => r._id),
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature,
-            paymentMethod: 'razorpay'
-          })
-        });
-        
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+        rentalIds: rentals.map(r => r._id),
+        razorpay_order_id: response.razorpay_order_id,
+        razorpay_payment_id: response.razorpay_payment_id,
+        razorpay_signature: response.razorpay_signature,
+        paymentMethod: 'razorpay'
+        })
+     });
+
         const verifyData = await verifyResponse.json();
+        console.log('Verify response:', verifyData);
+
         if (verifyData.success) {
-          toast.success(`Payment successful! ${rentals.length} items rented`);
-          clearCart();
-          navigate('/my-rentals');
+        toast.success(`Payment successful! ${rentals.length} items rented`);
+        clearCart();
+        navigate('/my-rentals');
         } else {
-          toast.error('Payment verification failed');
+        toast.error('Payment verification failed: ' + (verifyData.message || 'Unknown error'));
         }
       },
       prefill: { name: user?.name, email: user?.email },
