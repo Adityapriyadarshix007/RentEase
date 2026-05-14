@@ -40,7 +40,7 @@ const getProducts = async (req, res) => {
     
     // Select only needed fields (exclude large image data)
     const products = await Product.find(query)
-      .select('name category subCategory monthlyRent rating numReviews availableQuantity brand')
+      .select('name category subCategory monthlyRent rating numReviews availableQuantity brand images')
       .limit(parseInt(limit))
       .skip(skip)
       .sort(sortOptions)

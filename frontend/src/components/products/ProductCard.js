@@ -29,11 +29,17 @@ const ProductCard = React.memo(({ product }) => {
     return stars;
   }, []);
 
-  // Get image URL - handle both string and array
+  // Get image URL - prefer Cloudinary URLs
   const getImageUrl = () => {
     if (!product.images) return null;
-    if (typeof product.images === 'string') return product.images;
-    if (Array.isArray(product.images) && product.images.length > 0) return product.images[0];
+    if (Array.isArray(product.images) && product.images.length > 0) {
+      let img = product.images[0];
+      // If it's a Cloudinary URL, add optimization parameters
+      if (img && img.includes('cloudinary.com')) {
+        img = img.replace('/upload/', '/upload/w_300,h_200,c_fill,q_auto,f_auto/');
+      }
+      return img;
+    }
     return null;
   };
 
