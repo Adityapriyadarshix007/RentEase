@@ -29,27 +29,23 @@ const ProductCard = React.memo(({ product }) => {
     return stars;
   }, []);
 
-  // Get optimized thumbnail - add loading="lazy" for performance
-  // Add this function inside ProductCard component
-const getOptimizedImageUrl = (url) => {
-  if (!url) return null;
-  // If it's a Cloudinary URL, add optimization parameters
-  if (url.includes('cloudinary.com')) {
-    return url.replace('/upload/', '/upload/w_300,h_200,c_fill,q_auto,f_auto/');
-  }
-  return url;
-};
+  // Get image URL - handle both string and array
+  const getImageUrl = () => {
+    if (!product.images) return null;
+    if (typeof product.images === 'string') return product.images;
+    if (Array.isArray(product.images) && product.images.length > 0) return product.images[0];
+    return null;
+  };
 
-// Then use it in the img src:
-const optimizedUrl = getOptimizedImageUrl(thumbnailUrl);
+  const imageUrl = getImageUrl();
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 group">
       <Link to={`/products/${product._id}`}>
         <div className="h-48 bg-gray-100 flex items-center justify-center overflow-hidden relative">
-          {thumbnailUrl ? (
+          {imageUrl ? (
             <img
-              src={thumbnailUrl}
+              src={imageUrl}
               alt={product.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               loading="lazy"
@@ -62,9 +58,10 @@ const optimizedUrl = getOptimizedImageUrl(thumbnailUrl);
               }}
             />
           ) : (
-            <div className="text-6xl">🛋️</div>
+            <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+              <div className="text-4xl">🛋️</div>
+            </div>
           )}
-          {/* Low stock badge */}
           {product.availableQuantity > 0 && product.availableQuantity <= 3 && (
             <span className="absolute top-2 right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full z-10">
               Only {product.availableQuantity} left
