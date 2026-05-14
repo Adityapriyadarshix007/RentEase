@@ -20,7 +20,7 @@ const Products = () => {
     total: 0,
     currentPage: 1,
     totalPages: 1,
-    limit: 12
+    limit: 8
   });
 
   const [filters, setFilters] = useState({
@@ -113,7 +113,7 @@ const Products = () => {
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
       if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
       params.append('page', filters.page);
-      params.append('limit', 12);
+      params.append('limit', 8);
 
       const response = await fetch(`${API_BASE_URL}/api/products?${params}`, {
         signal: abortController.signal
@@ -124,7 +124,7 @@ const Products = () => {
         total: data.pagination?.total || 0,
         currentPage: data.pagination?.page || 1,
         totalPages: data.pagination?.pages || 1,
-        limit: 12
+        limit: 8
       });
     } catch (error) {
       if (error.name !== 'AbortError') {

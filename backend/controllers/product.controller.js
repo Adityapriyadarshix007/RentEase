@@ -32,7 +32,7 @@ const getProducts = async (req, res) => {
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    const products = await Product.find(query).select('name category subCategory monthlyRent images rating numReviews availableQuantity brand').lean()
+    const products = await Product.find(query).lean().lean().select('name category subCategory monthlyRent images rating numReviews availableQuantity brand').lean()
       .limit(parseInt(limit))
       .skip(skip)
       .sort(sortOptions);
@@ -41,6 +41,7 @@ const getProducts = async (req, res) => {
     
     res.set('Cache-Control', 'public, max-age=300');
   res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+  res.set('Cache-Control', 'public, max-age=300');
   res.json({
       success: true,
       products,
@@ -64,6 +65,7 @@ const getProductById = async (req, res) => {
     }
     res.set('Cache-Control', 'public, max-age=300');
   res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+  res.set('Cache-Control', 'public, max-age=300');
   res.json({ success: true, product });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -96,6 +98,7 @@ const updateProduct = async (req, res) => {
     
     res.set('Cache-Control', 'public, max-age=300');
   res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+  res.set('Cache-Control', 'public, max-age=300');
   res.json({ success: true, product });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -112,6 +115,7 @@ const deleteProduct = async (req, res) => {
     await product.deleteOne();
     res.set('Cache-Control', 'public, max-age=300');
   res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+  res.set('Cache-Control', 'public, max-age=300');
   res.json({ success: true, message: 'Product removed successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -125,6 +129,7 @@ const getFeaturedProducts = async (req, res) => {
       .limit(8);
     res.set('Cache-Control', 'public, max-age=300');
   res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+  res.set('Cache-Control', 'public, max-age=300');
   res.json({ success: true, products });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -207,6 +212,7 @@ const markReviewHelpful = async (req, res) => {
     
     res.set('Cache-Control', 'public, max-age=300');
   res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+  res.set('Cache-Control', 'public, max-age=300');
   res.json({ success: true, message: 'Review marked as helpful', helpfulCount: review.helpful.length });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -226,6 +232,7 @@ const getProductReviews = async (req, res) => {
     
     res.set('Cache-Control', 'public, max-age=300');
   res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+  res.set('Cache-Control', 'public, max-age=300');
   res.json({
       success: true,
       reviews: product.reviews,
