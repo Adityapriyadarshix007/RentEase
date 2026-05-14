@@ -1,6 +1,5 @@
 const express = require('express');
 const compression = require('compression');
-const compression = require('compression');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -24,9 +23,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '100mb' }));
-app.use(compression());
-app.use(compression());
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+app.use(compression());
 app.use(helmet());
 app.use(morgan('dev'));
 
@@ -87,6 +85,7 @@ const rentalRoutes = require('./routes/rental.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const returnsRoutes = require('./routes/returns.routes');
 const cartRoutes = require('./routes/cart.routes');
+const uploadRoutes = require('./routes/upload.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -99,6 +98,7 @@ app.use('/api/rentals', rentalRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/returns', returnsRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -172,7 +172,4 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-
 module.exports = app;
-const uploadRoutes = require('./routes/upload.routes');
-app.use('/api/upload', uploadRoutes);
