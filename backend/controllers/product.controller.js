@@ -32,14 +32,15 @@ const getProducts = async (req, res) => {
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    const products = await Product.find(query)
+    const products = await Product.find(query).select('name category subCategory monthlyRent images rating numReviews availableQuantity brand').lean()
       .limit(parseInt(limit))
       .skip(skip)
       .sort(sortOptions);
     
     const total = await Product.countDocuments(query);
     
-    res.json({
+    res.set('Cache-Control', 'public, max-age=300');
+  res.json({
       success: true,
       products,
       pagination: {
@@ -60,7 +61,8 @@ const getProductById = async (req, res) => {
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
-    res.json({ success: true, product });
+    res.set('Cache-Control', 'public, max-age=300');
+  res.json({ success: true, product });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -90,7 +92,8 @@ const updateProduct = async (req, res) => {
     product.updatedAt = Date.now();
     await product.save();
     
-    res.json({ success: true, product });
+    res.set('Cache-Control', 'public, max-age=300');
+  res.json({ success: true, product });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -104,7 +107,8 @@ const deleteProduct = async (req, res) => {
     }
     
     await product.deleteOne();
-    res.json({ success: true, message: 'Product removed successfully' });
+    res.set('Cache-Control', 'public, max-age=300');
+  res.json({ success: true, message: 'Product removed successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -115,7 +119,8 @@ const getFeaturedProducts = async (req, res) => {
     const products = await Product.find({ isAvailable: true, availableQuantity: { $gt: 0 } })
       .sort({ rating: -1 })
       .limit(8);
-    res.json({ success: true, products });
+    res.set('Cache-Control', 'public, max-age=300');
+  res.json({ success: true, products });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -195,7 +200,8 @@ const markReviewHelpful = async (req, res) => {
     review.helpful.push(req.user._id);
     await product.save();
     
-    res.json({ success: true, message: 'Review marked as helpful', helpfulCount: review.helpful.length });
+    res.set('Cache-Control', 'public, max-age=300');
+  res.json({ success: true, message: 'Review marked as helpful', helpfulCount: review.helpful.length });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -212,7 +218,8 @@ const getProductReviews = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
     
-    res.json({
+    res.set('Cache-Control', 'public, max-age=300');
+  res.json({
       success: true,
       reviews: product.reviews,
       rating: product.rating,
