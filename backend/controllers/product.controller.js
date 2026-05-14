@@ -20,7 +20,7 @@ const getProducts = async (req, res) => {
       return res.json(cached.data);
     }
     
-    let query = { isAvailable: true, availableQuantity: { $gt: 0 } };
+    let query = {};
     
     if (category) query.category = category;
     if (subCategory) query.subCategory = subCategory;
@@ -85,16 +85,28 @@ const getProductById = async (req, res) => {
 
 const createProduct = async (req, res) => {
   try {
+    console.log("Received product data:", req.body);
     const productData = {
-      ...req.body,
-      availableQuantity: req.body.quantity
+      name: req.body.name,
+      category: req.body.category,
+      subCategory: req.body.subCategory || "",
+      description: req.body.description || "",
+      monthlyRent: parseFloat(req.body.monthlyRent),
+      securityDeposit: parseFloat(req.body.securityDeposit) || 0,
+      availableQuantity: parseInt(req.body.availableQuantity) || parseInt(req.body.quantity) || 0,
+      brand: req.body.brand || "",
+      condition: req.body.condition || "good",
+      images: req.body.images || [],
+      specifications: req.body.specifications || {},
+      isAvailable: true,
+      createdAt: new Date()
     };
     const product = await Product.create(productData);
-    // Clear cache on product creation
     cache.clear();
     res.status(201).json({ success: true, product });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Create product error:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
