@@ -1,18 +1,24 @@
 const Product = require('../models/Product.model');
 
+// Simple in-memory cache for product list
+const cache = new Map();
+const CACHE_TTL = 30000; // 30 seconds
+
 const getProducts = async (req, res) => {
   try {
     const { 
-      category, 
-      subCategory, 
-      search, 
-      minPrice, 
-      maxPrice, 
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
-      page = 1, 
-      limit = 12 
+      category, subCategory, search, minPrice, maxPrice, 
+      sortBy = 'createdAt', sortOrder = 'desc', page = 1, limit = 12 
     } = req.query;
+    
+    // Build cache key based on query parameters
+    const cacheKey = JSON.stringify({ category, subCategory, search, minPrice, maxPrice, sortBy, sortOrder, page, limit });
+    
+    // Check cache
+    const cached = cache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return res.json(cached.data);
+    }
     
     let query = { isAvailable: true, availableQuantity: { $gt: 0 } };
     
@@ -32,17 +38,17 @@ const getProducts = async (req, res) => {
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    const products = await Product.find(query).lean().lean().select('name category subCategory monthlyRent images rating numReviews availableQuantity brand').lean()
+    // Select only needed fields (exclude large image data)
+    const products = await Product.find(query)
+      .select('name category subCategory monthlyRent rating numReviews availableQuantity brand')
       .limit(parseInt(limit))
       .skip(skip)
-      .sort(sortOptions);
+      .sort(sortOptions)
+      .lean();
     
     const total = await Product.countDocuments(query);
     
-    res.set('Cache-Control', 'public, max-age=300');
-  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
-  res.set('Cache-Control', 'public, max-age=300');
-  res.json({
+    const responseData = {
       success: true,
       products,
       pagination: {
@@ -51,22 +57,27 @@ const getProducts = async (req, res) => {
         pages: Math.ceil(total / parseInt(limit)),
         limit: parseInt(limit)
       }
-    });
+    };
+    
+    // Store in cache
+    cache.set(cacheKey, { data: responseData, timestamp: Date.now() });
+    
+    // Set cache headers
+    res.set('Cache-Control', 'public, max-age=30');
+    res.json(responseData);
   } catch (error) {
+    console.error('Get products error:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
 const getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(req.params.id).lean();
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
-    res.set('Cache-Control', 'public, max-age=300');
-  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
-  res.set('Cache-Control', 'public, max-age=300');
-  res.json({ success: true, product });
+    res.json({ success: true, product });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -79,6 +90,8 @@ const createProduct = async (req, res) => {
       availableQuantity: req.body.quantity
     };
     const product = await Product.create(productData);
+    // Clear cache on product creation
+    cache.clear();
     res.status(201).json({ success: true, product });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -96,10 +109,10 @@ const updateProduct = async (req, res) => {
     product.updatedAt = Date.now();
     await product.save();
     
-    res.set('Cache-Control', 'public, max-age=300');
-  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
-  res.set('Cache-Control', 'public, max-age=300');
-  res.json({ success: true, product });
+    // Clear cache on product update
+    cache.clear();
+    
+    res.json({ success: true, product });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -113,10 +126,11 @@ const deleteProduct = async (req, res) => {
     }
     
     await product.deleteOne();
-    res.set('Cache-Control', 'public, max-age=300');
-  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
-  res.set('Cache-Control', 'public, max-age=300');
-  res.json({ success: true, message: 'Product removed successfully' });
+    
+    // Clear cache on product deletion
+    cache.clear();
+    
+    res.json({ success: true, message: 'Product removed successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -125,12 +139,11 @@ const deleteProduct = async (req, res) => {
 const getFeaturedProducts = async (req, res) => {
   try {
     const products = await Product.find({ isAvailable: true, availableQuantity: { $gt: 0 } })
+      .select('name category monthlyRent rating numReviews images')
       .sort({ rating: -1 })
-      .limit(8);
-    res.set('Cache-Control', 'public, max-age=300');
-  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
-  res.set('Cache-Control', 'public, max-age=300');
-  res.json({ success: true, products });
+      .limit(8)
+      .lean();
+    res.json({ success: true, products });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -145,7 +158,6 @@ const addProductReview = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
     
-    // Check if user already reviewed this product
     const alreadyReviewed = product.reviews.find(
       review => review.user.toString() === req.user._id.toString()
     );
@@ -154,7 +166,6 @@ const addProductReview = async (req, res) => {
       return res.status(400).json({ success: false, message: 'You have already reviewed this product' });
     }
     
-    // Check if user has actually rented this product (verified purchase)
     const Rental = require('../models/Rental.model');
     const hasRented = await Rental.findOne({
       user: req.user._id,
@@ -175,6 +186,9 @@ const addProductReview = async (req, res) => {
     await product.updateRating();
     await product.save();
     
+    // Clear cache on review addition
+    cache.clear();
+    
     res.status(201).json({
       success: true,
       message: 'Review added successfully',
@@ -189,7 +203,6 @@ const addProductReview = async (req, res) => {
   }
 };
 
-// Mark review as helpful
 const markReviewHelpful = async (req, res) => {
   try {
     const product = await Product.findById(req.params.productId);
@@ -202,7 +215,6 @@ const markReviewHelpful = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Review not found' });
     }
     
-    // Check if user already marked as helpful
     if (review.helpful.includes(req.user._id)) {
       return res.status(400).json({ success: false, message: 'You already marked this review as helpful' });
     }
@@ -210,30 +222,24 @@ const markReviewHelpful = async (req, res) => {
     review.helpful.push(req.user._id);
     await product.save();
     
-    res.set('Cache-Control', 'public, max-age=300');
-  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
-  res.set('Cache-Control', 'public, max-age=300');
-  res.json({ success: true, message: 'Review marked as helpful', helpfulCount: review.helpful.length });
+    res.json({ success: true, message: 'Review marked as helpful', helpfulCount: review.helpful.length });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Get product reviews
 const getProductReviews = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
       .select('reviews rating numReviews ratingDistribution')
-      .populate('reviews.user', 'name');
+      .populate('reviews.user', 'name')
+      .lean();
     
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
     
-    res.set('Cache-Control', 'public, max-age=300');
-  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
-  res.set('Cache-Control', 'public, max-age=300');
-  res.json({
+    res.json({
       success: true,
       reviews: product.reviews,
       rating: product.rating,
@@ -245,14 +251,13 @@ const getProductReviews = async (req, res) => {
   }
 };
 
-
 module.exports = { 
   getProducts, 
   getProductById, 
   createProduct, 
   updateProduct, 
   deleteProduct,
-  getFeaturedProducts ,
+  getFeaturedProducts,
   addProductReview,
   markReviewHelpful,
   getProductReviews
