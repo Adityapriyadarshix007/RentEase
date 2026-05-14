@@ -40,6 +40,7 @@ const getProducts = async (req, res) => {
     const total = await Product.countDocuments(query);
     
     res.set('Cache-Control', 'public, max-age=300');
+  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
   res.json({
       success: true,
       products,
@@ -62,6 +63,7 @@ const getProductById = async (req, res) => {
       return res.status(404).json({ message: 'Product not found' });
     }
     res.set('Cache-Control', 'public, max-age=300');
+  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
   res.json({ success: true, product });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -93,6 +95,7 @@ const updateProduct = async (req, res) => {
     await product.save();
     
     res.set('Cache-Control', 'public, max-age=300');
+  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
   res.json({ success: true, product });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -108,6 +111,7 @@ const deleteProduct = async (req, res) => {
     
     await product.deleteOne();
     res.set('Cache-Control', 'public, max-age=300');
+  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
   res.json({ success: true, message: 'Product removed successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -120,6 +124,7 @@ const getFeaturedProducts = async (req, res) => {
       .sort({ rating: -1 })
       .limit(8);
     res.set('Cache-Control', 'public, max-age=300');
+  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
   res.json({ success: true, products });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -201,6 +206,7 @@ const markReviewHelpful = async (req, res) => {
     await product.save();
     
     res.set('Cache-Control', 'public, max-age=300');
+  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
   res.json({ success: true, message: 'Review marked as helpful', helpfulCount: review.helpful.length });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -219,6 +225,7 @@ const getProductReviews = async (req, res) => {
     }
     
     res.set('Cache-Control', 'public, max-age=300');
+  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
   res.json({
       success: true,
       reviews: product.reviews,
