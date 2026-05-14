@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { productService } from '../../services/index';
-import { FaEdit, FaTrash, FaPlus, FaSearch, FaFilter, FaTimes, FaEye, FaSave, FaTimesCircle, FaUpload, FaBox } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaPlus, FaSearch, FaTimes, FaUpload, FaBox, FaSync } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const AdminProducts = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [categories, setCategories] = useState([]);
@@ -26,10 +26,6 @@ const AdminProducts = () => {
   });
   const [imagePreview, setImagePreview] = useState([]);
   const [uploadingImage, setUploadingImage] = useState(false);
-
-  // Image validation constants
-  const MAX_IMAGE_SIZE = 20 * 1024 * 1024; // 20MB in bytes
-  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
   const staticCategories = ['Furniture', 'Appliances'];
@@ -59,60 +55,31 @@ const AdminProducts = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
-      setProducts(data.products || []);
+      if (data.success) {
+        setProducts(data.products || []);
+      } else {
+        setProducts([]);
+      }
     } catch (error) {
       console.error('Error fetching products:', error);
       toast.error('Failed to fetch products');
+      setProducts([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchProducts();
+    toast.success('Refreshing product list...');
   };
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
   };
 
-  // Compress image before upload
-  const compressImage = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target.result;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          
-          let width = img.width;
-          let height = img.height;
-          const maxWidth = 1200;
-          const maxHeight = 1200;
-          
-          if (width > maxWidth) {
-            height = (height * maxWidth) / width;
-            width = maxWidth;
-          }
-          if (height > maxHeight) {
-            width = (width * maxHeight) / height;
-            height = maxHeight;
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          canvas.toBlob((blob) => {
-            resolve(blob);
-          }, 'image/jpeg', 0.4);
-        };
-        img.onerror = reject;
-      };
-      reader.onerror = reject;
-    });
-  };
-
-  // handleImageUpload using Cloudinary
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
     setUploadingImage(true);
@@ -194,7 +161,8 @@ const AdminProducts = () => {
         brand: formData.brand,
         condition: formData.condition,
         images: formData.images,
-        specifications: formData.specifications || {}
+        specifications: formData.specifications || {},
+        isAvailable: true
       };
       
       console.log('Sending product data:', productData);
@@ -217,7 +185,10 @@ const AdminProducts = () => {
         toast.success(editingProduct ? 'Product updated successfully' : 'Product created successfully');
         setShowModal(false);
         resetForm();
-        fetchProducts();
+        // Force refresh the product list
+        await fetchProducts();
+        // Also dispatch event for products page
+        window.dispatchEvent(new CustomEvent('productsUpdated'));
       } else {
         toast.error(data.message || 'Operation failed');
         console.error('Error details:', data);
@@ -244,7 +215,8 @@ const AdminProducts = () => {
       
       if (response.ok) {
         toast.success('Product deleted successfully');
-        fetchProducts();
+        await fetchProducts();
+        window.dispatchEvent(new CustomEvent('productsUpdated'));
       } else {
         const data = await response.json();
         toast.error(data.message || 'Failed to delete product');
@@ -300,10 +272,9 @@ const AdminProducts = () => {
     return matchesSearch && matchesCategory;
   });
 
-  // Remove duplicates by using Set
   const allCategories = [...new Set([...staticCategories, ...categories.map(c => c.name)])];
 
-  if (loading) {
+  if (loading && products.length === 0) {
     return (
       <div className="flex justify-center items-center h-96">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -318,15 +289,24 @@ const AdminProducts = () => {
           <h1 className="text-3xl font-bold">Manage Products</h1>
           <p className="text-gray-500 mt-1">Manage your product inventory, edit details, and track stock</p>
         </div>
-        <button
-          onClick={() => {
-            resetForm();
-            setShowModal(true);
-          }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition"
-        >
-          <FaPlus /> Add New Product
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition"
+          >
+            <FaSync className={refreshing ? 'animate-spin' : ''} /> Refresh
+          </button>
+          <button
+            onClick={() => {
+              resetForm();
+              setShowModal(true);
+            }}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition"
+          >
+            <FaPlus /> Add New Product
+          </button>
+        </div>
       </div>
 
       {/* Search and Filter Bar */}
@@ -485,7 +465,7 @@ const AdminProducts = () => {
         Showing {filteredProducts.length} of {products.length} products
       </div>
 
-      {/* Add/Edit Product Modal */}
+      {/* Add/Edit Product Modal - Same as before */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
