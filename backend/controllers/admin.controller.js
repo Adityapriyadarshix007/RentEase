@@ -13,13 +13,13 @@ const getDashboardStats = async (req, res) => {
     const totalVendors = await User.countDocuments({ role: 'vendor' });
     const totalCategories = await Category.countDocuments();
     
-
+    // Calculate TOTAL REVENUE (all time)
     const totalRevenue = await Rental.aggregate([
       { $match: { paymentStatus: { $in: ['paid', 'completed'] } } },
       { $group: { _id: null, total: { $sum: '$totalAmount' } } }
     ]);
     
-  
+    // Calculate CURRENT MONTH REVENUE
     const currentDate = new Date();
     const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
@@ -29,7 +29,7 @@ const getDashboardStats = async (req, res) => {
       { $group: { _id: null, total: { $sum: '$totalAmount' } } }
     ]);
     
-
+    // Calculate LAST 30 DAYS REVENUE
     const last30Days = new Date();
     last30Days.setDate(last30Days.getDate() - 30);
     const last30DaysRevenue = await Rental.aggregate([
@@ -41,6 +41,55 @@ const getDashboardStats = async (req, res) => {
       },
       { $group: { _id: null, total: { $sum: '$totalAmount' } } }
     ]);
+    
+    // ========== NEW KPI CALCULATIONS ==========
+    
+    // 1. PRODUCT UTILIZATION RATE
+    const productUtilization = await Rental.aggregate([
+      { $match: { status: 'active' } },
+      { $group: { _id: '$product', count: { $sum: 1 } } },
+      { $lookup: { from: 'products', localField: '_id', foreignField: '_id', as: 'product' } },
+      { $unwind: '$product' },
+      { $group: { 
+        _id: null, 
+        totalRented: { $sum: '$count' },
+        totalAvailable: { $sum: '$product.availableQuantity' }
+      } }
+    ]);
+    
+    const utilizationRate = productUtilization[0] 
+      ? ((productUtilization[0].totalRented / productUtilization[0].totalAvailable) * 100).toFixed(1)
+      : 0;
+    
+    // 2. CUSTOMER RETENTION RATE
+    const customerRentals = await Rental.aggregate([
+      { $group: { _id: '$user', rentalCount: { $sum: 1 } } }
+    ]);
+    
+    const totalCustomers = customerRentals.length;
+    const repeatCustomers = customerRentals.filter(c => c.rentalCount > 1).length;
+    const retentionRate = totalCustomers > 0 
+      ? ((repeatCustomers / totalCustomers) * 100).toFixed(1)
+      : 0;
+    
+    // 3. AVERAGE MAINTENANCE RESOLUTION TIME (hours)
+    const resolvedMaintenance = await Maintenance.aggregate([
+      { $match: { status: 'resolved', resolvedAt: { $exists: true } } },
+      { $addFields: { 
+        resolutionTime: { 
+          $divide: [
+            { $subtract: ['$resolvedAt', '$createdAt'] },
+            1000 * 60 * 60
+          ]
+        } 
+      } }
+    ]);
+    
+    const avgResolutionTime = resolvedMaintenance.length > 0
+      ? (resolvedMaintenance.reduce((sum, m) => sum + m.resolutionTime, 0) / resolvedMaintenance.length).toFixed(1)
+      : 0;
+    
+    // ========== END NEW KPI CALCULATIONS ==========
     
     const recentRentals = await Rental.find()
       .populate('user', 'name email')
@@ -68,7 +117,11 @@ const getDashboardStats = async (req, res) => {
         totalCategories,
         totalRevenue: totalRevenue[0]?.total || 0,
         monthlyRevenue: currentMonthRevenue[0]?.total || 0,
-        last30DaysRevenue: last30DaysRevenue[0]?.total || 0
+        last30DaysRevenue: last30DaysRevenue[0]?.total || 0,
+        // ========== NEW KPI VALUES ==========
+        productUtilizationRate: parseFloat(utilizationRate),
+        customerRetentionRate: parseFloat(retentionRate),
+        avgMaintenanceResolutionTime: parseFloat(avgResolutionTime)
       },
       recentRentals,
       recentUsers,
@@ -168,7 +221,6 @@ const getAnalytics = async (req, res) => {
   }
 };
 
-
 const exportAnalyticsData = async (req, res) => {
   try {
     const { type, startDate, endDate } = req.query;
@@ -192,14 +244,12 @@ const exportAnalyticsData = async (req, res) => {
         break;
         
       case 'rentals':
-       
         const rentalsData = await Rental.find(dateFilter)
           .populate('user', 'name email phone')
           .populate('product', 'name category monthlyRent')
           .sort({ createdAt: -1 })
           .lean();
         
-     
         data = rentalsData.map(rental => ({
           'User Name': rental.user?.name || 'N/A',
           'User Email': rental.user?.email || 'N/A',
@@ -221,7 +271,6 @@ const exportAnalyticsData = async (req, res) => {
             `${rental.deliveryAddress.street || ''}, ${rental.deliveryAddress.city || ''}, ${rental.deliveryAddress.state || ''} - ${rental.deliveryAddress.pincode || ''}` : 'N/A',
           'Created Date': rental.createdAt ? new Date(rental.createdAt).toLocaleDateString() : 'N/A'
         }));
-        
         filename = `rentals_export_${Date.now()}.csv`;
         break;
         
@@ -238,30 +287,30 @@ const exportAnalyticsData = async (req, res) => {
       case 'returns':
         const Return = require('../models/Return.model');
         const returnsData = await Return.find(dateFilter)
-        .populate('user', 'name email phone')
-        .populate('product', 'name category monthlyRent')
-        .sort({ createdAt: -1 })
-        .lean();
+          .populate('user', 'name email phone')
+          .populate('product', 'name category monthlyRent')
+          .sort({ createdAt: -1 })
+          .lean();
   
         data = returnsData.map(returnItem => ({
-       'Return ID': returnItem._id,
-       'User Name': returnItem.user?.name || 'N/A',
-       'User Email': returnItem.user?.email || 'N/A',
-       'User Phone': returnItem.user?.phone || 'N/A',
-       'Product Name': returnItem.product?.name || 'N/A',
-       'Product Category': returnItem.product?.category || 'N/A',
-       'Reason': returnItem.reason,
-       'Description': returnItem.description || 'N/A',
-       'Status': returnItem.status,
-       'Damage Amount (₹)': returnItem.damageAmount || 0,
-       'Refund Amount (₹)': returnItem.refundAmount || 0,
-       'Request Date': returnItem.createdAt ? new Date(returnItem.createdAt).toLocaleDateString() : 'N/A',
-       'Pickup Date': returnItem.pickupDate ? new Date(returnItem.pickupDate).toLocaleDateString() : 'N/A',
-       'Pickup Slot': returnItem.pickupSlot || 'N/A',
-       'Inspection Notes': returnItem.inspectionNotes || 'N/A'
-       }));
-       filename = `returns_export_${Date.now()}.csv`;
-      break;
+          'Return ID': returnItem._id,
+          'User Name': returnItem.user?.name || 'N/A',
+          'User Email': returnItem.user?.email || 'N/A',
+          'User Phone': returnItem.user?.phone || 'N/A',
+          'Product Name': returnItem.product?.name || 'N/A',
+          'Product Category': returnItem.product?.category || 'N/A',
+          'Reason': returnItem.reason,
+          'Description': returnItem.description || 'N/A',
+          'Status': returnItem.status,
+          'Damage Amount (₹)': returnItem.damageAmount || 0,
+          'Refund Amount (₹)': returnItem.refundAmount || 0,
+          'Request Date': returnItem.createdAt ? new Date(returnItem.createdAt).toLocaleDateString() : 'N/A',
+          'Pickup Date': returnItem.pickupDate ? new Date(returnItem.pickupDate).toLocaleDateString() : 'N/A',
+          'Pickup Slot': returnItem.pickupSlot || 'N/A',
+          'Inspection Notes': returnItem.inspectionNotes || 'N/A'
+        }));
+        filename = `returns_export_${Date.now()}.csv`;
+        break;
         
       default:
         return res.status(400).json({ success: false, message: 'Invalid export type' });
@@ -273,14 +322,11 @@ const exportAnalyticsData = async (req, res) => {
     
     console.log(`📊 Found ${data.length} ${type} to export`);
     
-    // Generate CSV
     let headers, csvRows;
     
     if (type === 'rentals' || type === 'returns') {
-      // Use predefined headers for rentals (already in correct order)
       headers = Object.keys(data[0]);
       csvRows = [headers.join(',')];
-      
       for (const item of data) {
         const values = headers.map(header => {
           let value = item[header];
@@ -289,10 +335,8 @@ const exportAnalyticsData = async (req, res) => {
         csvRows.push(values.join(','));
       }
     } else {
-      // Dynamic headers for other types
       headers = Object.keys(data[0]).filter(k => !k.startsWith('_') && k !== '__v');
       csvRows = [headers.join(',')];
-      
       for (const item of data) {
         const values = headers.map(header => {
           let value = item[header];
@@ -376,7 +420,6 @@ const getReturnsAnalytics = async (req, res) => {
   }
 };
 
-
 module.exports = { 
   getDashboardStats, 
   getAllUsers, 
@@ -388,4 +431,3 @@ module.exports = {
   getRealtimeUpdates,
   getReturnsAnalytics 
 };
-
