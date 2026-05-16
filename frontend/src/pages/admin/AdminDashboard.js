@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaUsers, FaBox, FaCalendarCheck, FaWrench, FaRupeeSign, FaSync, FaShoppingCart, FaUserPlus } from 'react-icons/fa';
+import { FaUsers, FaBox, FaCalendarCheck, FaWrench, FaRupeeSign, FaSync, FaShoppingCart, FaUserPlus, FaChartLine, FaClock } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const AdminDashboard = () => {
@@ -8,7 +8,7 @@ const AdminDashboard = () => {
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
 
   const fetchDashboardData = useCallback(async (showToast = false) => {
     try {
@@ -65,6 +65,7 @@ const AdminDashboard = () => {
     );
   }
 
+  // ========== ORIGINAL STAT CARDS + NEW KPI CARDS ==========
   const statCards = [
     { title: 'Total Users', value: stats?.stats?.totalUsers || 0, icon: <FaUsers />, color: 'bg-blue-500' },
     { title: 'Total Products', value: stats?.stats?.totalProducts || 0, icon: <FaBox />, color: 'bg-green-500' },
@@ -72,6 +73,11 @@ const AdminDashboard = () => {
     { title: 'Pending Maintenance', value: stats?.stats?.pendingMaintenance || 0, icon: <FaWrench />, color: 'bg-yellow-500' },
     { title: 'Monthly Revenue', value: `₹${(stats?.stats?.monthlyRevenue || 0).toLocaleString()}`, icon: <FaRupeeSign />, color: 'bg-red-500' },
     { title: 'Total Vendors', value: stats?.stats?.totalVendors || 0, icon: <FaUserPlus />, color: 'bg-indigo-500' },
+    // ========== NEW KPI CARDS (ADDED - NOT REMOVING ANYTHING) ==========
+    { title: 'Total Revenue', value: `₹${(stats?.stats?.totalRevenue || 0).toLocaleString()}`, icon: <FaChartLine />, color: 'bg-emerald-500' },
+    { title: 'Product Utilization', value: `${stats?.stats?.productUtilizationRate || 0}%`, icon: <FaChartLine />, color: 'bg-teal-500' },
+    { title: 'Customer Retention', value: `${stats?.stats?.customerRetentionRate || 0}%`, icon: <FaUsers />, color: 'bg-pink-500' },
+    { title: 'Avg Resolution Time', value: `${stats?.stats?.avgMaintenanceResolutionTime || 0} hrs`, icon: <FaClock />, color: 'bg-orange-500' },
   ];
 
   return (
@@ -92,8 +98,8 @@ const AdminDashboard = () => {
         </button>
       </div>
       
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+      {/* Stats Grid - Updated to handle 10 cards (2 rows of 5 or responsive) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         {statCards.map((stat, index) => (
           <div key={index} className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition">
             <div className="flex items-center justify-between mb-2">
