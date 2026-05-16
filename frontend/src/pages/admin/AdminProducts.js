@@ -31,7 +31,7 @@ const AdminProducts = () => {
   const staticCategories = ['Furniture', 'Appliances'];
 
   useEffect(() => {
-    fetchProducts();
+    loadProducts();
     fetchCategories();
   }, []);
 
@@ -47,7 +47,8 @@ const AdminProducts = () => {
     }
   };
 
-  const fetchProducts = async () => {
+  // Separate function for loading products (no toast on initial load)
+  const loadProducts = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -57,15 +58,8 @@ const AdminProducts = () => {
       const data = await response.json();
       if (data.success) {
         setProducts(data.products || []);
-        // Show success message only when refreshing (not on initial load)
-        if (refreshing) {
-          toast.success('Products refreshed successfully');
-        }
       } else {
         setProducts([]);
-        if (refreshing) {
-          toast.error(data.message || 'Failed to refresh products');
-        }
       }
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -73,13 +67,36 @@ const AdminProducts = () => {
       setProducts([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Separate function for refreshing (shows toast)
+  const refreshProducts = async () => {
+    setRefreshing(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/products?limit=100`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setProducts(data.products || []);
+        toast.success('Products refreshed successfully!');
+      } else {
+        setProducts([]);
+        toast.error(data.message || 'Failed to refresh products');
+      }
+    } catch (error) {
+      console.error('Error refreshing products:', error);
+      toast.error('Failed to refresh products');
+      setProducts([]);
+    } finally {
       setRefreshing(false);
     }
   };
 
   const handleRefresh = () => {
-    setRefreshing(true);
-    fetchProducts();
+    refreshProducts();
   };
 
   // Compression function for images
@@ -232,7 +249,7 @@ const AdminProducts = () => {
         toast.success(editingProduct ? 'Product updated successfully' : 'Product created successfully');
         setShowModal(false);
         resetForm();
-        await fetchProducts();
+        await loadProducts(); // Load without showing refresh toast
         window.dispatchEvent(new CustomEvent('productsUpdated'));
       } else {
         toast.error(data.message || 'Operation failed');
@@ -260,7 +277,7 @@ const AdminProducts = () => {
       
       if (response.ok) {
         toast.success('Product deleted successfully');
-        await fetchProducts();
+        await loadProducts(); // Load without showing refresh toast
         window.dispatchEvent(new CustomEvent('productsUpdated'));
       } else {
         const data = await response.json();
