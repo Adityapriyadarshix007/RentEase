@@ -57,6 +57,7 @@ const AdminProducts = () => {
       const data = await response.json();
       if (data.success) {
         setProducts(data.products || []);
+        // Show success message only when refreshing (not on initial load)
         if (refreshing) {
           toast.success('Products refreshed successfully');
         }
