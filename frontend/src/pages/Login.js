@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaEnvelope, FaLock, FaGoogle, FaHome } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaGoogle, FaHome, FaEye, FaEyeSlash } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const Login = () => {
@@ -11,6 +11,7 @@ const Login = () => {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetting, setResetting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,7 +34,6 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Basic validation
     if (!email.trim()) {
       toast.error('Please enter your email address');
       return;
@@ -54,7 +54,6 @@ const Login = () => {
 
   const handleGoogleLogin = () => {
     const backendUrl = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
-    // Store current page to redirect back after login
     localStorage.setItem('redirectAfterLogin', window.location.pathname);
     window.location.href = `${backendUrl}/api/auth/google`;
   };
@@ -68,7 +67,6 @@ const Login = () => {
     
     setResetting(true);
     try {
-      // API call to send password reset email
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com'}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -95,7 +93,6 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="max-w-md w-full space-y-8">
-        {/* Header - Changed 'R' to Home icon */}
         <div className="text-center">
           <div className="mx-auto h-14 w-14 bg-gradient-to-r from-blue-600 to-blue-800 rounded-full flex items-center justify-center shadow-lg">
             <FaHome className="text-white text-2xl" />
@@ -108,7 +105,6 @@ const Login = () => {
           </p>
         </div>
         
-        {/* Email/Password Form */}
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
@@ -144,14 +140,21 @@ const Login = () => {
                 <input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none rounded-lg relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm"
+                  className="appearance-none rounded-lg relative block w-full pl-10 pr-12 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm"
                   placeholder="Enter your password"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition"
+                >
+                  {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                </button>
               </div>
             </div>
           </div>
@@ -199,7 +202,6 @@ const Login = () => {
           </button>
         </form>
 
-        {/* Divider */}
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-300"></div>
@@ -209,7 +211,6 @@ const Login = () => {
           </div>
         </div>
 
-        {/* Social Login Buttons */}
         <div className="space-y-3">
           <button
             onClick={handleGoogleLogin}
@@ -220,7 +221,6 @@ const Login = () => {
           </button>
         </div>
 
-        {/* Sign Up Link */}
         <p className="text-center text-sm text-gray-600">
           Don't have an account?{' '}
           <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
