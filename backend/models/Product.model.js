@@ -108,6 +108,20 @@ const productSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  // ========== NEW CITY FIELDS ==========
+  city: {
+    type: String,
+    enum: ['Delhi', 'Mumbai', 'Bangalore', 'Kolkata', 'Chennai', 'Hyderabad', 'Pune', 'All India'],
+    default: 'All India'
+  },
+  availableCities: [{
+    type: String,
+    enum: ['Delhi', 'Mumbai', 'Bangalore', 'Kolkata', 'Chennai', 'Hyderabad', 'Pune']
+  }],
+  deliveryCharge: {
+    type: Number,
+    default: 0
   }
 });
 

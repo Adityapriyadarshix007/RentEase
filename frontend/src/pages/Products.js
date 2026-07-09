@@ -31,7 +31,8 @@ const Products = () => {
     maxPrice: searchParams.get('maxPrice') || '',
     sortBy: searchParams.get('sortBy') || 'createdAt',
     sortOrder: searchParams.get('sortOrder') || 'desc',
-    page: parseInt(searchParams.get('page')) || 1
+    page: parseInt(searchParams.get('page')) || 1,
+    city: searchParams.get('city') || 'All Cities' // ← NEW
   });
 
   const [searchInput, setSearchInput] = useState(filters.search);
@@ -114,6 +115,10 @@ const Products = () => {
       if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
       params.append('page', filters.page);
       params.append('limit', 12);
+      // ========== NEW: Add city filter ==========
+      if (filters.city && filters.city !== 'All Cities') {
+        params.append('city', filters.city);
+      }
 
       const response = await fetch(`${API_BASE_URL}/api/products?${params}`, {
         signal: abortController.signal
@@ -195,7 +200,8 @@ const Products = () => {
       maxPrice: '',
       sortBy: 'createdAt',
       sortOrder: 'desc',
-      page: 1
+      page: 1,
+      city: 'All Cities' // ← NEW
     });
     setSearchInput('');
     setMinPriceInput('');
@@ -288,6 +294,25 @@ const Products = () => {
       {/* Filter Bar - Desktop */}
       <div className="hidden lg:block bg-white rounded-lg shadow-md p-4 mb-6">
         <div className="flex flex-wrap gap-4 items-end">
+          {/* ========== NEW: City Filter ========== */}
+          <div className="flex-1 min-w-[150px]">
+            <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+            <select
+              value={filters.city || 'All Cities'}
+              onChange={(e) => handleFilterChange('city', e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="All Cities">All Cities</option>
+              <option value="Delhi">Delhi</option>
+              <option value="Mumbai">Mumbai</option>
+              <option value="Bangalore">Bangalore</option>
+              <option value="Kolkata">Kolkata</option>
+              <option value="Chennai">Chennai</option>
+              <option value="Hyderabad">Hyderabad</option>
+              <option value="Pune">Pune</option>
+            </select>
+          </div>
+
           <div className="flex-1 min-w-[150px]">
             <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
             <select
@@ -377,6 +402,24 @@ const Products = () => {
               <button onClick={() => setShowFilters(false)} className="text-gray-500"><FaTimes size={24} /></button>
             </div>
             <div className="space-y-4">
+              {/* ========== NEW: City Filter in Mobile ========== */}
+              <div>
+                <label className="block text-sm font-medium mb-1">City</label>
+                <select
+                  value={filters.city || 'All Cities'}
+                  onChange={(e) => handleFilterChange('city', e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg"
+                >
+                  <option value="All Cities">All Cities</option>
+                  <option value="Delhi">Delhi</option>
+                  <option value="Mumbai">Mumbai</option>
+                  <option value="Bangalore">Bangalore</option>
+                  <option value="Kolkata">Kolkata</option>
+                  <option value="Chennai">Chennai</option>
+                  <option value="Hyderabad">Hyderabad</option>
+                  <option value="Pune">Pune</option>
+                </select>
+              </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Category</label>
                 <select 

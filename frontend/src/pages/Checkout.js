@@ -20,6 +20,7 @@ const Checkout = () => {
     landmark: ''
   });
   const [pincodeValid, setPincodeValid] = useState(true);
+  const [cityValid, setCityValid] = useState(true); // ← NEW
 
   const API_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
   const RAZORPAY_KEY = process.env.REACT_APP_RAZORPAY_KEY_ID || 'rzp_test_SoJcSoBvNFxUU0';
@@ -49,6 +50,13 @@ const Checkout = () => {
     if (address.pincode.length === 6) validatePincode(address.pincode);
   }, [address.pincode]);
 
+  useEffect(() => {
+    // ========== NEW: Validate city when it changes ==========
+    if (address.city && cartItems.length > 0) {
+      validateCityForAllProducts(address.city);
+    }
+  }, [address.city, cartItems]);
+
   const validatePincode = async (pincode) => {
     try {
       const token = localStorage.getItem('token');
@@ -68,6 +76,33 @@ const Checkout = () => {
     } catch (error) {
       console.error('Pincode validation error:', error);
     }
+  };
+
+  // ========== NEW: Validate city for all products ==========
+  const validateCityForAllProducts = async (city) => {
+    if (!city || cartItems.length === 0) return;
+    
+    let allAvailable = true;
+    for (const item of cartItems) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/api/products/validate-city`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ city, productId: item.productId })
+        });
+        const data = await response.json();
+        if (!data.success || !data.available) {
+          allAvailable = false;
+          toast.error(`${item.productName} is not available in ${city}`);
+          break;
+        }
+      } catch (error) {
+        console.error('City validation error:', error);
+        allAvailable = false;
+      }
+    }
+    setCityValid(allAvailable);
   };
 
   const loadRazorpayScript = () => {
@@ -90,6 +125,11 @@ const Checkout = () => {
     
     if (address.pincode.length !== 6) {
       toast.error('Pincode must be 6 digits');
+      return;
+    }
+    
+    if (!cityValid) {
+      toast.error('Some products are not available in your city');
       return;
     }
     
@@ -183,7 +223,7 @@ const Checkout = () => {
               
               const verifyData = await verifyResponse.json();
               console.log('Verify response:', verifyData);
-              
+            
               if (verifyData.success) {
                 toast.success(`Payment successful! ${rentals.length} items rented`);
                 clearCart();
@@ -235,7 +275,13 @@ const Checkout = () => {
               <div className="md:col-span-2">
                 <input type="text" name="street" value={address.street} onChange={handleAddressChange} placeholder="Street Address *" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required />
               </div>
-              <input type="text" name="city" value={address.city} onChange={handleAddressChange} placeholder="City *" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required />
+              {/* ========== UPDATED: City dropdown with validation ========== */}
+              <div>
+                <input type="text" name="city" value={address.city} onChange={handleAddressChange} placeholder="City *" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required />
+                {!cityValid && address.city && (
+                  <p className="text-red-500 text-xs mt-1">Some products not available in this city</p>
+                )}
+              </div>
               <input type="text" name="state" value={address.state} onChange={handleAddressChange} placeholder="State *" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required />
               <div>
                 <input type="text" name="pincode" value={address.pincode} onChange={handleAddressChange} placeholder="Pincode *" className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${!pincodeValid && address.pincode.length === 6 ? 'border-red-500' : ''}`} maxLength="6" required />
@@ -307,7 +353,7 @@ const Checkout = () => {
               <div className="border-t pt-2 mt-2"><div className="flex justify-between font-bold text-lg"><span>Total to Pay</span><span className="text-blue-600">₹{grandTotal}</span></div>
               <p className="text-xs text-gray-500 mt-1">Security deposit is refundable after inspection</p></div>
             </div>
-            <button onClick={handleSubmit} disabled={loading || !pincodeValid} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+            <button onClick={handleSubmit} disabled={loading || !pincodeValid || !cityValid} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
               {loading ? 'Processing...' : `Place Order • ₹${grandTotal}`}
             </button>
             <p className="text-xs text-gray-400 text-center mt-3">By placing order, you agree to our Terms & Conditions</p>

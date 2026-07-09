@@ -10,7 +10,8 @@ const {
   getFeaturedProducts,
   addProductReview,
   markReviewHelpful,
-  getProductReviews
+  getProductReviews,
+  validateCityAvailability // ← NEW
 } = require('../controllers/product.controller');
 
 // Public routes
@@ -18,6 +19,9 @@ router.get('/', getProducts);
 router.get('/featured', getFeaturedProducts);
 router.get('/:id', getProductById);
 router.get('/:id/reviews', getProductReviews);
+
+// ========== NEW: City validation route ==========
+router.post('/validate-city', protect, validateCityAvailability);
 
 // Admin only routes
 router.post('/', protect, createProduct);

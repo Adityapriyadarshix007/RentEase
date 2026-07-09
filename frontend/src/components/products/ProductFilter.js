@@ -22,7 +22,8 @@ const ProductFilter = ({ filters, onFilterChange, categories = [] }) => {
       subCategory: '',
       search: '',
       minPrice: '',
-      maxPrice: ''
+      maxPrice: '',
+      city: 'All Cities' // ← NEW
     });
   };
 
@@ -40,6 +41,26 @@ const ProductFilter = ({ filters, onFilterChange, categories = [] }) => {
           placeholder="Search products..."
           className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+      </div>
+      
+      {/* ========== NEW: City Filter ========== */}
+      <div className="mb-4">
+        <label className="block text-gray-700 mb-2">City</label>
+        <select
+          name="city"
+          value={filters.city || 'All Cities'}
+          onChange={handleChange}
+          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="All Cities">All Cities</option>
+          <option value="Delhi">Delhi</option>
+          <option value="Mumbai">Mumbai</option>
+          <option value="Bangalore">Bangalore</option>
+          <option value="Kolkata">Kolkata</option>
+          <option value="Chennai">Chennai</option>
+          <option value="Hyderabad">Hyderabad</option>
+          <option value="Pune">Pune</option>
+        </select>
       </div>
       
       <div className="mb-4">

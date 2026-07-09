@@ -8,11 +8,12 @@ const getProducts = async (req, res) => {
   try {
     const { 
       category, subCategory, search, minPrice, maxPrice, 
-      sortBy = 'createdAt', sortOrder = 'desc', page = 1, limit = 12 
+      sortBy = 'createdAt', sortOrder = 'desc', page = 1, limit = 12,
+      city = 'All Cities' // ← NEW: City filter
     } = req.query;
     
     // Build cache key based on query parameters
-    const cacheKey = JSON.stringify({ category, subCategory, search, minPrice, maxPrice, sortBy, sortOrder, page, limit });
+    const cacheKey = JSON.stringify({ category, subCategory, search, minPrice, maxPrice, sortBy, sortOrder, page, limit, city });
     
     // Check cache
     const cached = cache.get(cacheKey);
@@ -33,6 +34,14 @@ const getProducts = async (req, res) => {
       query.$text = { $search: search };
     }
     
+    // ========== NEW CITY FILTER ==========
+    if (city && city !== 'All Cities') {
+      query.$or = [
+        { city: city },
+        { city: 'All India' }
+      ];
+    }
+    
     const sortOptions = {};
     sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
     
@@ -40,7 +49,7 @@ const getProducts = async (req, res) => {
     
     // Select only needed fields (exclude large image data)
     const products = await Product.find(query)
-      .select('name category subCategory monthlyRent rating numReviews availableQuantity brand images')
+      .select('name category subCategory monthlyRent rating numReviews availableQuantity brand images city availableCities')
       .limit(parseInt(limit))
       .skip(skip)
       .sort(sortOptions)
@@ -99,7 +108,11 @@ const createProduct = async (req, res) => {
       images: req.body.images || [],
       specifications: req.body.specifications || {},
       isAvailable: true,
-      createdAt: new Date()
+      createdAt: new Date(),
+      // ========== NEW CITY FIELDS ==========
+      city: req.body.city || 'All India',
+      availableCities: req.body.availableCities || [],
+      deliveryCharge: req.body.deliveryCharge || 0
     };
     const product = await Product.create(productData);
     cache.clear();
@@ -151,7 +164,7 @@ const deleteProduct = async (req, res) => {
 const getFeaturedProducts = async (req, res) => {
   try {
     const products = await Product.find({ isAvailable: true, availableQuantity: { $gt: 0 } })
-      .select('name category monthlyRent rating numReviews images')
+      .select('name category monthlyRent rating numReviews images city')
       .sort({ rating: -1 })
       .limit(8)
       .lean();
@@ -263,6 +276,31 @@ const getProductReviews = async (req, res) => {
   }
 };
 
+// ========== NEW: Validate City Availability ==========
+const validateCityAvailability = async (req, res) => {
+  try {
+    const { city, productId } = req.body;
+    
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+    
+    // Check if product is available in the city
+    const isAvailable = product.city === 'All India' || 
+                        product.city === city || 
+                        (product.availableCities && product.availableCities.includes(city));
+    
+    res.json({ 
+      success: true, 
+      available: isAvailable,
+      deliveryCharge: isAvailable ? (product.deliveryCharge || 0) : null
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = { 
   getProducts, 
   getProductById, 
@@ -272,5 +310,6 @@ module.exports = {
   getFeaturedProducts,
   addProductReview,
   markReviewHelpful,
-  getProductReviews
+  getProductReviews,
+  validateCityAvailability // ← NEW
 };
