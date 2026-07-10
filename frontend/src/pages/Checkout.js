@@ -22,7 +22,7 @@ const Checkout = () => {
     landmark: ''
   });
   const [pincodeValid, setPincodeValid] = useState(true);
-  const [cityValid, setCityValid] = useState(true);
+  const [outOfCityProducts, setOutOfCityProducts] = useState([]); // Track out-of-city products
 
   const API_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
   const RAZORPAY_KEY = process.env.REACT_APP_RAZORPAY_KEY_ID || 'rzp_test_SoJcSoBvNFxUU0';
@@ -55,7 +55,7 @@ const Checkout = () => {
     }
   }, [cartItems, address.city]);
 
-  // ========== FIX: Calculate delivery charges with fallback ==========
+  // ========== FIX: Calculate delivery charges without blocking ==========
   const calculateDeliveryCharges = async () => {
     if (!address.city) return;
     setDeliveryLoading(true);
@@ -79,26 +79,31 @@ const Checkout = () => {
       const data = await response.json();
       
       if (data.success && data.data) {
-        // Use API response
         const charges = {};
-        let allAvailable = true;
-        data.data.products.forEach(p => {
+        const outOfCity = [];
+        data.data.products.forEach((p, index) => {
           charges[p.productId] = p.deliveryCharge || 0;
-          if (!p.isAvailableInCity) allAvailable = false;
+          if (!p.isAvailableInCity && p.deliveryCharge > 0) {
+            outOfCity.push({
+              name: cartItems[index]?.productName || 'Product',
+              deliveryCharge: p.deliveryCharge,
+              city: p.city
+            });
+          }
         });
         setDeliveryCharges(charges);
-        setCityValid(allAvailable);
-        if (!allAvailable) {
-          toast.error('Some products are not available in your city');
+        setOutOfCityProducts(outOfCity);
+        
+        // Show warning but don't block
+        if (outOfCity.length > 0) {
+          toast.warning(`${outOfCity.length} item(s) will be shipped from other cities with delivery charges`);
         }
-        console.log('✅ Delivery charges from API:', charges);
       } else {
         // Fallback: Calculate locally
         calculateDeliveryLocally();
       }
     } catch (error) {
       console.error('Error calculating delivery, using fallback:', error);
-      // Fallback: Calculate locally
       calculateDeliveryLocally();
     } finally {
       setDeliveryLoading(false);
@@ -109,25 +114,30 @@ const Checkout = () => {
   const calculateDeliveryLocally = () => {
     console.log('📦 Using local delivery calculation for city:', address.city);
     const charges = {};
-    let allAvailable = true;
+    const outOfCity = [];
     
     cartItems.forEach(item => {
-      // Check if product is available in user's city
       const isAvailable = item.city === address.city || 
                          item.city === 'All India' ||
                          (item.availableCities && item.availableCities.includes(address.city));
       
       const charge = isAvailable ? 0 : (item.outOfCityDeliveryCharge || 299);
       charges[item.productId] = charge;
-      if (!isAvailable) allAvailable = false;
       
-      console.log(`  ${item.productName}: ${isAvailable ? '✅ Available' : '❌ Not available'} - Charge: ₹${charge}`);
+      if (!isAvailable && charge > 0) {
+        outOfCity.push({
+          name: item.productName,
+          deliveryCharge: charge,
+          city: item.city || 'another city'
+        });
+      }
     });
     
     setDeliveryCharges(charges);
-    setCityValid(allAvailable);
-    if (!allAvailable) {
-      toast.error('Some products are not available in your city');
+    setOutOfCityProducts(outOfCity);
+    
+    if (outOfCity.length > 0) {
+      toast.warning(`${outOfCity.length} item(s) will be shipped from other cities with delivery charges`);
     }
   };
 
@@ -179,8 +189,8 @@ const Checkout = () => {
       return;
     }
     
-    if (!cityValid) {
-      toast.error('Some products are not available in your city');
+    if (!pincodeValid) {
+      toast.error('Delivery not available at this pincode');
       return;
     }
     
@@ -307,7 +317,7 @@ const Checkout = () => {
     setAddress(prev => ({ ...prev, [name]: value }));
     // Recalculate delivery when city changes
     if (name === 'city') {
-      setCityValid(true);
+      setOutOfCityProducts([]);
     }
   };
 
@@ -337,8 +347,10 @@ const Checkout = () => {
               </div>
               <div>
                 <input type="text" name="city" value={address.city} onChange={handleAddressChange} placeholder="City *" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required />
-                {!cityValid && address.city && (
-                  <p className="text-red-500 text-xs mt-1">Some products not available in this city</p>
+                {outOfCityProducts.length > 0 && address.city && (
+                  <div className="text-orange-500 text-xs mt-1">
+                    ⚠️ {outOfCityProducts.length} item(s) will be shipped from other cities
+                  </div>
                 )}
                 {deliveryLoading && address.city && (
                   <p className="text-blue-500 text-xs mt-1">Checking availability...</p>
@@ -424,8 +436,8 @@ const Checkout = () => {
                 </span>
               </div>
               {itemsWithDelivery > 0 && (
-                <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-                  {itemsWithDelivery} item(s) will be shipped from other cities
+                <div className="text-xs text-orange-500 bg-orange-50 p-2 rounded">
+                  ⚠️ {itemsWithDelivery} item(s) will be shipped from other cities
                 </div>
               )}
               <div className="flex justify-between"><span>Security Deposit</span><span>₹{totalDeposit}</span></div>
@@ -437,7 +449,11 @@ const Checkout = () => {
                 <p className="text-xs text-gray-500 mt-1">Security deposit is refundable after inspection</p>
               </div>
             </div>
-            <button onClick={handleSubmit} disabled={loading || !pincodeValid || !cityValid || deliveryLoading} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+            <button 
+              onClick={handleSubmit} 
+              disabled={loading || !pincodeValid || deliveryLoading} 
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               {loading ? 'Processing...' : deliveryLoading ? 'Calculating delivery...' : `Place Order • ₹${grandTotal}`}
             </button>
             <p className="text-xs text-gray-400 text-center mt-3">By placing order, you agree to our Terms & Conditions</p>
