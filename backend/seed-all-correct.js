@@ -11,6 +11,9 @@ async function seedAll() {
   const deleted = await db.collection('products').deleteMany({});
   console.log(`🗑️ Cleared ${deleted.deletedCount} existing products\n`);
   
+  // ========== VALID CITIES (Must match Product model enum) ==========
+  const VALID_CITIES = ['Delhi', 'Mumbai', 'Bangalore', 'Kolkata', 'Chennai', 'Hyderabad', 'Pune'];
+  
   // ========== 5 PRODUCTS PER CITY ==========
   const cityProducts = [
     // ===== DELHI PRODUCTS (5) =====
@@ -23,7 +26,7 @@ async function seedAll() {
       brand: "WoodCraft",
       desc: "King size bed with hydraulic storage, solid sheesham wood construction. Dimensions: 200cm x 190cm x 90cm.",
       city: "Delhi",
-      availableCities: ["Delhi", "Noida", "Gurgaon", "Faridabad"],
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Pune"],
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -35,7 +38,7 @@ async function seedAll() {
       brand: "LuxuryHome",
       desc: "Premium 3-seater leather sofa with high-resilience foam cushions.",
       city: "Delhi",
-      availableCities: ["Delhi", "Noida", "Gurgaon", "Faridabad"],
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Pune"],
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -47,7 +50,7 @@ async function seedAll() {
       brand: "WoodCraft",
       desc: "6-seater dining table set with 6 cushioned chairs. Solid wood construction.",
       city: "Delhi",
-      availableCities: ["Delhi", "Noida", "Gurgaon", "Faridabad"],
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Pune"],
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -59,7 +62,7 @@ async function seedAll() {
       brand: "ComfortSeat",
       desc: "Ergonomic office chair with adjustable height, lumbar support, and armrests.",
       city: "Delhi",
-      availableCities: ["Delhi", "Noida", "Gurgaon", "Faridabad"],
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Pune"],
       outOfCityDeliveryCharge: 199
     },
     { 
@@ -71,7 +74,7 @@ async function seedAll() {
       brand: "WoodCraft",
       desc: "3-door wooden wardrobe with full-length mirror and 2 drawers.",
       city: "Delhi",
-      availableCities: ["Delhi", "Noida", "Gurgaon", "Faridabad"],
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Pune"],
       outOfCityDeliveryCharge: 299
     },
     
@@ -85,7 +88,7 @@ async function seedAll() {
       brand: "SleepWell",
       desc: "Premium queen size bed with tufted headboard and sturdy wooden frame.",
       city: "Mumbai",
-      availableCities: ["Mumbai", "Thane", "Navi Mumbai", "Pune"],
+      availableCities: ["Mumbai", "Delhi", "Pune", "Bangalore"],
       outOfCityDeliveryCharge: 399
     },
     { 
@@ -97,7 +100,7 @@ async function seedAll() {
       brand: "UrbanLivin",
       desc: "L-shaped 4-seater fabric sofa with chaise lounge. Machine-washable covers.",
       city: "Mumbai",
-      availableCities: ["Mumbai", "Thane", "Navi Mumbai", "Pune"],
+      availableCities: ["Mumbai", "Delhi", "Pune", "Bangalore"],
       outOfCityDeliveryCharge: 399
     },
     { 
@@ -109,7 +112,7 @@ async function seedAll() {
       brand: "UrbanLivin",
       desc: "Modern coffee table with two drawers and shelf. High-gloss finish.",
       city: "Mumbai",
-      availableCities: ["Mumbai", "Thane", "Navi Mumbai", "Pune"],
+      availableCities: ["Mumbai", "Delhi", "Pune", "Bangalore"],
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -121,7 +124,7 @@ async function seedAll() {
       brand: "WoodCraft",
       desc: "Set of 2 solid wooden dining chairs with comfortable curved backrest.",
       city: "Mumbai",
-      availableCities: ["Mumbai", "Thane", "Navi Mumbai", "Pune"],
+      availableCities: ["Mumbai", "Delhi", "Pune", "Bangalore"],
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -133,7 +136,7 @@ async function seedAll() {
       brand: "SpaceSaver",
       desc: "4-door sliding wardrobe with 6 shelves and hanging section.",
       city: "Mumbai",
-      availableCities: ["Mumbai", "Thane", "Navi Mumbai", "Pune"],
+      availableCities: ["Mumbai", "Delhi", "Pune", "Bangalore"],
       outOfCityDeliveryCharge: 399
     },
     
@@ -147,7 +150,7 @@ async function seedAll() {
       brand: "SpaceSaver",
       desc: "Double bed with hydraulic storage mechanism. Premium high-gloss finish.",
       city: "Bangalore",
-      availableCities: ["Bangalore", "Mysore", "Hyderabad", "Chennai"],
+      availableCities: ["Bangalore", "Hyderabad", "Chennai", "Mumbai"],
       outOfCityDeliveryCharge: 399
     },
     { 
@@ -159,7 +162,7 @@ async function seedAll() {
       brand: "SpaceSaver",
       desc: "Compact 2-seater loveseat with hidden storage in armrests.",
       city: "Bangalore",
-      availableCities: ["Bangalore", "Mysore", "Hyderabad", "Chennai"],
+      availableCities: ["Bangalore", "Hyderabad", "Chennai", "Mumbai"],
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -171,7 +174,7 @@ async function seedAll() {
       brand: "GlassHouse",
       desc: "Elegant center table with tempered glass top and wooden base.",
       city: "Bangalore",
-      availableCities: ["Bangalore", "Mysore", "Hyderabad", "Chennai"],
+      availableCities: ["Bangalore", "Hyderabad", "Chennai", "Mumbai"],
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -183,7 +186,7 @@ async function seedAll() {
       brand: "RelaxLife",
       desc: "Comfortable rocking chair with removable cushion. Solid teak wood construction.",
       city: "Bangalore",
-      availableCities: ["Bangalore", "Mysore", "Hyderabad", "Chennai"],
+      availableCities: ["Bangalore", "Hyderabad", "Chennai", "Mumbai"],
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -195,7 +198,7 @@ async function seedAll() {
       brand: "WoodCraft",
       desc: "Premium 4-door wardrobe with 4 drawers, hanging rods, and shoe rack.",
       city: "Bangalore",
-      availableCities: ["Bangalore", "Mysore", "Hyderabad", "Chennai"],
+      availableCities: ["Bangalore", "Hyderabad", "Chennai", "Mumbai"],
       outOfCityDeliveryCharge: 399
     },
     
@@ -209,7 +212,7 @@ async function seedAll() {
       brand: "StudyNest",
       desc: "Bunk bed with built-in study desk and bookshelf. Ideal for students.",
       city: "Kolkata",
-      availableCities: ["Kolkata", "Howrah", "Salt Lake", "Durgapur"],
+      availableCities: ["Kolkata", "Delhi", "Mumbai", "Bangalore"],
       outOfCityDeliveryCharge: 499
     },
     { 
@@ -221,7 +224,7 @@ async function seedAll() {
       brand: "SleepSofa",
       desc: "Multi-functional sofa cum bed. Converts to a comfortable double bed.",
       city: "Kolkata",
-      availableCities: ["Kolkata", "Howrah", "Salt Lake", "Durgapur"],
+      availableCities: ["Kolkata", "Delhi", "Mumbai", "Bangalore"],
       outOfCityDeliveryCharge: 499
     },
     { 
@@ -233,7 +236,7 @@ async function seedAll() {
       brand: "WoodCraft",
       desc: "Stylish console table with wall-mounted mirror. Perfect for entryways.",
       city: "Kolkata",
-      availableCities: ["Kolkata", "Howrah", "Salt Lake", "Durgapur"],
+      availableCities: ["Kolkata", "Delhi", "Mumbai", "Bangalore"],
       outOfCityDeliveryCharge: 499
     },
     { 
@@ -245,7 +248,7 @@ async function seedAll() {
       brand: "GameSeat",
       desc: "Professional gaming chair with 4D adjustable armrests and backrest.",
       city: "Kolkata",
-      availableCities: ["Kolkata", "Howrah", "Salt Lake", "Durgapur"],
+      availableCities: ["Kolkata", "Delhi", "Mumbai", "Bangalore"],
       outOfCityDeliveryCharge: 499
     },
     { 
@@ -257,7 +260,7 @@ async function seedAll() {
       brand: "SpaceSaver",
       desc: "Space-saving corner wardrobe with triangular design.",
       city: "Kolkata",
-      availableCities: ["Kolkata", "Howrah", "Salt Lake", "Durgapur"],
+      availableCities: ["Kolkata", "Delhi", "Mumbai", "Bangalore"],
       outOfCityDeliveryCharge: 499
     },
     
@@ -271,7 +274,7 @@ async function seedAll() {
       brand: "WoodCraft",
       desc: "Space-saving single bed with 3 drawers for storage.",
       city: "Chennai",
-      availableCities: ["Chennai", "Coimbatore", "Bangalore", "Hyderabad"],
+      availableCities: ["Chennai", "Bangalore", "Hyderabad", "Mumbai"],
       outOfCityDeliveryCharge: 499
     },
     { 
@@ -283,7 +286,7 @@ async function seedAll() {
       brand: "ReclinerWorld",
       desc: "Luxurious single seater recliner with swivel base. PU leather upholstery.",
       city: "Chennai",
-      availableCities: ["Chennai", "Coimbatore", "Bangalore", "Hyderabad"],
+      availableCities: ["Chennai", "Bangalore", "Hyderabad", "Mumbai"],
       outOfCityDeliveryCharge: 499
     },
     { 
@@ -295,7 +298,7 @@ async function seedAll() {
       brand: "StudyNest",
       desc: "Adjustable height study table with tiltable top. Built-in cable management.",
       city: "Chennai",
-      availableCities: ["Chennai", "Coimbatore", "Bangalore", "Hyderabad"],
+      availableCities: ["Chennai", "Bangalore", "Hyderabad", "Mumbai"],
       outOfCityDeliveryCharge: 499
     },
     { 
@@ -307,7 +310,7 @@ async function seedAll() {
       brand: "LuxuryHome",
       desc: "Elegant accent chair with gold-finished metal legs and velvet upholstery.",
       city: "Chennai",
-      availableCities: ["Chennai", "Coimbatore", "Bangalore", "Hyderabad"],
+      availableCities: ["Chennai", "Bangalore", "Hyderabad", "Mumbai"],
       outOfCityDeliveryCharge: 499
     },
     { 
@@ -319,7 +322,7 @@ async function seedAll() {
       brand: "EasyMove",
       desc: "Lightweight portable closet with wheels and hanging rod.",
       city: "Chennai",
-      availableCities: ["Chennai", "Coimbatore", "Bangalore", "Hyderabad"],
+      availableCities: ["Chennai", "Bangalore", "Hyderabad", "Mumbai"],
       outOfCityDeliveryCharge: 499
     },
     
@@ -333,7 +336,7 @@ async function seedAll() {
       brand: "WoodCraft",
       desc: "Premium wooden bed with hydraulic storage. Solid sheesham wood construction.",
       city: "Hyderabad",
-      availableCities: ["Hyderabad", "Secunderabad", "Bangalore", "Chennai"],
+      availableCities: ["Hyderabad", "Bangalore", "Chennai", "Mumbai"],
       outOfCityDeliveryCharge: 399
     },
     { 
@@ -345,7 +348,7 @@ async function seedAll() {
       brand: "LuxuryHome",
       desc: "Premium 3-seater fabric sofa with high-resilience foam cushions.",
       city: "Hyderabad",
-      availableCities: ["Hyderabad", "Secunderabad", "Bangalore", "Chennai"],
+      availableCities: ["Hyderabad", "Bangalore", "Chennai", "Mumbai"],
       outOfCityDeliveryCharge: 399
     },
     { 
@@ -357,7 +360,7 @@ async function seedAll() {
       brand: "WoodCraft",
       desc: "4-seater wooden dining table with solid wood construction.",
       city: "Hyderabad",
-      availableCities: ["Hyderabad", "Secunderabad", "Bangalore", "Chennai"],
+      availableCities: ["Hyderabad", "Bangalore", "Chennai", "Mumbai"],
       outOfCityDeliveryCharge: 399
     },
     { 
@@ -369,7 +372,7 @@ async function seedAll() {
       brand: "ComfortSeat",
       desc: "Executive office chair with premium leather and ergonomic design.",
       city: "Hyderabad",
-      availableCities: ["Hyderabad", "Secunderabad", "Bangalore", "Chennai"],
+      availableCities: ["Hyderabad", "Bangalore", "Chennai", "Mumbai"],
       outOfCityDeliveryCharge: 399
     },
     { 
@@ -381,7 +384,7 @@ async function seedAll() {
       brand: "SpaceSaver",
       desc: "Premium wardrobe with full-length mirror and multiple storage options.",
       city: "Hyderabad",
-      availableCities: ["Hyderabad", "Secunderabad", "Bangalore", "Chennai"],
+      availableCities: ["Hyderabad", "Bangalore", "Chennai", "Mumbai"],
       outOfCityDeliveryCharge: 399
     },
     
@@ -395,7 +398,7 @@ async function seedAll() {
       brand: "SleepWell",
       desc: "Comfort queen bed with storage drawers. Perfect for modern homes.",
       city: "Pune",
-      availableCities: ["Pune", "Mumbai", "Thane", "Navi Mumbai"],
+      availableCities: ["Pune", "Mumbai", "Delhi", "Bangalore"],
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -407,7 +410,7 @@ async function seedAll() {
       brand: "UrbanLivin",
       desc: "Modern L-shape fabric sofa with premium cushioning.",
       city: "Pune",
-      availableCities: ["Pune", "Mumbai", "Thane", "Navi Mumbai"],
+      availableCities: ["Pune", "Mumbai", "Delhi", "Bangalore"],
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -419,7 +422,7 @@ async function seedAll() {
       brand: "StudyNest",
       desc: "Study table with built-in bookshelf and storage compartments.",
       city: "Pune",
-      availableCities: ["Pune", "Mumbai", "Thane", "Navi Mumbai"],
+      availableCities: ["Pune", "Mumbai", "Delhi", "Bangalore"],
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -431,7 +434,7 @@ async function seedAll() {
       brand: "WoodCraft",
       desc: "Set of 4 premium wooden dining chairs with comfortable seating.",
       city: "Pune",
-      availableCities: ["Pune", "Mumbai", "Thane", "Navi Mumbai"],
+      availableCities: ["Pune", "Mumbai", "Delhi", "Bangalore"],
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -443,7 +446,7 @@ async function seedAll() {
       brand: "SpaceSaver",
       desc: "Spacious sliding wardrobe with mirror and multiple shelves.",
       city: "Pune",
-      availableCities: ["Pune", "Mumbai", "Thane", "Navi Mumbai"],
+      availableCities: ["Pune", "Mumbai", "Delhi", "Bangalore"],
       outOfCityDeliveryCharge: 299
     }
   ];
@@ -460,7 +463,7 @@ async function seedAll() {
       brand: "WoodCraft",
       desc: "King size bed with hydraulic storage. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -472,7 +475,7 @@ async function seedAll() {
       brand: "SleepWell",
       desc: "Queen size bed with tufted headboard. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -484,7 +487,7 @@ async function seedAll() {
       brand: "WoodCraft",
       desc: "Single bed with underbed storage. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     },
     
@@ -498,7 +501,7 @@ async function seedAll() {
       brand: "LuxuryHome",
       desc: "3-seater leather sofa. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -510,7 +513,7 @@ async function seedAll() {
       brand: "SpaceSaver",
       desc: "2-seater loveseat with storage. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -522,7 +525,7 @@ async function seedAll() {
       brand: "SleepSofa",
       desc: "Sofa cum bed 3-in-1. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -534,7 +537,7 @@ async function seedAll() {
       brand: "ReclinerWorld",
       desc: "Single seater premium recliner. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 499
     },
     
@@ -548,7 +551,7 @@ async function seedAll() {
       brand: "WoodCraft",
       desc: "6-seater dining table set. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -560,7 +563,7 @@ async function seedAll() {
       brand: "UrbanLivin",
       desc: "Modern coffee table with storage. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -572,7 +575,7 @@ async function seedAll() {
       brand: "GlassHouse",
       desc: "Premium center table with glass top. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     },
     
@@ -586,7 +589,7 @@ async function seedAll() {
       brand: "ComfortSeat",
       desc: "Ergonomic office chair with lumbar support. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 199
     },
     { 
@@ -598,7 +601,7 @@ async function seedAll() {
       brand: "WoodCraft",
       desc: "Set of 2 wooden dining chairs. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -610,7 +613,7 @@ async function seedAll() {
       brand: "RelaxLife",
       desc: "Rocking chair with cushion. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -622,7 +625,7 @@ async function seedAll() {
       brand: "GameSeat",
       desc: "Gaming chair with neck support. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     },
     
@@ -636,7 +639,7 @@ async function seedAll() {
       brand: "WoodCraft",
       desc: "3-door wooden wardrobe with mirror. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -648,7 +651,7 @@ async function seedAll() {
       brand: "SpaceSaver",
       desc: "4-door sliding wardrobe. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 399
     },
     { 
@@ -660,7 +663,7 @@ async function seedAll() {
       brand: "WoodCraft",
       desc: "4-door premium wooden wardrobe. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -672,7 +675,7 @@ async function seedAll() {
       brand: "EasyMove",
       desc: "Portable closet with wheels. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     },
     
@@ -686,7 +689,7 @@ async function seedAll() {
       brand: "Whirlpool",
       desc: "Double door refrigerator 340L. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 399
     },
     { 
@@ -698,7 +701,7 @@ async function seedAll() {
       brand: "LG",
       desc: "Single door refrigerator 190L. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -710,7 +713,7 @@ async function seedAll() {
       brand: "Samsung",
       desc: "Front load washing machine 7kg. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 399
     },
     { 
@@ -722,7 +725,7 @@ async function seedAll() {
       brand: "LG",
       desc: "Top load washing machine 8kg. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -734,7 +737,7 @@ async function seedAll() {
       brand: "Samsung",
       desc: "43-inch 4K Smart TV. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -746,7 +749,7 @@ async function seedAll() {
       brand: "LG",
       desc: "55-inch QLED 4K TV. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 399
     },
     { 
@@ -758,7 +761,7 @@ async function seedAll() {
       brand: "LG",
       desc: "1.5 ton 5-star inverter AC. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 399
     },
     { 
@@ -770,7 +773,7 @@ async function seedAll() {
       brand: "Samsung",
       desc: "1 ton split AC. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -782,7 +785,7 @@ async function seedAll() {
       brand: "Samsung",
       desc: "28L convection microwave oven. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     },
     { 
@@ -794,7 +797,7 @@ async function seedAll() {
       brand: "LG",
       desc: "20L solo microwave oven. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 199
     },
     { 
@@ -806,7 +809,7 @@ async function seedAll() {
       brand: "Panasonic",
       desc: "23L grill microwave with sensor. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      availableCities: VALID_CITIES,
       outOfCityDeliveryCharge: 299
     }
   ];
@@ -856,7 +859,7 @@ async function seedAll() {
       outOfCityDeliveryCharge: p.outOfCityDeliveryCharge || 299
     });
     count++;
-    console.log(`✅ [${count}/${allProducts.length}] ${p.name} (${p.city}) - Out of city: ₹${p.outOfCityDeliveryCharge || 299}`);
+    console.log(`✅ [${count}/${allProducts.length}] ${p.name} (${p.city}) - ${p.availableCities.length} cities - Out of city: ₹${p.outOfCityDeliveryCharge || 299}`);
   }
   
   // Final verification
@@ -879,6 +882,8 @@ async function seedAll() {
   console.log('   - If user\'s city matches product city → Free delivery (₹0)');
   console.log('   - If user\'s city is in availableCities → Free delivery (₹0)');
   console.log('   - If user\'s city is NOT in availableCities → outOfCityDeliveryCharge applies');
+  console.log('\n📝 Valid Cities (from Product model enum):');
+  console.log(`   ${VALID_CITIES.join(', ')}`);
   
   process.exit(0);
 }
