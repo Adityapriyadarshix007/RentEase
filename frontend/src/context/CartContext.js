@@ -16,9 +16,13 @@ export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSynced, setIsSynced] = useState(false);
+  const [cartTotals, setCartTotals] = useState({
+    subtotal: 0,
+    deliveryTotal: 0,
+    grandTotal: 0
+  });
 
   const API_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
-  const token = localStorage.getItem('token');
 
   // Fetch cart from backend
   const fetchCart = useCallback(async () => {
@@ -35,6 +39,9 @@ export const CartProvider = ({ children }) => {
       });
       if (response.data.success) {
         setCartItems(response.data.cart || []);
+        if (response.data.totals) {
+          setCartTotals(response.data.totals);
+        }
       }
     } catch (error) {
       console.error('Error fetching cart:', error);
@@ -49,33 +56,12 @@ export const CartProvider = ({ children }) => {
     }
   }, [API_URL]);
 
-  // Sync cart to backend
-  const syncCartToBackend = useCallback(async (items) => {
-    const currentToken = localStorage.getItem('token');
-    if (!currentToken) return;
-    
-    try {
-      // For each item, ensure it's synced
-      for (const item of items) {
-        await axios.post(`${API_URL}/api/cart/add`, {
-          productId: item.productId,
-          quantity: item.quantity,
-          tenureMonths: item.tenureMonths
-        }, {
-          headers: { 'Authorization': `Bearer ${currentToken}` }
-        });
-      }
-    } catch (error) {
-      console.error('Error syncing cart:', error);
-    }
-  }, [API_URL]);
-
   // Initial load
   useEffect(() => {
     fetchCart();
   }, [fetchCart]);
 
-  // Save to localStorage as backup (when offline)
+  // Save to localStorage as backup
   useEffect(() => {
     if (isSynced) {
       localStorage.setItem('rentease_cart_backup', JSON.stringify(cartItems));
@@ -104,7 +90,10 @@ export const CartProvider = ({ children }) => {
       });
       
       if (response.data.success) {
-        setCartItems(response.data.cart);
+        setCartItems(response.data.cart || []);
+        if (response.data.totals) {
+          setCartTotals(response.data.totals);
+        }
         toast.success(`${product.name} added to cart!`);
         return true;
       }
@@ -125,7 +114,10 @@ export const CartProvider = ({ children }) => {
       });
       
       if (response.data.success) {
-        setCartItems(response.data.cart);
+        setCartItems(response.data.cart || []);
+        if (response.data.totals) {
+          setCartTotals(response.data.totals);
+        }
         toast.success('Item removed from cart');
       }
     } catch (error) {
@@ -151,7 +143,10 @@ export const CartProvider = ({ children }) => {
       });
       
       if (response.data.success) {
-        setCartItems(response.data.cart);
+        setCartItems(response.data.cart || []);
+        if (response.data.totals) {
+          setCartTotals(response.data.totals);
+        }
       }
     } catch (error) {
       console.error('Update quantity error:', error);
@@ -170,7 +165,10 @@ export const CartProvider = ({ children }) => {
       });
       
       if (response.data.success) {
-        setCartItems(response.data.cart);
+        setCartItems(response.data.cart || []);
+        if (response.data.totals) {
+          setCartTotals(response.data.totals);
+        }
       }
     } catch (error) {
       console.error('Update tenure error:', error);
@@ -188,6 +186,7 @@ export const CartProvider = ({ children }) => {
       
       if (response.data.success) {
         setCartItems([]);
+        setCartTotals({ subtotal: 0, deliveryTotal: 0, grandTotal: 0 });
         toast.success('Cart cleared');
       }
     } catch (error) {
@@ -205,17 +204,30 @@ export const CartProvider = ({ children }) => {
     return cartItems.reduce((count, item) => count + (item.quantity || 1), 0);
   };
 
+  const getDeliveryTotal = () => {
+    return cartTotals.deliveryTotal || cartItems.reduce((sum, item) => {
+      return sum + (item.deliveryCharge || 0);
+    }, 0);
+  };
+
+  const getGrandTotal = () => {
+    return cartTotals.grandTotal || (getCartTotal() + getDeliveryTotal());
+  };
+
   return (
     <CartContext.Provider value={{
       cartItems,
       loading,
+      cartTotals,
       addToCart,
       removeFromCart,
       updateQuantity,
       updateTenure,
       clearCart,
       getCartTotal,
-      getCartCount
+      getCartCount,
+      getDeliveryTotal,
+      getGrandTotal
     }}>
       {children}
     </CartContext.Provider>
