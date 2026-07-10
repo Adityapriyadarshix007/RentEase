@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { FaTrash, FaPlus, FaMinus, FaShoppingCart } from 'react-icons/fa';
+import { FaTrash, FaPlus, FaMinus, FaShoppingCart, FaTimes } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const Cart = () => {
@@ -12,13 +12,19 @@ const Cart = () => {
   const [deliveryCharges, setDeliveryCharges] = useState({});
   const [loading, setLoading] = useState(true);
   const [userCity, setUserCity] = useState('');
+  const [showCityDialog, setShowCityDialog] = useState(false);
+  const [tempCity, setTempCity] = useState('');
 
   const API_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
+
+  // Available cities list
+  const availableCities = ['Delhi', 'Mumbai', 'Bangalore', 'Kolkata', 'Chennai', 'Hyderabad', 'Pune'];
 
   // Get user's city
   useEffect(() => {
     const city = localStorage.getItem('userCity') || user?.address?.city || 'Delhi';
     setUserCity(city);
+    setTempCity(city);
   }, [user]);
 
   // Calculate delivery charges for all cart items
@@ -30,14 +36,13 @@ const Cart = () => {
     }
   }, [cartItems, userCity]);
 
-  // ========== FIX: Calculate delivery charges with fallback ==========
+  // ========== Calculate delivery charges with fallback ==========
   const calculateDeliveryCharges = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
       const productIds = cartItems.map(item => item.productId);
       
-      // Try API call first
       const response = await fetch(`${API_URL}/api/products/calculate-delivery`, {
         method: 'POST',
         headers: {
@@ -53,7 +58,6 @@ const Cart = () => {
       const data = await response.json();
       
       if (data.success && data.data) {
-        // Use API response
         const charges = {};
         data.data.products.forEach(p => {
           charges[p.productId] = p.deliveryCharge || 0;
@@ -61,12 +65,10 @@ const Cart = () => {
         setDeliveryCharges(charges);
         console.log('✅ Delivery charges from API:', charges);
       } else {
-        // Fallback: Calculate locally
         calculateDeliveryLocally();
       }
     } catch (error) {
       console.error('Error calculating delivery, using fallback:', error);
-      // Fallback: Calculate locally
       calculateDeliveryLocally();
     } finally {
       setLoading(false);
@@ -78,7 +80,6 @@ const Cart = () => {
     console.log('📦 Using local delivery calculation for city:', userCity);
     const charges = {};
     cartItems.forEach(item => {
-      // Check if product is available in user's city
       const isAvailable = item.city === userCity || 
                          item.city === 'All India' ||
                          (item.availableCities && item.availableCities.includes(userCity));
@@ -89,6 +90,27 @@ const Cart = () => {
       console.log(`  ${item.productName}: ${isAvailable ? '✅ Available' : '❌ Not available'} - Charge: ₹${charge}`);
     });
     setDeliveryCharges(charges);
+  };
+
+  // ========== Handle city change ==========
+  const handleCityChange = () => {
+    setTempCity(userCity);
+    setShowCityDialog(true);
+  };
+
+  const confirmCityChange = () => {
+    if (tempCity && tempCity !== userCity) {
+      localStorage.setItem('userCity', tempCity);
+      setUserCity(tempCity);
+      calculateDeliveryCharges();
+      toast.success(`City changed to ${tempCity}`);
+    }
+    setShowCityDialog(false);
+  };
+
+  const cancelCityChange = () => {
+    setTempCity(userCity);
+    setShowCityDialog(false);
   };
 
   const handleCheckout = () => {
@@ -123,7 +145,6 @@ const Cart = () => {
     const charge = deliveryCharges[item.productId];
     if (charge === undefined) return 'Calculating...';
     if (charge === 0) {
-      // Check why it's free
       const isAvailable = item.city === userCity || 
                          item.city === 'All India' ||
                          (item.availableCities && item.availableCities.includes(userCity));
@@ -140,7 +161,6 @@ const Cart = () => {
     if (item.city && item.city !== 'Unknown' && item.city !== '') {
       return item.city;
     }
-    // If city is not in item, try to get from availableCities
     if (item.availableCities && item.availableCities.length > 0) {
       return item.availableCities[0];
     }
@@ -158,26 +178,26 @@ const Cart = () => {
     return 'bg-gray-100 text-gray-600';
   };
 
+  // ========== Check if product is available in user's city ==========
+  const isProductAvailableInCity = (item) => {
+    return item.city === userCity || 
+           item.city === 'All India' ||
+           (item.availableCities && item.availableCities.includes(userCity));
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Shopping Cart</h1>
       <p className="text-gray-600 mb-6">{cartItems.length} items in your cart</p>
       
-      {/* City indicator */}
-      <div className="bg-blue-50 rounded-lg p-3 mb-6">
+      {/* City indicator with button */}
+      <div className="bg-blue-50 rounded-lg p-3 mb-6 flex items-center justify-between">
         <p className="text-sm text-blue-700">
           📍 Delivering to: <strong>{userCity}</strong>
         </p>
         <button 
-          onClick={() => {
-            const newCity = prompt('Enter your city (Delhi, Mumbai, Bangalore, Kolkata, Chennai, Hyderabad, Pune):', userCity);
-            if (newCity) {
-              localStorage.setItem('userCity', newCity);
-              setUserCity(newCity);
-              calculateDeliveryCharges();
-            }
-          }}
-          className="text-xs text-blue-600 hover:text-blue-800 ml-2 underline"
+          onClick={handleCityChange}
+          className="text-sm bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 transition"
         >
           Change City
         </button>
@@ -192,6 +212,7 @@ const Cart = () => {
             const itemGrandTotal = itemTotal + deliveryCharge;
             const displayCity = getDisplayCity(item);
             const cityBadgeColor = getCityBadgeColor(item);
+            const isAvailableInCity = isProductAvailableInCity(item);
             
             return (
               <div key={item.productId} className="bg-white rounded-lg shadow-md p-4">
@@ -212,7 +233,7 @@ const Cart = () => {
                     <p className="text-blue-600 font-semibold">₹{item.monthlyRent}/month</p>
                     
                     {/* City info with badge */}
-                    <div className="mt-1 flex items-center gap-2">
+                    <div className="mt-1 flex items-center gap-2 flex-wrap">
                       <span className="text-xs text-gray-500">📦 Located in:</span>
                       <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${cityBadgeColor}`}>
                         {displayCity}
@@ -223,14 +244,23 @@ const Cart = () => {
                       {displayCity === 'All India' && (
                         <span className="text-xs text-green-600 font-medium">(Nationwide)</span>
                       )}
+                      {!isAvailableInCity && displayCity !== 'All India' && (
+                        <span className="text-xs text-orange-500 font-medium">(Ships from here)</span>
+                      )}
                     </div>
                     
                     {/* Available Cities */}
                     {item.availableCities && item.availableCities.length > 0 && item.city !== 'All India' && (
                       <div className="mt-1">
-                        <span className="text-xs text-gray-500">Available in: </span>
+                        <span className="text-xs text-gray-500">📦 Available in: </span>
                         <span className="text-xs text-gray-600">
-                          {item.availableCities.join(', ')}
+                          {item.availableCities.map((city, index) => (
+                            <span key={city}>
+                              {city}
+                              {city === userCity && <span className="text-green-600 font-medium"> ✓</span>}
+                              {index < item.availableCities.length - 1 && ', '}
+                            </span>
+                          ))}
                         </span>
                       </div>
                     )}
@@ -244,10 +274,15 @@ const Cart = () => {
                         </span>
                       </p>
                       {deliveryCharge > 0 && (
-                        <p className="text-xs text-gray-500">Ships from {displayCity}</p>
+                        <p className="text-xs text-gray-500">
+                          💡 Product ships from {displayCity} to {userCity}
+                        </p>
                       )}
                       {deliveryCharge === 0 && item.city === 'All India' && (
                         <p className="text-xs text-green-500">Available nationwide with free delivery</p>
+                      )}
+                      {deliveryCharge === 0 && item.city !== 'All India' && isAvailableInCity && (
+                        <p className="text-xs text-green-500">✅ Available in {userCity} - Free delivery</p>
                       )}
                     </div>
                   </div>
@@ -358,6 +393,72 @@ const Cart = () => {
           </div>
         </div>
       </div>
+
+      {/* ========== CITY SELECTION DIALOG ========== */}
+      {showCityDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full shadow-xl">
+            {/* Dialog Header */}
+            <div className="flex justify-between items-center p-4 border-b">
+              <h2 className="text-xl font-bold">Select Your City</h2>
+              <button
+                onClick={cancelCityChange}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                <FaTimes />
+              </button>
+            </div>
+            
+            {/* Dialog Body */}
+            <div className="p-4">
+              <p className="text-gray-600 mb-4">
+                Choose your city to see product availability and delivery charges.
+              </p>
+              
+              <div className="grid grid-cols-2 gap-2">
+                {availableCities.map((city) => (
+                  <button
+                    key={city}
+                    onClick={() => setTempCity(city)}
+                    className={`p-3 rounded-lg border-2 transition text-center ${
+                      tempCity === city
+                        ? 'border-blue-600 bg-blue-50 text-blue-700'
+                        : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                    }`}
+                  >
+                    {city}
+                    {tempCity === city && (
+                      <span className="block text-xs text-blue-600">✓ Selected</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              
+              {tempCity !== userCity && (
+                <div className="mt-3 p-3 bg-yellow-50 rounded-lg text-sm text-yellow-700">
+                  ⚠️ Changing city will recalculate delivery charges
+                </div>
+              )}
+            </div>
+            
+            {/* Dialog Footer */}
+            <div className="flex justify-end gap-3 p-4 border-t">
+              <button
+                onClick={cancelCityChange}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmCityChange}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              >
+                Apply City
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
