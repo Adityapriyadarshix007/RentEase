@@ -796,7 +796,7 @@ const ProductDetail = () => {
                     </div>
                     <p className="text-gray-600 ml-13">{review.comment}</p>
                     <p className="text-xs text-gray-400 mt-2 ml-13">
-                      Verified Purchase • {new Date(review.createdAt).toLocaleDateString()}
+                      Verified Purchase • {formatDate(review.createdAt)}
                     </p>
                   </div>
                 ))

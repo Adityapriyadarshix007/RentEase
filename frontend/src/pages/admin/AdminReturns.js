@@ -195,7 +195,7 @@ const AdminReturns = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm">
-                      {new Date(returnReq.createdAt).toLocaleDateString()}
+                      {formatDate(returnReq.createdAt)}
                     </td>
                     <td className="px-6 py-4">
                       <button

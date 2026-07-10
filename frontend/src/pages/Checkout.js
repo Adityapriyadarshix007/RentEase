@@ -297,7 +297,7 @@ const Checkout = () => {
       }
       
       if (paymentMethod === 'cod') {
-        toast.success(`Order placed successfully! ${rentals.length} item(s) will be delivered COD on ${new Date(deliveryDate).toLocaleDateString()}`);
+        toast.success(`Order placed successfully! ${rentals.length} item(s) will be delivered COD on ${formatDate(deliveryDate)}`);
         clearCart();
         navigate('/my-rentals');
         setLoading(false);

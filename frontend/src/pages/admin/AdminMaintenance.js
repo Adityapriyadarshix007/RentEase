@@ -301,7 +301,7 @@ const AdminMaintenance = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      {new Date(request.createdAt).toLocaleDateString()}
+                      {formatDate(request.createdAt)}
                      </td>
                     <td className="px-6 py-4">
                       <div className="flex gap-2">

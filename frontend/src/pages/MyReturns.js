@@ -144,7 +144,7 @@ const MyReturns = () => {
               </div>
               {returnReq.status === 'approved' && returnReq.pickupDate && (
                 <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                  <p className="text-blue-600 text-sm">Pickup scheduled for {new Date(returnReq.pickupDate).toLocaleDateString()}</p>
+                  <p className="text-blue-600 text-sm">Pickup scheduled for {formatDate(returnReq.pickupDate)}</p>
                 </div>
               )}
               {returnReq.status === 'completed' && returnReq.refundAmount > 0 && (

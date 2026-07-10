@@ -209,7 +209,7 @@ const AdminRentals = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
-                    {new Date(rental.createdAt).toLocaleDateString()}
+                    {formatDate(rental.createdAt)}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex gap-2 flex-wrap">
