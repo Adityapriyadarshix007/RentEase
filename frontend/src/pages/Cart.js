@@ -135,6 +135,29 @@ const Cart = () => {
     return `🚚 ₹${charge} (Ships from ${item.city || 'another city'})`;
   };
 
+  // ========== Get display city name ==========
+  const getDisplayCity = (item) => {
+    if (item.city && item.city !== 'Unknown' && item.city !== '') {
+      return item.city;
+    }
+    // If city is not in item, try to get from availableCities
+    if (item.availableCities && item.availableCities.length > 0) {
+      return item.availableCities[0];
+    }
+    return 'N/A';
+  };
+
+  // ========== Get city badge color ==========
+  const getCityBadgeColor = (item) => {
+    if (item.city === 'All India') {
+      return 'bg-green-100 text-green-800';
+    }
+    if (item.city === userCity) {
+      return 'bg-blue-100 text-blue-800';
+    }
+    return 'bg-gray-100 text-gray-600';
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Shopping Cart</h1>
@@ -167,6 +190,8 @@ const Cart = () => {
             const itemTotal = item.monthlyRent * item.tenureMonths * item.quantity;
             const deliveryCharge = deliveryCharges[item.productId] || 0;
             const itemGrandTotal = itemTotal + deliveryCharge;
+            const displayCity = getDisplayCity(item);
+            const cityBadgeColor = getCityBadgeColor(item);
             
             return (
               <div key={item.productId} className="bg-white rounded-lg shadow-md p-4">
@@ -186,10 +211,29 @@ const Cart = () => {
                     <p className="text-gray-600 text-sm mb-2">{item.subCategory || item.category}</p>
                     <p className="text-blue-600 font-semibold">₹{item.monthlyRent}/month</p>
                     
-                    {/* City info */}
-                    <p className="text-xs text-gray-400 mt-1">
-                      📦 Located in: {item.city || 'Unknown'}
-                    </p>
+                    {/* City info with badge */}
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="text-xs text-gray-500">📦 Located in:</span>
+                      <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${cityBadgeColor}`}>
+                        {displayCity}
+                      </span>
+                      {displayCity === userCity && (
+                        <span className="text-xs text-green-600 font-medium">(Your city)</span>
+                      )}
+                      {displayCity === 'All India' && (
+                        <span className="text-xs text-green-600 font-medium">(Nationwide)</span>
+                      )}
+                    </div>
+                    
+                    {/* Available Cities */}
+                    {item.availableCities && item.availableCities.length > 0 && item.city !== 'All India' && (
+                      <div className="mt-1">
+                        <span className="text-xs text-gray-500">Available in: </span>
+                        <span className="text-xs text-gray-600">
+                          {item.availableCities.join(', ')}
+                        </span>
+                      </div>
+                    )}
                     
                     {/* Delivery info */}
                     <div className="mt-2">
@@ -200,7 +244,7 @@ const Cart = () => {
                         </span>
                       </p>
                       {deliveryCharge > 0 && (
-                        <p className="text-xs text-gray-500">Ships from {item.city || 'another city'}</p>
+                        <p className="text-xs text-gray-500">Ships from {displayCity}</p>
                       )}
                       {deliveryCharge === 0 && item.city === 'All India' && (
                         <p className="text-xs text-green-500">Available nationwide with free delivery</p>
