@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaEdit, FaTrash, FaPlus, FaSearch, FaTimes, FaUpload, FaBox, FaSync, FaTimesCircle } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaPlus, FaSearch, FaTimes, FaUpload, FaBox, FaSync, FaTimesCircle, FaCity, FaMapMarkerAlt } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const AdminProducts = () => {
@@ -8,6 +8,7 @@ const AdminProducts = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
   const [categories, setCategories] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -22,13 +23,41 @@ const AdminProducts = () => {
     brand: '',
     condition: 'good',
     images: [],
-    specifications: {}
+    specifications: {},
+    // ===== CITY FIELDS =====
+    city: 'All India',
+    availableCities: [],
+    outOfCityDeliveryCharge: 299,
+    deliveryCharge: 0
   });
   const [imagePreview, setImagePreview] = useState([]);
   const [uploadingImage, setUploadingImage] = useState(false);
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
   const staticCategories = ['Furniture', 'Appliances'];
+
+  // ===== CITY OPTIONS =====
+  const cityOptions = [
+    'All India',
+    'Delhi',
+    'Mumbai',
+    'Bangalore',
+    'Kolkata',
+    'Chennai',
+    'Hyderabad',
+    'Pune',
+    'Noida',
+    'Gurgaon',
+    'Faridabad',
+    'Thane',
+    'Navi Mumbai',
+    'Mysore',
+    'Howrah',
+    'Salt Lake',
+    'Durgapur',
+    'Coimbatore',
+    'Secunderabad'
+  ];
 
   useEffect(() => {
     loadProducts();
@@ -47,7 +76,6 @@ const AdminProducts = () => {
     }
   };
 
-  // Separate function for loading products (no toast on initial load)
   const loadProducts = async () => {
     setLoading(true);
     try {
@@ -70,7 +98,6 @@ const AdminProducts = () => {
     }
   };
 
-  // Separate function for refreshing (shows toast)
   const refreshProducts = async () => {
     setRefreshing(true);
     try {
@@ -99,7 +126,6 @@ const AdminProducts = () => {
     refreshProducts();
   };
 
-  // Compression function for images
   const compressImage = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -226,7 +252,12 @@ const AdminProducts = () => {
         condition: formData.condition,
         images: formData.images,
         specifications: formData.specifications || {},
-        isAvailable: true
+        isAvailable: true,
+        // ===== CITY FIELDS =====
+        city: formData.city || 'All India',
+        availableCities: formData.availableCities || [],
+        outOfCityDeliveryCharge: parseFloat(formData.outOfCityDeliveryCharge) || 299,
+        deliveryCharge: 0
       };
       
       console.log('Sending product data:', productData);
@@ -249,7 +280,7 @@ const AdminProducts = () => {
         toast.success(editingProduct ? 'Product updated successfully' : 'Product created successfully');
         setShowModal(false);
         resetForm();
-        await loadProducts(); // Load without showing refresh toast
+        await loadProducts();
         window.dispatchEvent(new CustomEvent('productsUpdated'));
       } else {
         toast.error(data.message || 'Operation failed');
@@ -277,7 +308,7 @@ const AdminProducts = () => {
       
       if (response.ok) {
         toast.success('Product deleted successfully');
-        await loadProducts(); // Load without showing refresh toast
+        await loadProducts();
         window.dispatchEvent(new CustomEvent('productsUpdated'));
       } else {
         const data = await response.json();
@@ -303,7 +334,12 @@ const AdminProducts = () => {
       brand: product.brand || '',
       condition: product.condition || 'good',
       images: product.images || [],
-      specifications: product.specifications || {}
+      specifications: product.specifications || {},
+      // ===== CITY FIELDS =====
+      city: product.city || 'All India',
+      availableCities: product.availableCities || [],
+      outOfCityDeliveryCharge: product.outOfCityDeliveryCharge || 299,
+      deliveryCharge: product.deliveryCharge || 0
     });
     setImagePreview(product.images || []);
     setShowModal(true);
@@ -322,16 +358,50 @@ const AdminProducts = () => {
       brand: '',
       condition: 'good',
       images: [],
-      specifications: {}
+      specifications: {},
+      // ===== CITY FIELDS =====
+      city: 'All India',
+      availableCities: [],
+      outOfCityDeliveryCharge: 299,
+      deliveryCharge: 0
     });
     setImagePreview([]);
+  };
+
+  // ===== Handle available cities selection =====
+  const handleCitySelection = (city) => {
+    if (city === 'All India') {
+      // If All India is selected, select all cities
+      const allCities = cityOptions.filter(c => c !== 'All India');
+      setFormData(prev => ({
+        ...prev,
+        city: 'All India',
+        availableCities: allCities
+      }));
+    } else {
+      setFormData(prev => {
+        const currentCities = prev.availableCities || [];
+        let newCities;
+        if (currentCities.includes(city)) {
+          newCities = currentCities.filter(c => c !== city);
+        } else {
+          newCities = [...currentCities, city];
+        }
+        return {
+          ...prev,
+          availableCities: newCities
+        };
+      });
+    }
   };
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           product.brand?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = !selectedCategory || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const matchesCity = !selectedCity || product.city === selectedCity || 
+                       (product.availableCities && product.availableCities.includes(selectedCity));
+    return matchesSearch && matchesCategory && matchesCity;
   });
 
   const allCategories = [...new Set([...staticCategories, ...categories.map(c => c.name)])];
@@ -387,7 +457,7 @@ const AdminProducts = () => {
               />
             </div>
           </div>
-          <div className="w-64">
+          <div className="w-48">
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
@@ -399,11 +469,24 @@ const AdminProducts = () => {
               ))}
             </select>
           </div>
-          {(searchTerm || selectedCategory) && (
+          <div className="w-48">
+            <select
+              value={selectedCity}
+              onChange={(e) => setSelectedCity(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Cities</option>
+              {cityOptions.map(city => (
+                <option key={city} value={city}>{city}</option>
+              ))}
+            </select>
+          </div>
+          {(searchTerm || selectedCategory || selectedCity) && (
             <button
               onClick={() => {
                 setSearchTerm('');
                 setSelectedCategory('');
+                setSelectedCity('');
               }}
               className="px-4 py-2 text-gray-600 hover:text-gray-800 flex items-center gap-2"
             >
@@ -422,6 +505,8 @@ const AdminProducts = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">City</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -430,7 +515,7 @@ const AdminProducts = () => {
             <tbody className="divide-y divide-gray-200">
               {filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                     No products found. Click "Add New Product" to create one.
                   </td>
                 </tr>
@@ -477,6 +562,27 @@ const AdminProducts = () => {
                         <p className="text-sm font-semibold text-green-600">₹{product.monthlyRent}/month</p>
                         {product.securityDeposit > 0 && (
                           <p className="text-xs text-gray-500">Deposit: ₹{product.securityDeposit}</p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">{product.city || 'N/A'}</p>
+                        {product.availableCities && product.availableCities.length > 0 && product.city !== 'All India' && (
+                          <p className="text-xs text-gray-500">
+                            {product.availableCities.length} cities
+                          </p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        {product.city === 'All India' ? (
+                          <span className="text-xs text-green-600 font-semibold">🌍 All India</span>
+                        ) : (
+                          <span className="text-xs text-gray-600">
+                            ₹{product.outOfCityDeliveryCharge || 299} out-of-city
+                          </span>
                         )}
                       </div>
                     </td>
@@ -631,6 +737,77 @@ const AdminProducts = () => {
                     className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g., Samsung, Wooden Street"
                   />
+                </div>
+              </div>
+
+              {/* ===== CITY SECTION ===== */}
+              <div className="border rounded-lg p-4 bg-gray-50">
+                <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <FaCity className="text-blue-600" /> City & Delivery Settings
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-700 mb-2">Primary City *</label>
+                    <select
+                      value={formData.city}
+                      onChange={(e) => {
+                        const city = e.target.value;
+                        setFormData(prev => ({ ...prev, city }));
+                        if (city === 'All India') {
+                          // Auto-select all cities for availableCities
+                          const allCities = cityOptions.filter(c => c !== 'All India');
+                          setFormData(prev => ({ ...prev, availableCities: allCities }));
+                        }
+                      }}
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      {cityOptions.map(city => (
+                        <option key={city} value={city}>{city}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Primary location where product is stored</p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-gray-700 mb-2">Out-of-City Delivery Charge (₹)</label>
+                    <input
+                      type="number"
+                      value={formData.outOfCityDeliveryCharge}
+                      onChange={(e) => setFormData({ ...formData, outOfCityDeliveryCharge: e.target.value })}
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      min="0"
+                      placeholder="299"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Charge when delivering to other cities</p>
+                  </div>
+                </div>
+                
+                <div className="mt-3">
+                  <label className="block text-gray-700 mb-2 flex items-center gap-2">
+                    <FaMapMarkerAlt className="text-green-600" /> Available Cities (Select all that apply)
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {cityOptions.filter(c => c !== 'All India').map(city => (
+                      <button
+                        key={city}
+                        type="button"
+                        onClick={() => handleCitySelection(city)}
+                        className={`px-3 py-1 text-sm rounded-full border transition ${
+                          formData.availableCities && formData.availableCities.includes(city)
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                        }`}
+                      >
+                        {city}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.availableCities && formData.availableCities.length > 0 
+                      ? `Selected ${formData.availableCities.length} cities for delivery`
+                      : 'Select cities where this product can be delivered'}
+                  </p>
                 </div>
               </div>
               
