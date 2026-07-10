@@ -11,9 +11,9 @@ async function seedAll() {
   const deleted = await db.collection('products').deleteMany({});
   console.log(`🗑️ Cleared ${deleted.deletedCount} existing products\n`);
   
-  // ========== REAL PRODUCTS WITH CITY DATA ==========
-  const allProducts = [
-    // BEDS (5) - With Real Data
+  // ========== 5 PRODUCTS PER CITY ==========
+  const cityProducts = [
+    // ===== DELHI PRODUCTS (5) =====
     { 
       name: "Premium King Size Wooden Bed with Storage", 
       cat: "Furniture", 
@@ -21,56 +21,11 @@ async function seedAll() {
       price: 1899, 
       deposit: 5700,
       brand: "WoodCraft",
-      desc: "King size bed with hydraulic storage, solid sheesham wood construction. Includes 2 side tables. Dimensions: 200cm x 190cm x 90cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"]
-    },
-    { 
-      name: "Queen Size Upholstered Bed with Headboard", 
-      cat: "Furniture", 
-      sub: "Bed", 
-      price: 1599, 
-      deposit: 4800,
-      brand: "SleepWell",
-      desc: "Premium queen size bed with tufted headboard and sturdy wooden frame. Dimensions: 210cm x 160cm x 85cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad"]
-    },
-    { 
-      name: "Single Wooden Bed with Underbed Storage", 
-      cat: "Furniture", 
-      sub: "Bed", 
-      price: 899, 
-      deposit: 2700,
-      brand: "WoodCraft",
-      desc: "Space-saving single bed with 3 drawers for storage. Made of premium engineered wood. Dimensions: 190cm x 100cm x 85cm.",
+      desc: "King size bed with hydraulic storage, solid sheesham wood construction. Dimensions: 200cm x 190cm x 90cm.",
       city: "Delhi",
-      availableCities: ["Delhi", "Mumbai", "Bangalore"]
+      availableCities: ["Delhi", "Noida", "Gurgaon", "Faridabad"],
+      outOfCityDeliveryCharge: 299
     },
-    { 
-      name: "Double Storage Bed with Hydraulic Lift", 
-      cat: "Furniture", 
-      sub: "Bed", 
-      price: 2199, 
-      deposit: 6600,
-      brand: "SpaceSaver",
-      desc: "Double bed with hydraulic storage mechanism. Premium high-gloss finish. Dimensions: 200cm x 155cm x 90cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"]
-    },
-    { 
-      name: "Premium Bunk Bed with Study Desk", 
-      cat: "Furniture", 
-      sub: "Bed", 
-      price: 2499, 
-      deposit: 7500,
-      brand: "StudyNest",
-      desc: "Bunk bed with built-in study desk and bookshelf. Ideal for students. Material: Solid pine wood. Dimensions: 200cm x 200cm x 160cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Pune"]
-    },
-    
-    // SOFAS (5) - With Real Data
     { 
       name: "3-Seater Leather Sofa Set", 
       cat: "Furniture", 
@@ -78,9 +33,60 @@ async function seedAll() {
       price: 3499, 
       deposit: 10500,
       brand: "LuxuryHome",
-      desc: "Premium 3-seater leather sofa with high-resilience foam cushions. Chrome legs. Dimensions: 210cm x 85cm x 85cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune"]
+      desc: "Premium 3-seater leather sofa with high-resilience foam cushions.",
+      city: "Delhi",
+      availableCities: ["Delhi", "Noida", "Gurgaon", "Faridabad"],
+      outOfCityDeliveryCharge: 299
+    },
+    { 
+      name: "6-Seater Wooden Dining Table Set", 
+      cat: "Furniture", 
+      sub: "Table", 
+      price: 1899, 
+      deposit: 5700,
+      brand: "WoodCraft",
+      desc: "6-seater dining table set with 6 cushioned chairs. Solid wood construction.",
+      city: "Delhi",
+      availableCities: ["Delhi", "Noida", "Gurgaon", "Faridabad"],
+      outOfCityDeliveryCharge: 299
+    },
+    { 
+      name: "Ergonomic Office Chair with Lumbar Support", 
+      cat: "Furniture", 
+      sub: "Chair", 
+      price: 899, 
+      deposit: 2700,
+      brand: "ComfortSeat",
+      desc: "Ergonomic office chair with adjustable height, lumbar support, and armrests.",
+      city: "Delhi",
+      availableCities: ["Delhi", "Noida", "Gurgaon", "Faridabad"],
+      outOfCityDeliveryCharge: 199
+    },
+    { 
+      name: "3-Door Wooden Wardrobe with Mirror", 
+      cat: "Furniture", 
+      sub: "Wardrobe", 
+      price: 2499, 
+      deposit: 7500,
+      brand: "WoodCraft",
+      desc: "3-door wooden wardrobe with full-length mirror and 2 drawers.",
+      city: "Delhi",
+      availableCities: ["Delhi", "Noida", "Gurgaon", "Faridabad"],
+      outOfCityDeliveryCharge: 299
+    },
+    
+    // ===== MUMBAI PRODUCTS (5) =====
+    { 
+      name: "Queen Size Upholstered Bed with Headboard", 
+      cat: "Furniture", 
+      sub: "Bed", 
+      price: 1599, 
+      deposit: 4800,
+      brand: "SleepWell",
+      desc: "Premium queen size bed with tufted headboard and sturdy wooden frame.",
+      city: "Mumbai",
+      availableCities: ["Mumbai", "Thane", "Navi Mumbai", "Pune"],
+      outOfCityDeliveryCharge: 399
     },
     { 
       name: "L-Shape Fabric Sofa (4 Seater)", 
@@ -89,55 +95,10 @@ async function seedAll() {
       price: 3999, 
       deposit: 12000,
       brand: "UrbanLivin",
-      desc: "L-shaped 4-seater fabric sofa with chaise lounge. Machine-washable covers. Dimensions: 260cm x 180cm x 85cm.",
+      desc: "L-shaped 4-seater fabric sofa with chaise lounge. Machine-washable covers.",
       city: "Mumbai",
-      availableCities: ["Mumbai", "Pune", "Bangalore"]
-    },
-    { 
-      name: "2-Seater Loveseat with Storage", 
-      cat: "Furniture", 
-      sub: "Sofa", 
-      price: 1899, 
-      deposit: 5700,
-      brand: "SpaceSaver",
-      desc: "Compact 2-seater loveseat with hidden storage in armrests. Dimensions: 160cm x 80cm x 80cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai"]
-    },
-    { 
-      name: "Sofa Cum Bed (3-in-1)", 
-      cat: "Furniture", 
-      sub: "Sofa", 
-      price: 3299, 
-      deposit: 9900,
-      brand: "SleepSofa",
-      desc: "Multi-functional sofa cum bed. Converts to a comfortable double bed. Dimensions: 200cm x 85cm x 80cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune"]
-    },
-    { 
-      name: "Single Seater Premium Recliner", 
-      cat: "Furniture", 
-      sub: "Sofa", 
-      price: 4499, 
-      deposit: 13500,
-      brand: "ReclinerWorld",
-      desc: "Luxurious single seater recliner with swivel base. PU leather upholstery. Dimensions: 100cm x 80cm x 100cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Chennai", "Pune"]
-    },
-    
-    // TABLES (5) - With Real Data
-    { 
-      name: "6-Seater Wooden Dining Table Set", 
-      cat: "Furniture", 
-      sub: "Table", 
-      price: 1899, 
-      deposit: 5700,
-      brand: "WoodCraft",
-      desc: "6-seater dining table set with 6 cushioned chairs. Solid wood construction. Table: 180cm x 90cm x 76cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune", "Chennai"]
+      availableCities: ["Mumbai", "Thane", "Navi Mumbai", "Pune"],
+      outOfCityDeliveryCharge: 399
     },
     { 
       name: "Modern Coffee Table with Storage", 
@@ -146,55 +107,10 @@ async function seedAll() {
       price: 999, 
       deposit: 3000,
       brand: "UrbanLivin",
-      desc: "Modern coffee table with two drawers and shelf. High-gloss finish. Dimensions: 120cm x 60cm x 45cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata"]
-    },
-    { 
-      name: "Adjustable Height Study Table", 
-      cat: "Furniture", 
-      sub: "Table", 
-      price: 799, 
-      deposit: 2400,
-      brand: "StudyNest",
-      desc: "Adjustable height study table with tiltable top. Built-in cable management. Dimensions: 120cm x 60cm x 75cm.",
-      city: "Delhi",
-      availableCities: ["Delhi", "Mumbai", "Bangalore"]
-    },
-    { 
-      name: "Premium Center Table with Glass Top", 
-      cat: "Furniture", 
-      sub: "Table", 
-      price: 1199, 
-      deposit: 3600,
-      brand: "GlassHouse",
-      desc: "Elegant center table with tempered glass top and wooden base. Dimensions: 100cm x 100cm x 45cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune"]
-    },
-    { 
-      name: "Console Table with Mirror", 
-      cat: "Furniture", 
-      sub: "Table", 
-      price: 1499, 
-      deposit: 4500,
-      brand: "WoodCraft",
-      desc: "Stylish console table with wall-mounted mirror. Perfect for entryways. Dimensions: 120cm x 40cm x 80cm.",
+      desc: "Modern coffee table with two drawers and shelf. High-gloss finish.",
       city: "Mumbai",
-      availableCities: ["Mumbai", "Pune", "Bangalore"]
-    },
-    
-    // CHAIRS (5) - With Real Data
-    { 
-      name: "Ergonomic Office Chair with Lumbar Support", 
-      cat: "Furniture", 
-      sub: "Chair", 
-      price: 899, 
-      deposit: 2700,
-      brand: "ComfortSeat",
-      desc: "Ergonomic office chair with adjustable height, lumbar support, and armrests. Weight capacity: 120kg.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune", "Chennai"]
+      availableCities: ["Mumbai", "Thane", "Navi Mumbai", "Pune"],
+      outOfCityDeliveryCharge: 299
     },
     { 
       name: "Wooden Dining Chair (Set of 2)", 
@@ -203,55 +119,10 @@ async function seedAll() {
       price: 499, 
       deposit: 1500,
       brand: "WoodCraft",
-      desc: "Set of 2 solid wooden dining chairs with comfortable curved backrest. Dimensions: 45cm x 42cm x 90cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata"]
-    },
-    { 
-      name: "Rocking Chair with Cushion", 
-      cat: "Furniture", 
-      sub: "Chair", 
-      price: 799, 
-      deposit: 2400,
-      brand: "RelaxLife",
-      desc: "Comfortable rocking chair with removable cushion. Solid teak wood construction. Weight capacity: 100kg.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Hyderabad", "Pune"]
-    },
-    { 
-      name: "Gaming Chair with Neck Support", 
-      cat: "Furniture", 
-      sub: "Chair", 
-      price: 1299, 
-      deposit: 3900,
-      brand: "GameSeat",
-      desc: "Professional gaming chair with 4D adjustable armrests and backrest. Height: 125-135cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Chennai", "Hyderabad", "Pune"]
-    },
-    { 
-      name: "Accent Chair with Gold Legs", 
-      cat: "Furniture", 
-      sub: "Chair", 
-      price: 699, 
-      deposit: 2100,
-      brand: "LuxuryHome",
-      desc: "Elegant accent chair with gold-finished metal legs and velvet upholstery. Dimensions: 70cm x 65cm x 85cm.",
+      desc: "Set of 2 solid wooden dining chairs with comfortable curved backrest.",
       city: "Mumbai",
-      availableCities: ["Mumbai", "Delhi", "Bangalore"]
-    },
-    
-    // WARDROBES (5) - With Real Data
-    { 
-      name: "3-Door Wooden Wardrobe with Mirror", 
-      cat: "Furniture", 
-      sub: "Wardrobe", 
-      price: 2499, 
-      deposit: 7500,
-      brand: "WoodCraft",
-      desc: "3-door wooden wardrobe with full-length mirror and 2 drawers. Dimensions: 150cm x 180cm x 60cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune", "Chennai"]
+      availableCities: ["Mumbai", "Thane", "Navi Mumbai", "Pune"],
+      outOfCityDeliveryCharge: 299
     },
     { 
       name: "Sliding Door Wardrobe with 4 Doors", 
@@ -260,9 +131,60 @@ async function seedAll() {
       price: 2899, 
       deposit: 8700,
       brand: "SpaceSaver",
-      desc: "4-door sliding wardrobe with 6 shelves and hanging section. Dimensions: 200cm x 200cm x 65cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune"]
+      desc: "4-door sliding wardrobe with 6 shelves and hanging section.",
+      city: "Mumbai",
+      availableCities: ["Mumbai", "Thane", "Navi Mumbai", "Pune"],
+      outOfCityDeliveryCharge: 399
+    },
+    
+    // ===== BANGALORE PRODUCTS (5) =====
+    { 
+      name: "Double Storage Bed with Hydraulic Lift", 
+      cat: "Furniture", 
+      sub: "Bed", 
+      price: 2199, 
+      deposit: 6600,
+      brand: "SpaceSaver",
+      desc: "Double bed with hydraulic storage mechanism. Premium high-gloss finish.",
+      city: "Bangalore",
+      availableCities: ["Bangalore", "Mysore", "Hyderabad", "Chennai"],
+      outOfCityDeliveryCharge: 399
+    },
+    { 
+      name: "2-Seater Loveseat with Storage", 
+      cat: "Furniture", 
+      sub: "Sofa", 
+      price: 1899, 
+      deposit: 5700,
+      brand: "SpaceSaver",
+      desc: "Compact 2-seater loveseat with hidden storage in armrests.",
+      city: "Bangalore",
+      availableCities: ["Bangalore", "Mysore", "Hyderabad", "Chennai"],
+      outOfCityDeliveryCharge: 299
+    },
+    { 
+      name: "Premium Center Table with Glass Top", 
+      cat: "Furniture", 
+      sub: "Table", 
+      price: 1199, 
+      deposit: 3600,
+      brand: "GlassHouse",
+      desc: "Elegant center table with tempered glass top and wooden base.",
+      city: "Bangalore",
+      availableCities: ["Bangalore", "Mysore", "Hyderabad", "Chennai"],
+      outOfCityDeliveryCharge: 299
+    },
+    { 
+      name: "Rocking Chair with Cushion", 
+      cat: "Furniture", 
+      sub: "Chair", 
+      price: 799, 
+      deposit: 2400,
+      brand: "RelaxLife",
+      desc: "Comfortable rocking chair with removable cushion. Solid teak wood construction.",
+      city: "Bangalore",
+      availableCities: ["Bangalore", "Mysore", "Hyderabad", "Chennai"],
+      outOfCityDeliveryCharge: 299
     },
     { 
       name: "4-Door Premium Wooden Wardrobe", 
@@ -271,9 +193,60 @@ async function seedAll() {
       price: 3299, 
       deposit: 9900,
       brand: "WoodCraft",
-      desc: "Premium 4-door wardrobe with 4 drawers, hanging rods, and shoe rack. Dimensions: 180cm x 200cm x 65cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune", "Chennai"]
+      desc: "Premium 4-door wardrobe with 4 drawers, hanging rods, and shoe rack.",
+      city: "Bangalore",
+      availableCities: ["Bangalore", "Mysore", "Hyderabad", "Chennai"],
+      outOfCityDeliveryCharge: 399
+    },
+    
+    // ===== KOLKATA PRODUCTS (5) =====
+    { 
+      name: "Premium Bunk Bed with Study Desk", 
+      cat: "Furniture", 
+      sub: "Bed", 
+      price: 2499, 
+      deposit: 7500,
+      brand: "StudyNest",
+      desc: "Bunk bed with built-in study desk and bookshelf. Ideal for students.",
+      city: "Kolkata",
+      availableCities: ["Kolkata", "Howrah", "Salt Lake", "Durgapur"],
+      outOfCityDeliveryCharge: 499
+    },
+    { 
+      name: "Sofa Cum Bed (3-in-1)", 
+      cat: "Furniture", 
+      sub: "Sofa", 
+      price: 3299, 
+      deposit: 9900,
+      brand: "SleepSofa",
+      desc: "Multi-functional sofa cum bed. Converts to a comfortable double bed.",
+      city: "Kolkata",
+      availableCities: ["Kolkata", "Howrah", "Salt Lake", "Durgapur"],
+      outOfCityDeliveryCharge: 499
+    },
+    { 
+      name: "Console Table with Mirror", 
+      cat: "Furniture", 
+      sub: "Table", 
+      price: 1499, 
+      deposit: 4500,
+      brand: "WoodCraft",
+      desc: "Stylish console table with wall-mounted mirror. Perfect for entryways.",
+      city: "Kolkata",
+      availableCities: ["Kolkata", "Howrah", "Salt Lake", "Durgapur"],
+      outOfCityDeliveryCharge: 499
+    },
+    { 
+      name: "Gaming Chair with Neck Support", 
+      cat: "Furniture", 
+      sub: "Chair", 
+      price: 1299, 
+      deposit: 3900,
+      brand: "GameSeat",
+      desc: "Professional gaming chair with 4D adjustable armrests and backrest.",
+      city: "Kolkata",
+      availableCities: ["Kolkata", "Howrah", "Salt Lake", "Durgapur"],
+      outOfCityDeliveryCharge: 499
     },
     { 
       name: "Corner Wardrobe for Small Spaces", 
@@ -282,9 +255,60 @@ async function seedAll() {
       price: 1999, 
       deposit: 6000,
       brand: "SpaceSaver",
-      desc: "Space-saving corner wardrobe with triangular design. Dimensions: 120cm x 120cm x 200cm.",
-      city: "Delhi",
-      availableCities: ["Delhi", "Mumbai", "Bangalore"]
+      desc: "Space-saving corner wardrobe with triangular design.",
+      city: "Kolkata",
+      availableCities: ["Kolkata", "Howrah", "Salt Lake", "Durgapur"],
+      outOfCityDeliveryCharge: 499
+    },
+    
+    // ===== CHENNAI PRODUCTS (5) =====
+    { 
+      name: "Single Wooden Bed with Underbed Storage", 
+      cat: "Furniture", 
+      sub: "Bed", 
+      price: 899, 
+      deposit: 2700,
+      brand: "WoodCraft",
+      desc: "Space-saving single bed with 3 drawers for storage.",
+      city: "Chennai",
+      availableCities: ["Chennai", "Coimbatore", "Bangalore", "Hyderabad"],
+      outOfCityDeliveryCharge: 499
+    },
+    { 
+      name: "Single Seater Premium Recliner", 
+      cat: "Furniture", 
+      sub: "Sofa", 
+      price: 4499, 
+      deposit: 13500,
+      brand: "ReclinerWorld",
+      desc: "Luxurious single seater recliner with swivel base. PU leather upholstery.",
+      city: "Chennai",
+      availableCities: ["Chennai", "Coimbatore", "Bangalore", "Hyderabad"],
+      outOfCityDeliveryCharge: 499
+    },
+    { 
+      name: "Adjustable Height Study Table", 
+      cat: "Furniture", 
+      sub: "Table", 
+      price: 799, 
+      deposit: 2400,
+      brand: "StudyNest",
+      desc: "Adjustable height study table with tiltable top. Built-in cable management.",
+      city: "Chennai",
+      availableCities: ["Chennai", "Coimbatore", "Bangalore", "Hyderabad"],
+      outOfCityDeliveryCharge: 499
+    },
+    { 
+      name: "Accent Chair with Gold Legs", 
+      cat: "Furniture", 
+      sub: "Chair", 
+      price: 699, 
+      deposit: 2100,
+      brand: "LuxuryHome",
+      desc: "Elegant accent chair with gold-finished metal legs and velvet upholstery.",
+      city: "Chennai",
+      availableCities: ["Chennai", "Coimbatore", "Bangalore", "Hyderabad"],
+      outOfCityDeliveryCharge: 499
     },
     { 
       name: "Portable Closet with Wheels", 
@@ -293,294 +317,497 @@ async function seedAll() {
       price: 999, 
       deposit: 3000,
       brand: "EasyMove",
-      desc: "Lightweight portable closet with wheels and hanging rod. Easy to assemble and move. Dimensions: 150cm x 180cm x 50cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune"]
+      desc: "Lightweight portable closet with wheels and hanging rod.",
+      city: "Chennai",
+      availableCities: ["Chennai", "Coimbatore", "Bangalore", "Hyderabad"],
+      outOfCityDeliveryCharge: 499
     },
     
-    // FRIDGES (5) - With Real Data
+    // ===== HYDERABAD PRODUCTS (5) =====
     { 
-      name: "Double Door Refrigerator 340L", 
+      name: "Premium Wooden Bed with Hydraulic Storage", 
+      cat: "Furniture", 
+      sub: "Bed", 
+      price: 1799, 
+      deposit: 5400,
+      brand: "WoodCraft",
+      desc: "Premium wooden bed with hydraulic storage. Solid sheesham wood construction.",
+      city: "Hyderabad",
+      availableCities: ["Hyderabad", "Secunderabad", "Bangalore", "Chennai"],
+      outOfCityDeliveryCharge: 399
+    },
+    { 
+      name: "Premium Fabric Sofa (3 Seater)", 
+      cat: "Furniture", 
+      sub: "Sofa", 
+      price: 2899, 
+      deposit: 8700,
+      brand: "LuxuryHome",
+      desc: "Premium 3-seater fabric sofa with high-resilience foam cushions.",
+      city: "Hyderabad",
+      availableCities: ["Hyderabad", "Secunderabad", "Bangalore", "Chennai"],
+      outOfCityDeliveryCharge: 399
+    },
+    { 
+      name: "Wooden Dining Table (4 Seater)", 
+      cat: "Furniture", 
+      sub: "Table", 
+      price: 1299, 
+      deposit: 3900,
+      brand: "WoodCraft",
+      desc: "4-seater wooden dining table with solid wood construction.",
+      city: "Hyderabad",
+      availableCities: ["Hyderabad", "Secunderabad", "Bangalore", "Chennai"],
+      outOfCityDeliveryCharge: 399
+    },
+    { 
+      name: "Executive Office Chair", 
+      cat: "Furniture", 
+      sub: "Chair", 
+      price: 1099, 
+      deposit: 3300,
+      brand: "ComfortSeat",
+      desc: "Executive office chair with premium leather and ergonomic design.",
+      city: "Hyderabad",
+      availableCities: ["Hyderabad", "Secunderabad", "Bangalore", "Chennai"],
+      outOfCityDeliveryCharge: 399
+    },
+    { 
+      name: "Premium Wardrobe with Mirror", 
+      cat: "Furniture", 
+      sub: "Wardrobe", 
+      price: 2799, 
+      deposit: 8400,
+      brand: "SpaceSaver",
+      desc: "Premium wardrobe with full-length mirror and multiple storage options.",
+      city: "Hyderabad",
+      availableCities: ["Hyderabad", "Secunderabad", "Bangalore", "Chennai"],
+      outOfCityDeliveryCharge: 399
+    },
+    
+    // ===== PUNE PRODUCTS (5) =====
+    { 
+      name: "Comfort Queen Bed with Storage", 
+      cat: "Furniture", 
+      sub: "Bed", 
+      price: 1699, 
+      deposit: 5100,
+      brand: "SleepWell",
+      desc: "Comfort queen bed with storage drawers. Perfect for modern homes.",
+      city: "Pune",
+      availableCities: ["Pune", "Mumbai", "Thane", "Navi Mumbai"],
+      outOfCityDeliveryCharge: 299
+    },
+    { 
+      name: "Modern Fabric Sofa (L-Shape)", 
+      cat: "Furniture", 
+      sub: "Sofa", 
+      price: 3699, 
+      deposit: 11100,
+      brand: "UrbanLivin",
+      desc: "Modern L-shape fabric sofa with premium cushioning.",
+      city: "Pune",
+      availableCities: ["Pune", "Mumbai", "Thane", "Navi Mumbai"],
+      outOfCityDeliveryCharge: 299
+    },
+    { 
+      name: "Study Table with Bookshelf", 
+      cat: "Furniture", 
+      sub: "Table", 
+      price: 899, 
+      deposit: 2700,
+      brand: "StudyNest",
+      desc: "Study table with built-in bookshelf and storage compartments.",
+      city: "Pune",
+      availableCities: ["Pune", "Mumbai", "Thane", "Navi Mumbai"],
+      outOfCityDeliveryCharge: 299
+    },
+    { 
+      name: "Dining Chair Set (4 pieces)", 
+      cat: "Furniture", 
+      sub: "Chair", 
+      price: 899, 
+      deposit: 2700,
+      brand: "WoodCraft",
+      desc: "Set of 4 premium wooden dining chairs with comfortable seating.",
+      city: "Pune",
+      availableCities: ["Pune", "Mumbai", "Thane", "Navi Mumbai"],
+      outOfCityDeliveryCharge: 299
+    },
+    { 
+      name: "Sliding Wardrobe with Mirror", 
+      cat: "Furniture", 
+      sub: "Wardrobe", 
+      price: 2599, 
+      deposit: 7800,
+      brand: "SpaceSaver",
+      desc: "Spacious sliding wardrobe with mirror and multiple shelves.",
+      city: "Pune",
+      availableCities: ["Pune", "Mumbai", "Thane", "Navi Mumbai"],
+      outOfCityDeliveryCharge: 299
+    }
+  ];
+  
+  // ========== ALL INDIA PRODUCTS (Remaining) ==========
+  const allIndiaProducts = [
+    // BEDS
+    { 
+      name: "King Size Wooden Bed with Storage (All India)", 
+      cat: "Furniture", 
+      sub: "Bed", 
+      price: 1899, 
+      deposit: 5700,
+      brand: "WoodCraft",
+      desc: "King size bed with hydraulic storage. Available all across India.",
+      city: "All India",
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
+    },
+    { 
+      name: "Queen Size Bed with Headboard (All India)", 
+      cat: "Furniture", 
+      sub: "Bed", 
+      price: 1599, 
+      deposit: 4800,
+      brand: "SleepWell",
+      desc: "Queen size bed with tufted headboard. Available all across India.",
+      city: "All India",
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
+    },
+    { 
+      name: "Single Bed with Underbed Storage (All India)", 
+      cat: "Furniture", 
+      sub: "Bed", 
+      price: 899, 
+      deposit: 2700,
+      brand: "WoodCraft",
+      desc: "Single bed with underbed storage. Available all across India.",
+      city: "All India",
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
+    },
+    
+    // SOFAS
+    { 
+      name: "3-Seater Leather Sofa (All India)", 
+      cat: "Furniture", 
+      sub: "Sofa", 
+      price: 3499, 
+      deposit: 10500,
+      brand: "LuxuryHome",
+      desc: "3-seater leather sofa. Available all across India.",
+      city: "All India",
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
+    },
+    { 
+      name: "2-Seater Loveseat with Storage (All India)", 
+      cat: "Furniture", 
+      sub: "Sofa", 
+      price: 1899, 
+      deposit: 5700,
+      brand: "SpaceSaver",
+      desc: "2-seater loveseat with storage. Available all across India.",
+      city: "All India",
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
+    },
+    { 
+      name: "Sofa Cum Bed 3-in-1 (All India)", 
+      cat: "Furniture", 
+      sub: "Sofa", 
+      price: 3299, 
+      deposit: 9900,
+      brand: "SleepSofa",
+      desc: "Sofa cum bed 3-in-1. Available all across India.",
+      city: "All India",
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
+    },
+    { 
+      name: "Single Seater Premium Recliner (All India)", 
+      cat: "Furniture", 
+      sub: "Sofa", 
+      price: 4499, 
+      deposit: 13500,
+      brand: "ReclinerWorld",
+      desc: "Single seater premium recliner. Available all across India.",
+      city: "All India",
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 499
+    },
+    
+    // TABLES
+    { 
+      name: "6-Seater Dining Table Set (All India)", 
+      cat: "Furniture", 
+      sub: "Table", 
+      price: 1899, 
+      deposit: 5700,
+      brand: "WoodCraft",
+      desc: "6-seater dining table set. Available all across India.",
+      city: "All India",
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
+    },
+    { 
+      name: "Modern Coffee Table (All India)", 
+      cat: "Furniture", 
+      sub: "Table", 
+      price: 999, 
+      deposit: 3000,
+      brand: "UrbanLivin",
+      desc: "Modern coffee table with storage. Available all across India.",
+      city: "All India",
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
+    },
+    { 
+      name: "Premium Center Table Glass Top (All India)", 
+      cat: "Furniture", 
+      sub: "Table", 
+      price: 1199, 
+      deposit: 3600,
+      brand: "GlassHouse",
+      desc: "Premium center table with glass top. Available all across India.",
+      city: "All India",
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
+    },
+    
+    // CHAIRS
+    { 
+      name: "Ergonomic Office Chair (All India)", 
+      cat: "Furniture", 
+      sub: "Chair", 
+      price: 899, 
+      deposit: 2700,
+      brand: "ComfortSeat",
+      desc: "Ergonomic office chair with lumbar support. Available all across India.",
+      city: "All India",
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 199
+    },
+    { 
+      name: "Wooden Dining Chair Set of 2 (All India)", 
+      cat: "Furniture", 
+      sub: "Chair", 
+      price: 499, 
+      deposit: 1500,
+      brand: "WoodCraft",
+      desc: "Set of 2 wooden dining chairs. Available all across India.",
+      city: "All India",
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
+    },
+    { 
+      name: "Rocking Chair with Cushion (All India)", 
+      cat: "Furniture", 
+      sub: "Chair", 
+      price: 799, 
+      deposit: 2400,
+      brand: "RelaxLife",
+      desc: "Rocking chair with cushion. Available all across India.",
+      city: "All India",
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
+    },
+    { 
+      name: "Gaming Chair with Neck Support (All India)", 
+      cat: "Furniture", 
+      sub: "Chair", 
+      price: 1299, 
+      deposit: 3900,
+      brand: "GameSeat",
+      desc: "Gaming chair with neck support. Available all across India.",
+      city: "All India",
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
+    },
+    
+    // WARDROBES
+    { 
+      name: "3-Door Wooden Wardrobe (All India)", 
+      cat: "Furniture", 
+      sub: "Wardrobe", 
+      price: 2499, 
+      deposit: 7500,
+      brand: "WoodCraft",
+      desc: "3-door wooden wardrobe with mirror. Available all across India.",
+      city: "All India",
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
+    },
+    { 
+      name: "Sliding Door Wardrobe 4 Doors (All India)", 
+      cat: "Furniture", 
+      sub: "Wardrobe", 
+      price: 2899, 
+      deposit: 8700,
+      brand: "SpaceSaver",
+      desc: "4-door sliding wardrobe. Available all across India.",
+      city: "All India",
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 399
+    },
+    { 
+      name: "4-Door Premium Wooden Wardrobe (All India)", 
+      cat: "Furniture", 
+      sub: "Wardrobe", 
+      price: 3299, 
+      deposit: 9900,
+      brand: "WoodCraft",
+      desc: "4-door premium wooden wardrobe. Available all across India.",
+      city: "All India",
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
+    },
+    { 
+      name: "Portable Closet with Wheels (All India)", 
+      cat: "Furniture", 
+      sub: "Wardrobe", 
+      price: 999, 
+      deposit: 3000,
+      brand: "EasyMove",
+      desc: "Portable closet with wheels. Available all across India.",
+      city: "All India",
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
+    },
+    
+    // APPLIANCES - All India
+    { 
+      name: "Double Door Refrigerator 340L (All India)", 
       cat: "Appliances", 
       sub: "Fridge", 
       price: 1599, 
       deposit: 4800,
       brand: "Whirlpool",
-      desc: "340L double door refrigerator with frost-free technology and 5-star energy rating. Dimensions: 165cm x 70cm x 70cm.",
+      desc: "Double door refrigerator 340L. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune", "Chennai"]
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 399
     },
     { 
-      name: "Single Door Refrigerator 190L", 
+      name: "Single Door Refrigerator 190L (All India)", 
       cat: "Appliances", 
       sub: "Fridge", 
       price: 999, 
       deposit: 3000,
       brand: "LG",
-      desc: "190L single door refrigerator with 5-star energy rating and direct cool technology. Dimensions: 140cm x 55cm x 60cm.",
+      desc: "Single door refrigerator 190L. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune"]
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
     },
     { 
-      name: "French Door Refrigerator 480L", 
-      cat: "Appliances", 
-      sub: "Fridge", 
-      price: 2499, 
-      deposit: 7500,
-      brand: "Samsung",
-      desc: "480L French door refrigerator with water dispenser and 5-star energy rating. Dimensions: 180cm x 85cm x 75cm.",
-      city: "Mumbai",
-      availableCities: ["Mumbai", "Delhi", "Bangalore", "Pune"]
-    },
-    { 
-      name: "Side-by-Side Refrigerator 550L", 
-      cat: "Appliances", 
-      sub: "Fridge", 
-      price: 2899, 
-      deposit: 8700,
-      brand: "LG",
-      desc: "550L side-by-side refrigerator with ice maker and stainless steel finish. Dimensions: 180cm x 90cm x 75cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune", "Chennai"]
-    },
-    { 
-      name: "Mini Fridge 50L (Single Person)", 
-      cat: "Appliances", 
-      sub: "Fridge", 
-      price: 599, 
-      deposit: 1800,
-      brand: "Godrej",
-      desc: "Compact 50L mini fridge, perfect for students and small spaces. Dimensions: 50cm x 45cm x 50cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune", "Chennai"]
-    },
-    
-    // WASHING MACHINES (5) - With Real Data
-    { 
-      name: "Front Load Washing Machine 7kg", 
+      name: "Front Load Washing Machine 7kg (All India)", 
       cat: "Appliances", 
       sub: "Washing Machine", 
       price: 1399, 
       deposit: 4200,
       brand: "Samsung",
-      desc: "7kg front load washing machine with inverter technology and 1400 RPM. Dimensions: 85cm x 60cm x 60cm.",
+      desc: "Front load washing machine 7kg. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune", "Chennai"]
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 399
     },
     { 
-      name: "Top Load Washing Machine 8kg", 
+      name: "Top Load Washing Machine 8kg (All India)", 
       cat: "Appliances", 
       sub: "Washing Machine", 
       price: 1199, 
       deposit: 3600,
       brand: "LG",
-      desc: "8kg top load washing machine with TurboDrum and 5-star energy rating. Dimensions: 95cm x 55cm x 55cm.",
+      desc: "Top load washing machine 8kg. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune"]
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
     },
     { 
-      name: "Smart Washer with Wi-Fi 7.5kg", 
-      cat: "Appliances", 
-      sub: "Washing Machine", 
-      price: 1799, 
-      deposit: 5400,
-      brand: "Samsung",
-      desc: "7.5kg smart washer with Wi-Fi connectivity and AI Wash. Dimensions: 85cm x 60cm x 60cm.",
-      city: "Delhi",
-      availableCities: ["Delhi", "Mumbai", "Bangalore"]
-    },
-    { 
-      name: "Semi-Automatic Washer 8kg", 
-      cat: "Appliances", 
-      sub: "Washing Machine", 
-      price: 799, 
-      deposit: 2400,
-      brand: "Whirlpool",
-      desc: "8kg semi-automatic washer with dual tub and rust-proof body. Dimensions: 90cm x 55cm x 60cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune", "Chennai"]
-    },
-    { 
-      name: "Compact Washer 5kg (Small Family)", 
-      cat: "Appliances", 
-      sub: "Washing Machine", 
-      price: 899, 
-      deposit: 2700,
-      brand: "Godrej",
-      desc: "5kg compact front load washer perfect for small families and apartments. Dimensions: 75cm x 50cm x 50cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune"]
-    },
-    
-    // TVS (5) - With Real Data
-    { 
-      name: "Samsung 43-inch 4K Ultra HD Smart TV", 
+      name: "Samsung 43-inch 4K Smart TV (All India)", 
       cat: "Appliances", 
       sub: "TV", 
       price: 1599, 
       deposit: 4800,
       brand: "Samsung",
-      desc: "43-inch 4K Ultra HD Smart TV with HDR and Tizen OS. 3 HDMI ports, 2 USB ports. Dimensions: 96cm x 56cm x 6cm.",
+      desc: "43-inch 4K Smart TV. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune", "Chennai"]
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
     },
     { 
-      name: "LG 55-inch QLED 4K TV", 
+      name: "LG 55-inch QLED 4K TV (All India)", 
       cat: "Appliances", 
       sub: "TV", 
       price: 2499, 
       deposit: 7500,
       brand: "LG",
-      desc: "55-inch QLED 4K TV with webOS and AI ThinQ. 4 HDMI ports, 3 USB ports. Dimensions: 123cm x 71cm x 5cm.",
+      desc: "55-inch QLED 4K TV. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune", "Chennai"]
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 399
     },
     { 
-      name: "Sony 32-inch HD Ready LED TV", 
-      cat: "Appliances", 
-      sub: "TV", 
-      price: 999, 
-      deposit: 3000,
-      brand: "Sony",
-      desc: "32-inch HD Ready LED TV with Google TV. 2 HDMI ports, 2 USB ports. Dimensions: 73cm x 43cm x 5cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune"]
-    },
-    { 
-      name: "OnePlus 65-inch OLED 4K Smart TV", 
-      cat: "Appliances", 
-      sub: "TV", 
-      price: 3999, 
-      deposit: 12000,
-      brand: "OnePlus",
-      desc: "65-inch OLED 4K Smart TV with Android TV OS. 4 HDMI ports, 3 USB ports. Dimensions: 145cm x 83cm x 5cm.",
-      city: "Mumbai",
-      availableCities: ["Mumbai", "Delhi", "Bangalore", "Pune"]
-    },
-    { 
-      name: "Mi 50-inch Android 4K TV", 
-      cat: "Appliances", 
-      sub: "TV", 
-      price: 1899, 
-      deposit: 5700,
-      brand: "Xiaomi",
-      desc: "50-inch Android 4K Smart TV with built-in Chromecast. 3 HDMI ports, 2 USB ports. Dimensions: 112cm x 65cm x 5cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune", "Chennai"]
-    },
-    
-    // ACs (5) - With Real Data
-    { 
-      name: "1.5 Ton 5-Star Inverter AC with Wi-Fi", 
+      name: "1.5 Ton 5-Star Inverter AC (All India)", 
       cat: "Appliances", 
       sub: "AC", 
       price: 1899, 
       deposit: 5700,
       brand: "LG",
-      desc: "1.5 ton 5-star inverter AC with Wi-Fi control and anti-bacterial filter. Covers 180 sq ft. Dimensions: 100cm x 30cm x 20cm.",
+      desc: "1.5 ton 5-star inverter AC. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune", "Chennai"]
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 399
     },
     { 
-      name: "1 Ton Split AC with Anti-Dust Filter", 
+      name: "1 Ton Split AC (All India)", 
       cat: "Appliances", 
       sub: "AC", 
       price: 1499, 
       deposit: 4500,
       brand: "Samsung",
-      desc: "1 ton split AC with anti-dust filter and 5-star energy rating. Covers 120 sq ft. Dimensions: 80cm x 25cm x 20cm.",
+      desc: "1 ton split AC. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune"]
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
     },
     { 
-      name: "2 Ton Window AC with Remote Control", 
-      cat: "Appliances", 
-      sub: "AC", 
-      price: 2199, 
-      deposit: 6600,
-      brand: "Voltas",
-      desc: "2 ton window AC with remote control and 5-star energy rating. Covers 250 sq ft. Dimensions: 65cm x 40cm x 70cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune", "Chennai"]
-    },
-    { 
-      name: "Smart Wi-Fi AC 1.5 Ton with Voice Control", 
-      cat: "Appliances", 
-      sub: "AC", 
-      price: 2399, 
-      deposit: 7200,
-      brand: "Daikin",
-      desc: "1.5 ton smart Wi-Fi AC with Google Assistant and Alexa control. 5-star rating. Covers 180 sq ft.",
-      city: "Delhi",
-      availableCities: ["Delhi", "Mumbai", "Bangalore"]
-    },
-    { 
-      name: "Portable AC 1 Ton (No Installation)", 
-      cat: "Appliances", 
-      sub: "AC", 
-      price: 1699, 
-      deposit: 5100,
-      brand: "PortableCool",
-      desc: "1 ton portable AC with easy no-install setup. Covers 120 sq ft. Includes remote control. Dimensions: 45cm x 35cm x 70cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune", "Chennai"]
-    },
-    
-    // MICROWAVES (5) - With Real Data
-    { 
-      name: "Samsung 28L Convection Microwave Oven", 
+      name: "Samsung 28L Convection Microwave (All India)", 
       cat: "Appliances", 
       sub: "Microwave", 
       price: 1099, 
       deposit: 3300,
       brand: "Samsung",
-      desc: "28L convection microwave oven with 6 auto-cook menus. 1000W power. Dimensions: 50cm x 45cm x 30cm.",
+      desc: "28L convection microwave oven. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune", "Chennai"]
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
     },
     { 
-      name: "LG 20L Solo Microwave Oven", 
+      name: "LG 20L Solo Microwave Oven (All India)", 
       cat: "Appliances", 
       sub: "Microwave", 
       price: 599, 
       deposit: 1800,
       brand: "LG",
-      desc: "20L solo microwave oven with 5 power levels. 700W power. Dimensions: 45cm x 35cm x 25cm.",
+      desc: "20L solo microwave oven. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune"]
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 199
     },
     { 
-      name: "Panasonic 23L Grill Microwave with Sensor", 
+      name: "Panasonic 23L Grill Microwave (All India)", 
       cat: "Appliances", 
       sub: "Microwave", 
       price: 999, 
       deposit: 3000,
       brand: "Panasonic",
-      desc: "23L grill microwave with sensor reheat and 5 auto-cook menus. 800W power. Dimensions: 48cm x 40cm x 28cm.",
+      desc: "23L grill microwave with sensor. Available all across India.",
       city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune", "Chennai"]
-    },
-    { 
-      name: "IFB 25L Inverter Microwave with Convection", 
-      cat: "Appliances", 
-      sub: "Microwave", 
-      price: 1299, 
-      deposit: 3900,
-      brand: "IFB",
-      desc: "25L inverter microwave with convection and 10 auto-cook menus. 900W power. Dimensions: 50cm x 42cm x 30cm.",
-      city: "Mumbai",
-      availableCities: ["Mumbai", "Delhi", "Bangalore", "Pune"]
-    },
-    { 
-      name: "Whirlpool 30L Convection Microwave with Crust", 
-      cat: "Appliances", 
-      sub: "Microwave", 
-      price: 1499, 
-      deposit: 4500,
-      brand: "Whirlpool",
-      desc: "30L convection microwave with crust technology and 8 auto-cook menus. 1200W power. Dimensions: 55cm x 45cm x 32cm.",
-      city: "All India",
-      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Pune", "Chennai"]
+      availableCities: ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune"],
+      outOfCityDeliveryCharge: 299
     }
   ];
   
@@ -596,6 +823,10 @@ async function seedAll() {
     ac: 'https://rukminim2.flixcart.com/image/312/312/xif0q/air-conditioner-new/v/z/c/-original-imahgfjzxdtkge6p.jpeg?q=70',
     microwave: 'https://rukminim2.flixcart.com/image/312/312/xif0q/microwave-new/q/m/h/-original-imah7z9yf6aqxkmn.jpeg?q=70'
   };
+  
+  // Combine all products
+  const allProducts = [...cityProducts, ...allIndiaProducts];
+  let count = 0;
   
   for (const p of allProducts) {
     let imgKey = p.sub.toLowerCase();
@@ -619,25 +850,35 @@ async function seedAll() {
       rating: (4 + Math.random() * 0.8).toFixed(1),
       numReviews: Math.floor(Math.random() * 200) + 50,
       isAvailable: true,
-      // ========== NEW CITY FIELDS ==========
       city: p.city,
       availableCities: p.availableCities,
-      deliveryCharge: 0
+      deliveryCharge: 0,
+      outOfCityDeliveryCharge: p.outOfCityDeliveryCharge || 299
     });
-    console.log(`✅ Added: ${p.name} (${p.city})`);
+    count++;
+    console.log(`✅ [${count}/${allProducts.length}] ${p.name} (${p.city}) - Out of city: ₹${p.outOfCityDeliveryCharge || 299}`);
   }
   
   // Final verification
-  const finalTVs = await db.collection('products').find({ subCategory: 'TV' }).toArray();
-  const finalMicrowaves = await db.collection('products').find({ subCategory: 'Microwave' }).toArray();
   const total = await db.collection('products').countDocuments();
+  const cityCounts = await db.collection('products').aggregate([
+    { $group: { _id: '$city', count: { $sum: 1 } } }
+  ]).toArray();
   
   console.log(`\n📊 FINAL COUNTS:`);
   console.log(`   Total Products: ${total}`);
-  console.log(`   TVs: ${finalTVs.length}/5`);
-  console.log(`   Microwaves: ${finalMicrowaves.length}/5`);
+  console.log(`\n🏙️ CITY DISTRIBUTION:`);
+  const expectedCities = ['Delhi', 'Mumbai', 'Bangalore', 'Kolkata', 'Chennai', 'Hyderabad', 'Pune', 'All India'];
+  cityCounts.forEach(c => {
+    const expected = expectedCities.includes(c._id) ? '✅' : '⚠️';
+    console.log(`   ${expected} ${c._id}: ${c.count} products`);
+  });
   
-  console.log('\n🎉 ALL 50 PRODUCTS ADDED SUCCESSFULLY!\n');
+  console.log('\n🎉 ALL PRODUCTS ADDED SUCCESSFULLY WITH DELIVERY CHARGES!\n');
+  console.log('📝 Delivery Charge Logic:');
+  console.log('   - If user\'s city matches product city → Free delivery (₹0)');
+  console.log('   - If user\'s city is in availableCities → Free delivery (₹0)');
+  console.log('   - If user\'s city is NOT in availableCities → outOfCityDeliveryCharge applies');
   
   process.exit(0);
 }

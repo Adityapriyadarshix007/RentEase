@@ -12,6 +12,8 @@ const Checkout = () => {
   const [deliveryDate, setDeliveryDate] = useState('');
   const [deliverySlot, setDeliverySlot] = useState('morning');
   const [paymentMethod, setPaymentMethod] = useState('razorpay');
+  const [deliveryCharges, setDeliveryCharges] = useState({});
+  const [deliveryLoading, setDeliveryLoading] = useState(true);
   const [address, setAddress] = useState({
     street: '',
     city: '',
@@ -20,7 +22,7 @@ const Checkout = () => {
     landmark: ''
   });
   const [pincodeValid, setPincodeValid] = useState(true);
-  const [cityValid, setCityValid] = useState(true); // ← NEW
+  const [cityValid, setCityValid] = useState(true);
 
   const API_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
   const RAZORPAY_KEY = process.env.REACT_APP_RAZORPAY_KEY_ID || 'rzp_test_SoJcSoBvNFxUU0';
@@ -46,16 +48,57 @@ const Checkout = () => {
     }
   }, [cartItems, navigate, user]);
 
+  // Calculate delivery charges
+  useEffect(() => {
+    if (cartItems.length > 0 && address.city) {
+      calculateDeliveryCharges();
+    }
+  }, [cartItems, address.city]);
+
+  const calculateDeliveryCharges = async () => {
+    if (!address.city) return;
+    setDeliveryLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const productIds = cartItems.map(item => item.productId);
+      
+      const response = await fetch(`${API_URL}/api/products/calculate-delivery`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          productIds, 
+          userCity: address.city 
+        })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        const charges = {};
+        data.data.products.forEach(p => {
+          charges[p.productId] = p.deliveryCharge;
+        });
+        setDeliveryCharges(charges);
+        
+        // Check if all products are available in city
+        const allAvailable = data.data.products.every(p => p.isAvailableInCity);
+        setCityValid(allAvailable);
+        if (!allAvailable) {
+          toast.error('Some products are not available in your city');
+        }
+      }
+    } catch (error) {
+      console.error('Error calculating delivery:', error);
+    } finally {
+      setDeliveryLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (address.pincode.length === 6) validatePincode(address.pincode);
   }, [address.pincode]);
-
-  useEffect(() => {
-    // ========== NEW: Validate city when it changes ==========
-    if (address.city && cartItems.length > 0) {
-      validateCityForAllProducts(address.city);
-    }
-  }, [address.city, cartItems]);
 
   const validatePincode = async (pincode) => {
     try {
@@ -76,33 +119,6 @@ const Checkout = () => {
     } catch (error) {
       console.error('Pincode validation error:', error);
     }
-  };
-
-  // ========== NEW: Validate city for all products ==========
-  const validateCityForAllProducts = async (city) => {
-    if (!city || cartItems.length === 0) return;
-    
-    let allAvailable = true;
-    for (const item of cartItems) {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/api/products/validate-city`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ city, productId: item.productId })
-        });
-        const data = await response.json();
-        if (!data.success || !data.available) {
-          allAvailable = false;
-          toast.error(`${item.productName} is not available in ${city}`);
-          break;
-        }
-      } catch (error) {
-        console.error('City validation error:', error);
-        allAvailable = false;
-      }
-    }
-    setCityValid(allAvailable);
   };
 
   const loadRazorpayScript = () => {
@@ -141,6 +157,7 @@ const Checkout = () => {
       // Create rentals for all cart items
       const rentals = [];
       for (const item of cartItems) {
+        const deliveryCharge = deliveryCharges[item.productId] || 0;
         const rentalData = {
           productId: item.productId,
           tenureMonths: item.tenureMonths,
@@ -148,7 +165,8 @@ const Checkout = () => {
           deliveryAddress: address,
           deliveryDate: deliveryDate,
           deliverySlot: deliverySlot,
-          paymentMethod: paymentMethod
+          paymentMethod: paymentMethod,
+          deliveryCharge: deliveryCharge
         };
         
         const response = await fetch(`${API_URL}/api/rentals`, {
@@ -182,9 +200,9 @@ const Checkout = () => {
       if (paymentMethod === 'razorpay') {
         const totalAmount = cartItems.reduce((sum, item) => {
           return sum + (item.monthlyRent * item.tenureMonths * item.quantity);
-        }, 0) + cartItems.reduce((sum, item) => sum + (item.securityDeposit || 0), 0);
+        }, 0) + cartItems.reduce((sum, item) => sum + (item.securityDeposit || 0), 0) + 
+        cartItems.reduce((sum, item) => sum + (deliveryCharges[item.productId] || 0), 0);
         
-        // Create group order
         const groupOrderResponse = await fetch(`${API_URL}/api/payments/create-group-order`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -222,8 +240,6 @@ const Checkout = () => {
               });
               
               const verifyData = await verifyResponse.json();
-              console.log('Verify response:', verifyData);
-            
               if (verifyData.success) {
                 toast.success(`Payment successful! ${rentals.length} items rented`);
                 clearCart();
@@ -254,13 +270,22 @@ const Checkout = () => {
   const handleAddressChange = (e) => {
     const { name, value } = e.target;
     setAddress(prev => ({ ...prev, [name]: value }));
+    // Recalculate delivery when city changes
+    if (name === 'city') {
+      setCityValid(true);
+    }
   };
 
   if (cartItems.length === 0) return null;
 
-  const subtotal = getCartTotal();
+  const subtotal = cartItems.reduce((sum, item) => {
+    return sum + (item.monthlyRent * item.tenureMonths * item.quantity);
+  }, 0);
   const totalDeposit = cartItems.reduce((sum, item) => sum + (item.securityDeposit || 0), 0);
-  const grandTotal = subtotal + totalDeposit;
+  const totalDelivery = cartItems.reduce((sum, item) => sum + (deliveryCharges[item.productId] || 0), 0);
+  const grandTotal = subtotal + totalDeposit + totalDelivery;
+
+  const itemsWithDelivery = cartItems.filter(item => (deliveryCharges[item.productId] || 0) > 0).length;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -275,11 +300,13 @@ const Checkout = () => {
               <div className="md:col-span-2">
                 <input type="text" name="street" value={address.street} onChange={handleAddressChange} placeholder="Street Address *" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required />
               </div>
-              {/* ========== UPDATED: City dropdown with validation ========== */}
               <div>
                 <input type="text" name="city" value={address.city} onChange={handleAddressChange} placeholder="City *" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required />
                 {!cityValid && address.city && (
                   <p className="text-red-500 text-xs mt-1">Some products not available in this city</p>
+                )}
+                {deliveryLoading && address.city && (
+                  <p className="text-blue-500 text-xs mt-1">Checking availability...</p>
                 )}
               </div>
               <input type="text" name="state" value={address.state} onChange={handleAddressChange} placeholder="State *" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required />
@@ -337,24 +364,46 @@ const Checkout = () => {
           <div className="bg-white rounded-lg shadow-md p-6 sticky top-20">
             <h2 className="text-xl font-bold mb-4">Order Summary</h2>
             <div className="max-h-80 overflow-y-auto mb-4 space-y-3">
-              {cartItems.map((item, idx) => (
-                <div key={idx} className="flex justify-between py-2 border-b">
-                  <div>
-                    <p className="font-medium">{item.productName}</p>
-                    <p className="text-sm text-gray-500">{item.quantity} × {item.tenureMonths} months @ ₹{item.monthlyRent}/month</p>
+              {cartItems.map((item, idx) => {
+                const deliveryCharge = deliveryCharges[item.productId] || 0;
+                return (
+                  <div key={idx} className="flex justify-between py-2 border-b">
+                    <div>
+                      <p className="font-medium">{item.productName}</p>
+                      <p className="text-sm text-gray-500">{item.quantity} × {item.tenureMonths} months @ ₹{item.monthlyRent}/month</p>
+                      {deliveryCharge > 0 && (
+                        <p className="text-xs text-orange-500">+ ₹{deliveryCharge} delivery</p>
+                      )}
+                    </div>
+                    <span className="font-semibold">₹{item.monthlyRent * item.tenureMonths * item.quantity + deliveryCharge}</span>
                   </div>
-                  <span className="font-semibold">₹{item.monthlyRent * item.tenureMonths * item.quantity}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div className="space-y-2 mb-4">
               <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal}</span></div>
+              <div className="flex justify-between">
+                <span>Delivery Charges</span>
+                <span className={totalDelivery > 0 ? 'text-orange-600' : 'text-green-600'}>
+                  {totalDelivery > 0 ? `₹${totalDelivery}` : 'FREE'}
+                </span>
+              </div>
+              {itemsWithDelivery > 0 && (
+                <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                  {itemsWithDelivery} item(s) will be shipped from other cities
+                </div>
+              )}
               <div className="flex justify-between"><span>Security Deposit</span><span>₹{totalDeposit}</span></div>
-              <div className="border-t pt-2 mt-2"><div className="flex justify-between font-bold text-lg"><span>Total to Pay</span><span className="text-blue-600">₹{grandTotal}</span></div>
-              <p className="text-xs text-gray-500 mt-1">Security deposit is refundable after inspection</p></div>
+              <div className="border-t pt-2 mt-2">
+                <div className="flex justify-between font-bold text-lg">
+                  <span>Total to Pay</span>
+                  <span className="text-blue-600">₹{grandTotal}</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Security deposit is refundable after inspection</p>
+              </div>
             </div>
-            <button onClick={handleSubmit} disabled={loading || !pincodeValid || !cityValid} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
-              {loading ? 'Processing...' : `Place Order • ₹${grandTotal}`}
+            <button onClick={handleSubmit} disabled={loading || !pincodeValid || !cityValid || deliveryLoading} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+              {loading ? 'Processing...' : deliveryLoading ? 'Calculating delivery...' : `Place Order • ₹${grandTotal}`}
             </button>
             <p className="text-xs text-gray-400 text-center mt-3">By placing order, you agree to our Terms & Conditions</p>
           </div>
