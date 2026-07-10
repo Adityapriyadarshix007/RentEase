@@ -55,6 +55,7 @@ const Checkout = () => {
     }
   }, [cartItems, address.city]);
 
+  // ========== FIX: Calculate delivery charges with fallback ==========
   const calculateDeliveryCharges = async () => {
     if (!address.city) return;
     setDeliveryLoading(true);
@@ -62,6 +63,7 @@ const Checkout = () => {
       const token = localStorage.getItem('token');
       const productIds = cartItems.map(item => item.productId);
       
+      // Try API call first
       const response = await fetch(`${API_URL}/api/products/calculate-delivery`, {
         method: 'POST',
         headers: {
@@ -75,24 +77,57 @@ const Checkout = () => {
       });
       
       const data = await response.json();
-      if (data.success) {
+      
+      if (data.success && data.data) {
+        // Use API response
         const charges = {};
+        let allAvailable = true;
         data.data.products.forEach(p => {
-          charges[p.productId] = p.deliveryCharge;
+          charges[p.productId] = p.deliveryCharge || 0;
+          if (!p.isAvailableInCity) allAvailable = false;
         });
         setDeliveryCharges(charges);
-        
-        // Check if all products are available in city
-        const allAvailable = data.data.products.every(p => p.isAvailableInCity);
         setCityValid(allAvailable);
         if (!allAvailable) {
           toast.error('Some products are not available in your city');
         }
+        console.log('✅ Delivery charges from API:', charges);
+      } else {
+        // Fallback: Calculate locally
+        calculateDeliveryLocally();
       }
     } catch (error) {
-      console.error('Error calculating delivery:', error);
+      console.error('Error calculating delivery, using fallback:', error);
+      // Fallback: Calculate locally
+      calculateDeliveryLocally();
     } finally {
       setDeliveryLoading(false);
+    }
+  };
+
+  // ========== FALLBACK: Calculate delivery locally ==========
+  const calculateDeliveryLocally = () => {
+    console.log('📦 Using local delivery calculation for city:', address.city);
+    const charges = {};
+    let allAvailable = true;
+    
+    cartItems.forEach(item => {
+      // Check if product is available in user's city
+      const isAvailable = item.city === address.city || 
+                         item.city === 'All India' ||
+                         (item.availableCities && item.availableCities.includes(address.city));
+      
+      const charge = isAvailable ? 0 : (item.outOfCityDeliveryCharge || 299);
+      charges[item.productId] = charge;
+      if (!isAvailable) allAvailable = false;
+      
+      console.log(`  ${item.productName}: ${isAvailable ? '✅ Available' : '❌ Not available'} - Charge: ₹${charge}`);
+    });
+    
+    setDeliveryCharges(charges);
+    setCityValid(allAvailable);
+    if (!allAvailable) {
+      toast.error('Some products are not available in your city');
     }
   };
 

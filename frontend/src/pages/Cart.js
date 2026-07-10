@@ -30,12 +30,14 @@ const Cart = () => {
     }
   }, [cartItems, userCity]);
 
+  // ========== FIX: Calculate delivery charges with fallback ==========
   const calculateDeliveryCharges = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
       const productIds = cartItems.map(item => item.productId);
       
+      // Try API call first
       const response = await fetch(`${API_URL}/api/products/calculate-delivery`, {
         method: 'POST',
         headers: {
@@ -49,18 +51,44 @@ const Cart = () => {
       });
       
       const data = await response.json();
-      if (data.success) {
+      
+      if (data.success && data.data) {
+        // Use API response
         const charges = {};
         data.data.products.forEach(p => {
-          charges[p.productId] = p.deliveryCharge;
+          charges[p.productId] = p.deliveryCharge || 0;
         });
         setDeliveryCharges(charges);
+        console.log('✅ Delivery charges from API:', charges);
+      } else {
+        // Fallback: Calculate locally
+        calculateDeliveryLocally();
       }
     } catch (error) {
-      console.error('Error calculating delivery:', error);
+      console.error('Error calculating delivery, using fallback:', error);
+      // Fallback: Calculate locally
+      calculateDeliveryLocally();
     } finally {
       setLoading(false);
     }
+  };
+
+  // ========== FALLBACK: Calculate delivery locally ==========
+  const calculateDeliveryLocally = () => {
+    console.log('📦 Using local delivery calculation for city:', userCity);
+    const charges = {};
+    cartItems.forEach(item => {
+      // Check if product is available in user's city
+      const isAvailable = item.city === userCity || 
+                         item.city === 'All India' ||
+                         (item.availableCities && item.availableCities.includes(userCity));
+      
+      const charge = isAvailable ? 0 : (item.outOfCityDeliveryCharge || 299);
+      charges[item.productId] = charge;
+      
+      console.log(`  ${item.productName}: ${isAvailable ? '✅ Available' : '❌ Not available'} - Charge: ₹${charge}`);
+    });
+    setDeliveryCharges(charges);
   };
 
   const handleCheckout = () => {
@@ -94,8 +122,17 @@ const Cart = () => {
   const getDeliveryStatus = (item) => {
     const charge = deliveryCharges[item.productId];
     if (charge === undefined) return 'Calculating...';
-    if (charge === 0) return '✅ Free';
-    return `🚚 ₹${charge}`;
+    if (charge === 0) {
+      // Check why it's free
+      const isAvailable = item.city === userCity || 
+                         item.city === 'All India' ||
+                         (item.availableCities && item.availableCities.includes(userCity));
+      if (isAvailable) {
+        return '✅ Free (Available in your city)';
+      }
+      return '✅ Free';
+    }
+    return `🚚 ₹${charge} (Ships from ${item.city || 'another city'})`;
   };
 
   return (
@@ -108,6 +145,19 @@ const Cart = () => {
         <p className="text-sm text-blue-700">
           📍 Delivering to: <strong>{userCity}</strong>
         </p>
+        <button 
+          onClick={() => {
+            const newCity = prompt('Enter your city (Delhi, Mumbai, Bangalore, Kolkata, Chennai, Hyderabad, Pune):', userCity);
+            if (newCity) {
+              localStorage.setItem('userCity', newCity);
+              setUserCity(newCity);
+              calculateDeliveryCharges();
+            }
+          }}
+          className="text-xs text-blue-600 hover:text-blue-800 ml-2 underline"
+        >
+          Change City
+        </button>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -136,6 +186,11 @@ const Cart = () => {
                     <p className="text-gray-600 text-sm mb-2">{item.subCategory || item.category}</p>
                     <p className="text-blue-600 font-semibold">₹{item.monthlyRent}/month</p>
                     
+                    {/* City info */}
+                    <p className="text-xs text-gray-400 mt-1">
+                      📦 Located in: {item.city || 'Unknown'}
+                    </p>
+                    
                     {/* Delivery info */}
                     <div className="mt-2">
                       <p className="text-sm">
@@ -146,6 +201,9 @@ const Cart = () => {
                       </p>
                       {deliveryCharge > 0 && (
                         <p className="text-xs text-gray-500">Ships from {item.city || 'another city'}</p>
+                      )}
+                      {deliveryCharge === 0 && item.city === 'All India' && (
+                        <p className="text-xs text-green-500">Available nationwide with free delivery</p>
                       )}
                     </div>
                   </div>
