@@ -36,7 +36,7 @@ const AdminProducts = () => {
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
   const staticCategories = ['Furniture', 'Appliances'];
 
-  // ===== CITY OPTIONS =====
+  // ===== CITY OPTIONS (Must match Product model enum) =====
   const cityOptions = [
     'All India',
     'Delhi',
@@ -45,18 +45,7 @@ const AdminProducts = () => {
     'Kolkata',
     'Chennai',
     'Hyderabad',
-    'Pune',
-    'Noida',
-    'Gurgaon',
-    'Faridabad',
-    'Thane',
-    'Navi Mumbai',
-    'Mysore',
-    'Howrah',
-    'Salt Lake',
-    'Durgapur',
-    'Coimbatore',
-    'Secunderabad'
+    'Pune'
   ];
 
   useEffect(() => {
@@ -224,6 +213,12 @@ const AdminProducts = () => {
       return;
     }
     
+    // Validate description is not empty
+    if (!formData.description || formData.description.trim() === '') {
+      toast.error('Please add a product description');
+      return;
+    }
+    
     const loadingToast = toast.loading(editingProduct ? 'Updating product...' : 'Creating product...');
     
     try {
@@ -240,22 +235,26 @@ const AdminProducts = () => {
       
       const method = editingProduct ? 'PUT' : 'POST';
       
+      // Filter availableCities to only include valid enum values
+      const validCities = ['Delhi', 'Mumbai', 'Bangalore', 'Kolkata', 'Chennai', 'Hyderabad', 'Pune'];
+      const filteredAvailableCities = formData.availableCities.filter(city => validCities.includes(city));
+      
       const productData = {
         name: formData.name,
         category: formData.category,
-        subCategory: formData.subCategory,
+        subCategory: formData.subCategory || '',
         description: formData.description,
         monthlyRent: parseFloat(formData.monthlyRent),
         securityDeposit: parseFloat(formData.securityDeposit) || 0,
         availableQuantity: parseInt(formData.availableQuantity) || 0,
-        brand: formData.brand,
-        condition: formData.condition,
-        images: formData.images,
+        brand: formData.brand || '',
+        condition: formData.condition || 'good',
+        images: formData.images || [],
         specifications: formData.specifications || {},
         isAvailable: true,
         // ===== CITY FIELDS =====
         city: formData.city || 'All India',
-        availableCities: formData.availableCities || [],
+        availableCities: filteredAvailableCities,
         outOfCityDeliveryCharge: parseFloat(formData.outOfCityDeliveryCharge) || 299,
         deliveryCharge: 0
       };
@@ -283,7 +282,13 @@ const AdminProducts = () => {
         await loadProducts();
         window.dispatchEvent(new CustomEvent('productsUpdated'));
       } else {
-        toast.error(data.message || 'Operation failed');
+        // Show detailed error message
+        let errorMessage = data.message || 'Operation failed';
+        if (data.errors) {
+          const errorDetails = Object.values(data.errors).map(err => err.message).join(', ');
+          errorMessage = errorDetails || errorMessage;
+        }
+        toast.error(errorMessage);
         console.error('Error details:', data);
       }
     } catch (error) {
@@ -370,13 +375,14 @@ const AdminProducts = () => {
 
   // ===== Handle available cities selection =====
   const handleCitySelection = (city) => {
+    // Only allow cities that are in the valid enum list
+    const validCities = ['Delhi', 'Mumbai', 'Bangalore', 'Kolkata', 'Chennai', 'Hyderabad', 'Pune'];
+    
     if (city === 'All India') {
-      // If All India is selected, select all cities
-      const allCities = cityOptions.filter(c => c !== 'All India');
       setFormData(prev => ({
         ...prev,
         city: 'All India',
-        availableCities: allCities
+        availableCities: [...validCities]
       }));
     } else {
       setFormData(prev => {
@@ -755,9 +761,8 @@ const AdminProducts = () => {
                         const city = e.target.value;
                         setFormData(prev => ({ ...prev, city }));
                         if (city === 'All India') {
-                          // Auto-select all cities for availableCities
-                          const allCities = cityOptions.filter(c => c !== 'All India');
-                          setFormData(prev => ({ ...prev, availableCities: allCities }));
+                          const validCities = ['Delhi', 'Mumbai', 'Bangalore', 'Kolkata', 'Chennai', 'Hyderabad', 'Pune'];
+                          setFormData(prev => ({ ...prev, availableCities: [...validCities] }));
                         }
                       }}
                       className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -826,14 +831,16 @@ const AdminProducts = () => {
               </div>
               
               <div>
-                <label className="block text-gray-700 mb-2">Description</label>
+                <label className="block text-gray-700 mb-2">Description *</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   rows="4"
                   placeholder="Product description..."
+                  required
                 />
+                <p className="text-xs text-gray-500 mt-1">Product description is required</p>
               </div>
               
               <div>
