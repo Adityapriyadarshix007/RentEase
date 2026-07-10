@@ -22,7 +22,7 @@ const Checkout = () => {
     landmark: ''
   });
   const [pincodeValid, setPincodeValid] = useState(true);
-  const [outOfCityProducts, setOutOfCityProducts] = useState([]); // Track out-of-city products
+  const [outOfCityProducts, setOutOfCityProducts] = useState([]);
 
   const API_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
   const RAZORPAY_KEY = process.env.REACT_APP_RAZORPAY_KEY_ID || 'rzp_test_SoJcSoBvNFxUU0';
@@ -32,11 +32,31 @@ const Checkout = () => {
     { id: 'cod', name: 'Cash on Delivery', icon: '💰', description: 'Pay when you receive the product', subtext: 'Pay in cash at delivery time' }
   ];
 
-  useEffect(() => {
-    if (cartItems.length === 0) navigate('/cart');
+  // ========== Get tomorrow's date ==========
+  const getTomorrowDate = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    setDeliveryDate(tomorrow.toISOString().split('T')[0]);
+    return tomorrow.toISOString().split('T')[0];
+  };
+
+  // ========== Get min date (tomorrow) ==========
+  const getMinDate = () => {
+    return getTomorrowDate();
+  };
+
+  // ========== Get max date (30 days from now) ==========
+  const getMaxDate = () => {
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 30);
+    return maxDate.toISOString().split('T')[0];
+  };
+
+  useEffect(() => {
+    if (cartItems.length === 0) navigate('/cart');
+    
+    // Set delivery date to tomorrow
+    setDeliveryDate(getTomorrowDate());
+    
     if (user?.address) {
       setAddress({
         street: user.address.street || '',
@@ -55,7 +75,7 @@ const Checkout = () => {
     }
   }, [cartItems, address.city]);
 
-  // ========== FIX: Calculate delivery charges without blocking ==========
+  // ========== Calculate delivery charges without blocking ==========
   const calculateDeliveryCharges = async () => {
     if (!address.city) return;
     setDeliveryLoading(true);
@@ -63,7 +83,6 @@ const Checkout = () => {
       const token = localStorage.getItem('token');
       const productIds = cartItems.map(item => item.productId);
       
-      // Try API call first
       const response = await fetch(`${API_URL}/api/products/calculate-delivery`, {
         method: 'POST',
         headers: {
@@ -94,12 +113,10 @@ const Checkout = () => {
         setDeliveryCharges(charges);
         setOutOfCityProducts(outOfCity);
         
-        // Show warning but don't block
         if (outOfCity.length > 0) {
           toast.warning(`${outOfCity.length} item(s) will be shipped from other cities with delivery charges`);
         }
       } else {
-        // Fallback: Calculate locally
         calculateDeliveryLocally();
       }
     } catch (error) {
@@ -176,6 +193,44 @@ const Checkout = () => {
     });
   };
 
+  // ========== Validate delivery date ==========
+  const validateDeliveryDate = (date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(date);
+    selectedDate.setHours(0, 0, 0, 0);
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Check if date is before tomorrow
+    if (selectedDate < tomorrow) {
+      toast.error('Delivery date must be at least tomorrow');
+      setDeliveryDate(getTomorrowDate());
+      return false;
+    }
+    
+    // Check if date is more than 30 days from now
+    const maxDate = new Date(today);
+    maxDate.setDate(maxDate.getDate() + 30);
+    if (selectedDate > maxDate) {
+      toast.error('Delivery date cannot be more than 30 days from now');
+      setDeliveryDate(getTomorrowDate());
+      return false;
+    }
+    
+    return true;
+  };
+
+  // ========== Handle delivery date change ==========
+  const handleDateChange = (e) => {
+    const newDate = e.target.value;
+    if (newDate) {
+      validateDeliveryDate(newDate);
+      setDeliveryDate(newDate);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -194,12 +249,21 @@ const Checkout = () => {
       return;
     }
     
+    // ========== Validate delivery date before submit ==========
+    if (!deliveryDate) {
+      toast.error('Please select a delivery date');
+      return;
+    }
+    
+    if (!validateDeliveryDate(deliveryDate)) {
+      return;
+    }
+    
     setLoading(true);
     
     try {
       const token = localStorage.getItem('token');
       
-      // Create rentals for all cart items
       const rentals = [];
       for (const item of cartItems) {
         const deliveryCharge = deliveryCharges[item.productId] || 0;
@@ -232,16 +296,14 @@ const Checkout = () => {
         return;
       }
       
-      // Handle COD
       if (paymentMethod === 'cod') {
-        toast.success(`Order placed successfully! ${rentals.length} item(s) will be delivered COD`);
+        toast.success(`Order placed successfully! ${rentals.length} item(s) will be delivered COD on ${new Date(deliveryDate).toLocaleDateString()}`);
         clearCart();
         navigate('/my-rentals');
         setLoading(false);
         return;
       }
       
-      // Handle Razorpay
       if (paymentMethod === 'razorpay') {
         const totalAmount = cartItems.reduce((sum, item) => {
           return sum + (item.monthlyRent * item.tenureMonths * item.quantity);
@@ -315,7 +377,6 @@ const Checkout = () => {
   const handleAddressChange = (e) => {
     const { name, value } = e.target;
     setAddress(prev => ({ ...prev, [name]: value }));
-    // Recalculate delivery when city changes
     if (name === 'city') {
       setOutOfCityProducts([]);
     }
@@ -331,6 +392,18 @@ const Checkout = () => {
   const grandTotal = subtotal + totalDeposit + totalDelivery;
 
   const itemsWithDelivery = cartItems.filter(item => (deliveryCharges[item.productId] || 0) > 0).length;
+
+  // ========== Format date for display ==========
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-IN', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -371,7 +444,23 @@ const Checkout = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Date</label>
-                <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} min={new Date().toISOString().split('T')[0]} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required />
+                <input 
+                  type="date" 
+                  value={deliveryDate} 
+                  onChange={handleDateChange}
+                  min={getMinDate()}
+                  max={getMaxDate()}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  required 
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Earliest: {formatDate(getMinDate())} • Latest: {formatDate(getMaxDate())}
+                </p>
+                {deliveryDate && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ Delivery on {formatDate(deliveryDate)}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Slot</label>
@@ -451,7 +540,7 @@ const Checkout = () => {
             </div>
             <button 
               onClick={handleSubmit} 
-              disabled={loading || !pincodeValid || deliveryLoading} 
+              disabled={loading || !pincodeValid || deliveryLoading || !deliveryDate} 
               className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Processing...' : deliveryLoading ? 'Calculating delivery...' : `Place Order • ₹${grandTotal}`}
