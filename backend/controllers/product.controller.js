@@ -21,8 +21,12 @@ const getProducts = async (req, res) => {
     
     let query = {};
     
-    if (category) query.category = category;
-    if (subCategory) query.subCategory = subCategory;
+    if (category && category !== 'All Categories') {
+      query.category = category;
+    }
+    if (subCategory && subCategory !== 'All') {
+      query.subCategory = subCategory;
+    }
     if (minPrice || maxPrice) {
       query.monthlyRent = {};
       if (minPrice) query.monthlyRent.$gte = parseInt(minPrice);
@@ -32,6 +36,8 @@ const getProducts = async (req, res) => {
       query.$text = { $search: search };
     }
     
+    // ===== CITY FILTER LOGIC =====
+    // If city is selected, show products available in that city OR All India
     if (city && city !== 'All Cities') {
       query.$or = [
         { city: city },
@@ -39,36 +45,83 @@ const getProducts = async (req, res) => {
       ];
     }
     
+    // ===== GET ALL PRODUCTS (without pagination first) =====
+    const allProducts = await Product.find(query)
+      .select('name category subCategory description monthlyRent securityDeposit availableQuantity brand condition images city availableCities outOfCityDeliveryCharge deliveryCharge rating numReviews isAvailable _id')
+      .lean();
+    
+    // ===== SORT: City-specific products first, then All India =====
+    let sortedProducts = allProducts;
+    if (city && city !== 'All Cities') {
+      sortedProducts = allProducts.sort((a, b) => {
+        const aIsCity = a.city === city;
+        const bIsCity = b.city === city;
+        
+        // City-specific products come first
+        if (aIsCity && !bIsCity) return -1;
+        if (!aIsCity && bIsCity) return 1;
+        
+        // If both are city or both are All India, sort by sortBy
+        return 0;
+      });
+    }
+    
+    // ===== APPLY SORTING =====
     const sortOptions = {};
     sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
     
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    
-    // ===== FIXED: Select ALL fields including description and securityDeposit =====
-    const products = await Product.find(query)
-      .select('name category subCategory description monthlyRent securityDeposit availableQuantity brand condition images city availableCities outOfCityDeliveryCharge deliveryCharge rating numReviews isAvailable _id')
-      .limit(parseInt(limit))
-      .skip(skip)
-      .sort(sortOptions)
-      .lean();
-    
-    const total = await Product.countDocuments(query);
-    
-    console.log(`📦 Found ${products.length} products`);
-    if (products.length > 0) {
-      console.log('📝 First product fields:', Object.keys(products[0]));
-      console.log('📝 Description:', products[0].description);
-      console.log('💰 Security Deposit:', products[0].securityDeposit);
+    // If sortBy is not city-specific, apply sorting after city priority
+    if (sortBy !== 'city') {
+      sortedProducts.sort((a, b) => {
+        // First priority: city-specific vs All India (if city is selected)
+        if (city && city !== 'All Cities') {
+          const aIsCity = a.city === city;
+          const bIsCity = b.city === city;
+          if (aIsCity && !bIsCity) return -1;
+          if (!aIsCity && bIsCity) return 1;
+        }
+        
+        // Then apply the requested sort
+        let aVal = a[sortBy];
+        let bVal = b[sortBy];
+        
+        if (sortBy === 'monthlyRent') {
+          aVal = parseFloat(aVal) || 0;
+          bVal = parseFloat(bVal) || 0;
+        } else if (sortBy === 'rating') {
+          aVal = parseFloat(aVal) || 0;
+          bVal = parseFloat(bVal) || 0;
+        } else if (sortBy === 'createdAt') {
+          aVal = new Date(aVal).getTime();
+          bVal = new Date(bVal).getTime();
+        }
+        
+        if (aVal < bVal) return sortOrder === 'desc' ? 1 : -1;
+        if (aVal > bVal) return sortOrder === 'desc' ? -1 : 1;
+        return 0;
+      });
     }
+    
+    // ===== APPLY PAGINATION =====
+    const total = sortedProducts.length;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const paginatedProducts = sortedProducts.slice(skip, skip + parseInt(limit));
+    
+    console.log(`📍 City: ${city}, Found: ${total} products, Showing: ${paginatedProducts.length}`);
     
     const responseData = {
       success: true,
-      products,
+      products: paginatedProducts,
       pagination: {
         total,
         page: parseInt(page),
         pages: Math.ceil(total / parseInt(limit)),
         limit: parseInt(limit)
+      },
+      filter: {
+        city: city || 'All Cities',
+        category: category || 'All Categories',
+        subCategory: subCategory || 'All'
       }
     };
     
@@ -124,7 +177,6 @@ const createProduct = async (req, res) => {
   }
 };
 
-// ===== FIXED: updateProduct with proper field updates =====
 const updateProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -134,7 +186,6 @@ const updateProduct = async (req, res) => {
     
     console.log('📥 Updating product with data:', req.body);
     
-    // Update ALL fields individually
     product.name = req.body.name || product.name;
     product.category = req.body.category || product.category;
     product.subCategory = req.body.subCategory || product.subCategory;
@@ -148,7 +199,6 @@ const updateProduct = async (req, res) => {
     product.specifications = req.body.specifications || product.specifications;
     product.isAvailable = req.body.isAvailable !== undefined ? req.body.isAvailable : product.isAvailable;
     
-    // City fields
     product.city = req.body.city || product.city || 'All India';
     product.availableCities = req.body.availableCities || product.availableCities || [];
     product.outOfCityDeliveryCharge = req.body.outOfCityDeliveryCharge !== undefined ? req.body.outOfCityDeliveryCharge : product.outOfCityDeliveryCharge;
