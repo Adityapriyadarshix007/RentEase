@@ -38,15 +38,18 @@ const productSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    index: true // ✅ Added index for faster search
   },
   category: {
     type: String,
-    required: true
+    required: true,
+    index: true // ✅ Added index for faster filtering
   },
   subCategory: {
     type: String,
-    default: ''
+    default: '',
+    index: true // ✅ Added index for faster filtering
   },
   description: {
     type: String,
@@ -55,7 +58,8 @@ const productSchema = new mongoose.Schema({
   monthlyRent: {
     type: Number,
     required: true,
-    min: 0
+    min: 0,
+    index: true // ✅ Added index for price range queries
   },
   securityDeposit: {
     type: Number,
@@ -66,7 +70,8 @@ const productSchema = new mongoose.Schema({
   }],
   brand: {
     type: String,
-    default: ''
+    default: '',
+    index: true // ✅ Added index for brand search
   },
   condition: {
     type: String,
@@ -75,7 +80,8 @@ const productSchema = new mongoose.Schema({
   },
   availableQuantity: {
     type: Number,
-    default: 0
+    default: 0,
+    index: true // ✅ Added index for stock filtering
   },
   specifications: {
     type: Object,
@@ -84,7 +90,8 @@ const productSchema = new mongoose.Schema({
   reviews: [reviewSchema],
   rating: {
     type: Number,
-    default: 0
+    default: 0,
+    index: true // ✅ Added index for sorting by rating
   },
   numReviews: {
     type: Number,
@@ -99,11 +106,13 @@ const productSchema = new mongoose.Schema({
   },
   isAvailable: {
     type: Boolean,
-    default: true
+    default: true,
+    index: true // ✅ Added index for availability filtering
   },
   createdAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
+    index: true // ✅ Added index for sorting by date
   },
   updatedAt: {
     type: Date,
@@ -113,7 +122,8 @@ const productSchema = new mongoose.Schema({
   city: {
     type: String,
     enum: ['Delhi', 'Mumbai', 'Bangalore', 'Kolkata', 'Chennai', 'Hyderabad', 'Pune', 'All India'],
-    default: 'All India'
+    default: 'All India',
+    index: true // ✅ Added index for city filtering
   },
   availableCities: [{
     type: String,
@@ -128,6 +138,14 @@ const productSchema = new mongoose.Schema({
     default: 299
   }
 });
+
+// ===== COMPOUND INDEXES FOR COMMON QUERIES =====
+productSchema.index({ category: 1, city: 1 });
+productSchema.index({ subCategory: 1, city: 1 });
+productSchema.index({ monthlyRent: 1, city: 1 });
+productSchema.index({ rating: -1, city: 1 });
+productSchema.index({ createdAt: -1, city: 1 });
+productSchema.index({ name: 'text', brand: 'text' }); // Text search index
 
 // Method to update rating when new review is added
 productSchema.methods.updateRating = async function() {
