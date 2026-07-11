@@ -24,7 +24,6 @@ const AdminProducts = () => {
     condition: 'good',
     images: [],
     specifications: {},
-    // ===== CITY FIELDS =====
     city: 'All India',
     availableCities: [],
     outOfCityDeliveryCharge: 299,
@@ -36,7 +35,6 @@ const AdminProducts = () => {
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://rentease-backend-njvk.onrender.com';
   const staticCategories = ['Furniture', 'Appliances'];
 
-  // ===== CITY OPTIONS (Must match Product model enum) =====
   const cityOptions = [
     'All India',
     'Delhi',
@@ -205,15 +203,16 @@ const AdminProducts = () => {
     setSearchTerm(e.target.value);
   };
 
+  // ===== FIXED: handleSubmit with proper data =====
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validate required fields
     if (!formData.name || !formData.category || !formData.monthlyRent) {
       toast.error('Please fill in all required fields');
       return;
     }
     
-    // Validate description is not empty
     if (!formData.description || formData.description.trim() === '') {
       toast.error('Please add a product description');
       return;
@@ -235,15 +234,15 @@ const AdminProducts = () => {
       
       const method = editingProduct ? 'PUT' : 'POST';
       
-      // Filter availableCities to only include valid enum values
       const validCities = ['Delhi', 'Mumbai', 'Bangalore', 'Kolkata', 'Chennai', 'Hyderabad', 'Pune'];
       const filteredAvailableCities = formData.availableCities.filter(city => validCities.includes(city));
       
+      // ===== FIXED: Properly format all data =====
       const productData = {
-        name: formData.name,
+        name: formData.name.trim(),
         category: formData.category,
         subCategory: formData.subCategory || '',
-        description: formData.description,
+        description: formData.description.trim(),
         monthlyRent: parseFloat(formData.monthlyRent),
         securityDeposit: parseFloat(formData.securityDeposit) || 0,
         availableQuantity: parseInt(formData.availableQuantity) || 0,
@@ -252,7 +251,6 @@ const AdminProducts = () => {
         images: formData.images || [],
         specifications: formData.specifications || {},
         isAvailable: true,
-        // ===== CITY FIELDS =====
         city: formData.city || 'All India',
         availableCities: filteredAvailableCities,
         outOfCityDeliveryCharge: parseFloat(formData.outOfCityDeliveryCharge) || 299,
@@ -282,7 +280,6 @@ const AdminProducts = () => {
         await loadProducts();
         window.dispatchEvent(new CustomEvent('productsUpdated'));
       } else {
-        // Show detailed error message
         let errorMessage = data.message || 'Operation failed';
         if (data.errors) {
           const errorDetails = Object.values(data.errors).map(err => err.message).join(', ');
@@ -328,22 +325,21 @@ const AdminProducts = () => {
 
   // ===== FIXED: handleEdit with all fields properly populated =====
   const handleEdit = (product) => {
-    console.log('Editing product:', product); // Debug log
+    console.log('Editing product:', product);
     
     setEditingProduct(product);
     setFormData({
       name: product.name || '',
       category: product.category || '',
       subCategory: product.subCategory || '',
-      description: product.description || '', // ← FIXED: Now properly sets description
+      description: product.description || '',
       monthlyRent: product.monthlyRent || '',
-      securityDeposit: product.securityDeposit || 0, // ← FIXED: Now properly sets security deposit
+      securityDeposit: product.securityDeposit || 0,
       availableQuantity: product.availableQuantity || '',
       brand: product.brand || '',
       condition: product.condition || 'good',
       images: product.images || [],
       specifications: product.specifications || {},
-      // ===== CITY FIELDS =====
       city: product.city || 'All India',
       availableCities: product.availableCities || [],
       outOfCityDeliveryCharge: product.outOfCityDeliveryCharge || 299,
@@ -367,7 +363,6 @@ const AdminProducts = () => {
       condition: 'good',
       images: [],
       specifications: {},
-      // ===== CITY FIELDS =====
       city: 'All India',
       availableCities: [],
       outOfCityDeliveryCharge: 299,
@@ -376,9 +371,7 @@ const AdminProducts = () => {
     setImagePreview([]);
   };
 
-  // ===== Handle available cities selection =====
   const handleCitySelection = (city) => {
-    // Only allow cities that are in the valid enum list
     const validCities = ['Delhi', 'Mumbai', 'Bangalore', 'Kolkata', 'Chennai', 'Hyderabad', 'Pune'];
     
     if (city === 'All India') {
@@ -834,6 +827,7 @@ const AdminProducts = () => {
                 </select>
               </div>
               
+              {/* ===== DESCRIPTION FIELD - Now properly populated ===== */}
               <div>
                 <label className="block text-gray-700 mb-2">Description *</label>
                 <textarea
