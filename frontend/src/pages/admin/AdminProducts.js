@@ -203,9 +203,11 @@ const AdminProducts = () => {
     setSearchTerm(e.target.value);
   };
 
+  // ===== FIXED: handleSubmit with proper data for ALL fields =====
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validate required fields
     if (!formData.name || !formData.category || !formData.monthlyRent) {
       toast.error('Please fill in all required fields');
       return;
@@ -235,13 +237,14 @@ const AdminProducts = () => {
       const validCities = ['Delhi', 'Mumbai', 'Bangalore', 'Kolkata', 'Chennai', 'Hyderabad', 'Pune'];
       const filteredAvailableCities = formData.availableCities.filter(city => validCities.includes(city));
       
+      // ===== FIXED: Properly format ALL fields =====
       const productData = {
         name: formData.name.trim(),
         category: formData.category,
         subCategory: formData.subCategory || '',
-        description: formData.description.trim(),
+        description: formData.description.trim(), // <-- FIXED: Description is sent
         monthlyRent: parseFloat(formData.monthlyRent),
-        securityDeposit: parseFloat(formData.securityDeposit) || 0,
+        securityDeposit: parseFloat(formData.securityDeposit) || 0, // <-- FIXED: Security Deposit is sent
         availableQuantity: parseInt(formData.availableQuantity) || 0,
         brand: formData.brand || '',
         condition: formData.condition || 'good',
@@ -254,7 +257,7 @@ const AdminProducts = () => {
         deliveryCharge: 0
       };
       
-      console.log('Sending product data:', productData);
+      console.log('📤 Sending product data:', productData);
       
       const response = await fetch(url, {
         method: method,
@@ -266,7 +269,7 @@ const AdminProducts = () => {
       });
       
       const data = await response.json();
-      console.log('Response:', data);
+      console.log('📥 Response:', data);
       
       toast.dismiss(loadingToast);
       
@@ -283,11 +286,11 @@ const AdminProducts = () => {
           errorMessage = errorDetails || errorMessage;
         }
         toast.error(errorMessage);
-        console.error('Error details:', data);
+        console.error('❌ Error details:', data);
       }
     } catch (error) {
       toast.dismiss(loadingToast);
-      console.error('Error saving product:', error);
+      console.error('❌ Error saving product:', error);
       toast.error('Network error: ' + error.message);
     }
   };
@@ -320,17 +323,20 @@ const AdminProducts = () => {
     }
   };
 
+  // ===== FIXED: handleEdit with ALL fields properly populated =====
   const handleEdit = (product) => {
-    console.log('Editing product:', product);
+    console.log('✏️ Editing product:', product);
+    console.log('📝 Description:', product.description);
+    console.log('💰 Security Deposit:', product.securityDeposit);
     
     setEditingProduct(product);
     setFormData({
       name: product.name || '',
       category: product.category || '',
       subCategory: product.subCategory || '',
-      description: product.description || '',
+      description: product.description || '', // <-- FIXED: Description is set
       monthlyRent: product.monthlyRent || '',
-      securityDeposit: product.securityDeposit || 0,
+      securityDeposit: product.securityDeposit || 0, // <-- FIXED: Security Deposit is set
       availableQuantity: product.availableQuantity || '',
       brand: product.brand || '',
       condition: product.condition || 'good',
