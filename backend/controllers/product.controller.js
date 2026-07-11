@@ -44,14 +44,22 @@ const getProducts = async (req, res) => {
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
+    // ===== FIXED: Select ALL fields including description and securityDeposit =====
     const products = await Product.find(query)
-      .select('name category subCategory monthlyRent rating numReviews availableQuantity brand images city availableCities outOfCityDeliveryCharge deliveryCharge')
+      .select('name category subCategory description monthlyRent securityDeposit availableQuantity brand condition images city availableCities outOfCityDeliveryCharge deliveryCharge rating numReviews isAvailable _id')
       .limit(parseInt(limit))
       .skip(skip)
       .sort(sortOptions)
       .lean();
     
     const total = await Product.countDocuments(query);
+    
+    console.log(`📦 Found ${products.length} products`);
+    if (products.length > 0) {
+      console.log('📝 First product fields:', Object.keys(products[0]));
+      console.log('📝 Description:', products[0].description);
+      console.log('💰 Security Deposit:', products[0].securityDeposit);
+    }
     
     const responseData = {
       success: true,
@@ -124,12 +132,14 @@ const updateProduct = async (req, res) => {
       return res.status(404).json({ message: 'Product not found' });
     }
     
-    // Update all fields individually (not using Object.assign)
+    console.log('📥 Updating product with data:', req.body);
+    
+    // Update ALL fields individually
     product.name = req.body.name || product.name;
     product.category = req.body.category || product.category;
     product.subCategory = req.body.subCategory || product.subCategory;
     product.description = req.body.description || product.description;
-    product.monthlyRent = req.body.monthlyRent || product.monthlyRent;
+    product.monthlyRent = req.body.monthlyRent !== undefined ? req.body.monthlyRent : product.monthlyRent;
     product.securityDeposit = req.body.securityDeposit !== undefined ? req.body.securityDeposit : product.securityDeposit;
     product.availableQuantity = req.body.availableQuantity !== undefined ? req.body.availableQuantity : product.availableQuantity;
     product.brand = req.body.brand || product.brand;
@@ -147,6 +157,8 @@ const updateProduct = async (req, res) => {
     product.updatedAt = Date.now();
     await product.save();
     
+    console.log('✅ Product updated:', product);
+    
     cache.clear();
     
     res.json({ 
@@ -155,7 +167,7 @@ const updateProduct = async (req, res) => {
       message: 'Product updated successfully'
     });
   } catch (error) {
-    console.error('Update product error:', error);
+    console.error('❌ Update product error:', error);
     res.status(500).json({ 
       success: false, 
       message: error.message 
