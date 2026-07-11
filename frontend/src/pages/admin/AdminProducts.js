@@ -207,7 +207,6 @@ const AdminProducts = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate required fields
     if (!formData.name || !formData.category || !formData.monthlyRent) {
       toast.error('Please fill in all required fields');
       return;
@@ -237,7 +236,6 @@ const AdminProducts = () => {
       const validCities = ['Delhi', 'Mumbai', 'Bangalore', 'Kolkata', 'Chennai', 'Hyderabad', 'Pune'];
       const filteredAvailableCities = formData.availableCities.filter(city => validCities.includes(city));
       
-      // ===== FIXED: Properly format all data =====
       const productData = {
         name: formData.name.trim(),
         category: formData.category,
@@ -326,6 +324,7 @@ const AdminProducts = () => {
   // ===== FIXED: handleEdit with all fields properly populated =====
   const handleEdit = (product) => {
     console.log('Editing product:', product);
+    console.log('Product description:', product.description);
     
     setEditingProduct(product);
     setFormData({
@@ -743,7 +742,7 @@ const AdminProducts = () => {
                 </div>
               </div>
 
-              {/* ===== CITY SECTION ===== */}
+              {/* CITY SECTION */}
               <div className="border rounded-lg p-4 bg-gray-50">
                 <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
                   <FaCity className="text-blue-600" /> City & Delivery Settings
@@ -827,15 +826,16 @@ const AdminProducts = () => {
                 </select>
               </div>
               
-              {/* ===== DESCRIPTION FIELD - Now properly populated ===== */}
+              {/* ===== FIXED: DESCRIPTION FIELD with proper value ===== */}
               <div>
                 <label className="block text-gray-700 mb-2">Description *</label>
                 <textarea
-                  value={formData.description}
+                  key={editingProduct?._id || 'new'} // Force re-render when editing different product
+                  value={formData.description || ''}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   rows="4"
-                  placeholder="Product description..."
+                  placeholder="Enter product description..."
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">Product description is required</p>
