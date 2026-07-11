@@ -203,11 +203,9 @@ const AdminProducts = () => {
     setSearchTerm(e.target.value);
   };
 
-  // ===== FIXED: handleSubmit with proper data for ALL fields =====
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate required fields
     if (!formData.name || !formData.category || !formData.monthlyRent) {
       toast.error('Please fill in all required fields');
       return;
@@ -237,14 +235,13 @@ const AdminProducts = () => {
       const validCities = ['Delhi', 'Mumbai', 'Bangalore', 'Kolkata', 'Chennai', 'Hyderabad', 'Pune'];
       const filteredAvailableCities = formData.availableCities.filter(city => validCities.includes(city));
       
-      // ===== FIXED: Properly format ALL fields =====
       const productData = {
         name: formData.name.trim(),
         category: formData.category,
         subCategory: formData.subCategory || '',
-        description: formData.description.trim(), // <-- FIXED: Description is sent
+        description: formData.description.trim(),
         monthlyRent: parseFloat(formData.monthlyRent),
-        securityDeposit: parseFloat(formData.securityDeposit) || 0, // <-- FIXED: Security Deposit is sent
+        securityDeposit: parseFloat(formData.securityDeposit) || 0,
         availableQuantity: parseInt(formData.availableQuantity) || 0,
         brand: formData.brand || '',
         condition: formData.condition || 'good',
@@ -326,17 +323,20 @@ const AdminProducts = () => {
   // ===== FIXED: handleEdit with ALL fields properly populated =====
   const handleEdit = (product) => {
     console.log('✏️ Editing product:', product);
-    console.log('📝 Description:', product.description);
-    console.log('💰 Security Deposit:', product.securityDeposit);
+    console.log('📝 Description from product:', product.description);
+    console.log('💰 Security Deposit from product:', product.securityDeposit);
     
+    // Set the editing product
     setEditingProduct(product);
+    
+    // Set form data with all fields from the product
     setFormData({
       name: product.name || '',
       category: product.category || '',
       subCategory: product.subCategory || '',
-      description: product.description || '', // <-- FIXED: Description is set
+      description: product.description || '', // Make sure this is set
       monthlyRent: product.monthlyRent || '',
-      securityDeposit: product.securityDeposit || 0, // <-- FIXED: Security Deposit is set
+      securityDeposit: product.securityDeposit || 0, // Make sure this is set
       availableQuantity: product.availableQuantity || '',
       brand: product.brand || '',
       condition: product.condition || 'good',
@@ -347,7 +347,11 @@ const AdminProducts = () => {
       outOfCityDeliveryCharge: product.outOfCityDeliveryCharge || 299,
       deliveryCharge: product.deliveryCharge || 0
     });
+    
+    // Set image preview
     setImagePreview(product.images || []);
+    
+    // Show the modal
     setShowModal(true);
   };
 
@@ -824,10 +828,10 @@ const AdminProducts = () => {
                 </select>
               </div>
               
+              {/* ===== FIXED: Description Field ===== */}
               <div>
                 <label className="block text-gray-700 mb-2">Description *</label>
                 <textarea
-                  key={editingProduct?._id || 'new'}
                   value={formData.description || ''}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
