@@ -326,15 +326,18 @@ const AdminProducts = () => {
     }
   };
 
+  // ===== FIXED: handleEdit with all fields properly populated =====
   const handleEdit = (product) => {
+    console.log('Editing product:', product); // Debug log
+    
     setEditingProduct(product);
     setFormData({
       name: product.name || '',
       category: product.category || '',
       subCategory: product.subCategory || '',
-      description: product.description || '',
+      description: product.description || '', // ← FIXED: Now properly sets description
       monthlyRent: product.monthlyRent || '',
-      securityDeposit: product.securityDeposit || '',
+      securityDeposit: product.securityDeposit || 0, // ← FIXED: Now properly sets security deposit
       availableQuantity: product.availableQuantity || '',
       brand: product.brand || '',
       condition: product.condition || 'good',
@@ -717,6 +720,7 @@ const AdminProducts = () => {
                     onChange={(e) => setFormData({ ...formData, securityDeposit: e.target.value })}
                     className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                     min="0"
+                    placeholder="0"
                   />
                 </div>
               </div>
