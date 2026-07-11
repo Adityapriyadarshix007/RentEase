@@ -440,7 +440,6 @@ const AdminProducts = () => {
         </div>
       </div>
 
-      {/* Search and Filter Bar */}
       <div className="bg-white rounded-lg shadow-md p-4 mb-6">
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-[200px]">
@@ -494,7 +493,6 @@ const AdminProducts = () => {
         </div>
       </div>
 
-      {/* Products Table */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -627,12 +625,10 @@ const AdminProducts = () => {
         </div>
       </div>
 
-      {/* Product Count */}
       <div className="mt-4 text-sm text-gray-500">
         Showing {filteredProducts.length} of {products.length} products
       </div>
 
-      {/* Add/Edit Product Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -739,7 +735,6 @@ const AdminProducts = () => {
                 </div>
               </div>
 
-              {/* CITY SECTION */}
               <div className="border rounded-lg p-4 bg-gray-50">
                 <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
                   <FaCity className="text-blue-600" /> City & Delivery Settings
