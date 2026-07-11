@@ -203,7 +203,6 @@ const AdminProducts = () => {
     setSearchTerm(e.target.value);
   };
 
-  // ===== FIXED: handleSubmit with proper data =====
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -258,7 +257,7 @@ const AdminProducts = () => {
       console.log('Sending product data:', productData);
       
       const response = await fetch(url, {
-        method,
+        method: method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -321,10 +320,8 @@ const AdminProducts = () => {
     }
   };
 
-  // ===== FIXED: handleEdit with all fields properly populated =====
   const handleEdit = (product) => {
     console.log('Editing product:', product);
-    console.log('Product description:', product.description);
     
     setEditingProduct(product);
     setFormData({
@@ -826,11 +823,10 @@ const AdminProducts = () => {
                 </select>
               </div>
               
-              {/* ===== FIXED: DESCRIPTION FIELD with proper value ===== */}
               <div>
                 <label className="block text-gray-700 mb-2">Description *</label>
                 <textarea
-                  key={editingProduct?._id || 'new'} // Force re-render when editing different product
+                  key={editingProduct?._id || 'new'}
                   value={formData.description || ''}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
