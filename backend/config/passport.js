@@ -5,7 +5,11 @@ const User = require('../models/User.model');
 console.log('🔧 Loading Passport configuration...');
 console.log('GOOGLE_CLIENT_ID exists:', !!process.env.GOOGLE_CLIENT_ID);
 console.log('GOOGLE_CLIENT_SECRET exists:', !!process.env.GOOGLE_CLIENT_SECRET);
-
+console.log("BACKEND_URL:", process.env.BACKEND_URL);
+console.log(
+  "Callback URL:",
+  `${process.env.BACKEND_URL}/api/auth/google/callback`
+);
 passport.use(
   new GoogleStrategy(
     {

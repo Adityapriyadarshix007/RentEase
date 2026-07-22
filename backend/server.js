@@ -159,37 +159,76 @@ app.get('/api/auth/google/callback',
     failureMessage: true
   }),
   (req, res) => {
-    console.log('✅ Google auth successful for user:', req.user?.email);
-    
-    const jwt = require('jsonwebtoken');
-    const token = jwt.sign(
-      { id: req.user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRE || '365d' }
-    );
-    
-    const frontendUrl = 'https://rentease-app-fawn.vercel.app';
-    console.log(`🔄 Redirecting to: ${frontendUrl}/google-auth?token=${token.substring(0, 30)}...`);
-    
-    res.redirect(`${frontendUrl}/google-auth?token=${token}`);
+    try {
+      console.log('✅ Google auth successful for user:', req.user?.email);
+      
+      const jwt = require('jsonwebtoken');
+      const token = jwt.sign(
+        { id: req.user._id },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRE || '365d' }
+      );
+      
+      const frontendUrl = process.env.NODE_ENV === 'production'
+        ? 'https://rentease-app-fawn.vercel.app'
+        : 'http://localhost:3000';
+
+      console.log(`🔄 Redirecting to: ${frontendUrl}/google-auth?token=${token.substring(0, 30)}...`);
+      
+      res.redirect(`${frontendUrl}/google-auth?token=${token}`);
+    } catch (error) {
+      console.error('❌ Google auth callback error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Authentication failed',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
   }
 );
 
+// Google auth user endpoint
 app.get('/api/auth/google/user', (req, res) => {
-  if (req.isAuthenticated()) {
-    const user = req.user.toObject();
-    delete user.password;
-    res.json({ success: true, user });
-  } else {
-    res.status(401).json({ success: false, message: 'Not authenticated' });
+  try {
+    if (req.isAuthenticated()) {
+      const user = req.user.toObject();
+      delete user.password;
+      res.json({ success: true, user });
+    } else {
+      res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+  } catch (error) {
+    console.error('❌ Google user endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get user data'
+    });
   }
 });
 
+// Google auth logout endpoint
 app.get('/api/auth/google/logout', (req, res) => {
   req.logout((err) => {
-    if (err) return res.status(500).json({ message: err.message });
-    req.session.destroy();
-    res.json({ success: true, message: 'Logged out successfully' });
+    if (err) {
+      console.error('❌ Logout error:', err);
+      return res.status(500).json({ 
+        success: false, 
+        message: err.message 
+      });
+    }
+    req.session.destroy((destroyErr) => {
+      if (destroyErr) {
+        console.error('❌ Session destroy error:', destroyErr);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to destroy session'
+        });
+      }
+      res.json({ 
+        success: true, 
+        message: 'Logged out successfully' 
+      });
+    });
   });
 });
 
